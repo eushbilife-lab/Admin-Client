@@ -4,11 +4,15 @@ const env = import.meta.env;
 function lanAwareApiUrl(): string | undefined {
   const envUrl = env.REACT_APP_API_URL;
   if (typeof window === "undefined") return envUrl;
-  const host = window.location.hostname;
-  if (host && host !== "localhost" && host !== "127.0.0.1") {
-    return `http://${host}:${ADMIN_API_PORT}/api/v1`;
+  const { hostname, port, origin } = window.location;
+  if (!hostname || hostname === "localhost" || hostname === "127.0.0.1") {
+    return envUrl;
   }
-  return envUrl;
+  // The Vite dev server on another machine still calls the API port directly.
+  if (port === "3000" || port === "5173" || port === "5175") {
+    return `http://${hostname}:${ADMIN_API_PORT}/api/v1`;
+  }
+  return `${origin}/api/v1`;
 }
 
 export const config = {

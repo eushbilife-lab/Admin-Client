@@ -38,7 +38,7 @@ export default function Brands() {
       {(brand.loading || manufacturer.loading) && <CircleLoader />}
       <LibraryPanel
         heading="Brands"
-        blurb="What households search for: SACA Farms, Gulf Dairy, Oasis Snacks."
+        blurb="What households search for: Eushbi Farms, Gulf Dairy, Oasis Snacks."
         addLabel="Add brand"
         empty="No brands yet."
         rows={brand.dynamics}
