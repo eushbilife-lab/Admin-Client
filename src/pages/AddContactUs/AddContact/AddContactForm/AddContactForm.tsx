@@ -8,7 +8,7 @@ function AddContactForm({ handleSubmit }: any) {
   return (
     <div>
       <form onSubmit={handleSubmit}>
-         <ReduxFormFields fields={fields(t)} />
+          <ReduxFormFields fields={fields(t)} />
       </form>
     </div>
   );
