@@ -1,0 +1,1 @@
+import{c as e,n as t,t as n}from"./jsx-runtime-Dx9TgJjK.js";import{d as r,f as i,l as a,u as o}from"./modal-BSODLHNV.js";i(),o();var s=e(t()),c=n(),l=[`value`],u=s.createContext();function d(e){let{value:t}=e,n=a(e,l);return(0,c.jsx)(u.Provider,r({value:t??!0},n))}var f=()=>s.useContext(u)??!1;export{f as n,d as t};

@@ -1,0 +1,16 @@
+import { useAppDispatch, useAppSelector } from "redux/hooks";
+import { change } from "redux-form";
+import { useEffect } from "react";
+
+export default function UpdateFOPLCertificateForm() {
+  const form = "AddFOPLCertificate";
+  const dispatch = useAppDispatch();
+  const data = useAppSelector((state) => state.modal.data);
+  useEffect(() => {
+    if (!data?.data || Object.keys(data?.data).length === 0) return;
+    const { name } = data?.data;
+    dispatch(change(form, "name", name || ""));
+  }, [data, dispatch]);
+
+  return null;
+}

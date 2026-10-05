@@ -1,0 +1,1 @@
+var e=e=>[{value:e(`active`),label:e(`Active`)},{value:e(`inactive`),label:e(`In Active`)}],t=e=>[{value:e(`level1_id`),label:e(`level 1`)},{value:e(`level2_id`),label:e(`level 2`)},{value:e(`level3_id`),label:e(`level 3`)},{value:e(`level4_id`),label:e(`level 4`)}];export{e as n,t};

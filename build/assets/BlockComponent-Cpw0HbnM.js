@@ -1,0 +1,1 @@
+import{c as e,n as t,t as n}from"./jsx-runtime-Dx9TgJjK.js";import{n as r}from"./hooks-B1MpP_e8.js";var i=e(t(),1),a=n();function o({allowedRoles:e,children:t}){let n=r(e=>e.auth?.user?.role)||``;return(0,i.useMemo)(()=>e?.includes(n),[n,e])?(0,a.jsx)(a.Fragment,{children:t}):null}export{o as t};

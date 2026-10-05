@@ -1,0 +1,1 @@
+var e,t,n={showError:t=>e?.(t),showSuccess:e=>t?.(e),subscribe:(n,r)=>{e=r,t=n}};export{n as t};

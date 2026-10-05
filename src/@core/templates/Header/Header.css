@@ -1,0 +1,133 @@
+.navbar {
+  box-shadow: "rgba(0, 0, 0, 0.06) 0px 12px 40px -12px";
+  border-bottom: 1px solid #dde7ee;
+  background: white;
+}
+header {
+  position: relative;
+}
+
+.logo {
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+}
+
+.logo h2 {
+  margin: 0;
+  color: #f5d312;
+  font-weight: 300;
+  line-height: 20px;
+  margin-bottom: 14px;
+}
+
+.logo h2 span {
+  font-size: 19px;
+}
+
+.header-bar {
+  padding: 0 25px;
+  text-align: right;
+  background-color: #4b525a;
+}
+
+.header-bar ul,
+.navbar ul {
+  padding: 0;
+  margin: 0;
+}
+
+.header-bar ul li {
+  list-style-type: none;
+  display: inline-block;
+  margin-left: 30px;
+}
+
+.header-bar ul li a {
+  font-size: 15.5px;
+  padding: 15px 0;
+  color: black;
+  font-weight: 300;
+  display: inline-block;
+  text-decoration: none;
+  transition: all 0.4s ease;
+}
+
+.header-bar ul li a:hover {
+  color: #f5d312;
+}
+
+.header-select .MuiOutlinedInput-root {
+  background: black;
+  color: black;
+  padding: 2px 10px !important;
+  border-radius: 25px;
+  font-size: 14px;
+}
+
+.header-select .MuiSelect-select {
+  padding: 0 !important;
+}
+
+.header-select .css-1d3z3hw-MuiOutlinedInput-notchedOutline {
+  border: 0;
+}
+
+.header-select svg {
+  display: none;
+}
+
+.navbar {
+  padding: 0 25px;
+  text-align: right;
+  font-size: 15.2px;
+}
+
+/* .navbar ul li {
+	list-style-type: none;
+	display: inline-block;
+	margin-left: 30px;
+} */
+
+.navbar ul li a {
+  font-size: 15.2px;
+  padding: 11px 0;
+  padding-bottom: 8px !important;
+  color: black;
+  font-weight: 500;
+  display: inline-block;
+  text-decoration: none;
+  transition: all 0.4s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.navbar ul li a.active {
+  color: #f08821;
+  border-bottom: 2px solid #f08821;
+}
+
+.navbar ul li:first-child {
+  margin-left: 5px;
+}
+
+.ILinks {
+  display: flex;
+  align-items: center;
+  gap: 20px 30px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+.ILinks-lower {
+  display: flex;
+  align-items: center;
+  gap: 20px 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+/* .ILinks-lower {
+  display: flex;
+  align-items: center;
+  gap: 20px 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+} */

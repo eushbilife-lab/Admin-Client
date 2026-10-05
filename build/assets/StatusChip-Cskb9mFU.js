@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-Dx9TgJjK.js";var t=e();function n({label:e,tone:n=`info`}){return(0,t.jsx)(`span`,{className:`status-chip is-${n}`,children:e})}export{n as t};

@@ -1,0 +1,1 @@
+var e=(e,t,n,r)=>!e||(r&&(e=e.toUpperCase()),n.test(e))?e:t,t=(t,n)=>e(t,n,/^[0-9]*$/i),n=(t,n)=>e(t,n,/^[0-9]+(\.[0-9]*)?$/i),r=(t,n)=>e(t,n,/^[1-9][0-9]{0,2}$/i);export{t as n,r,n as t};

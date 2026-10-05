@@ -1,0 +1,82 @@
+.quick-create {
+  position: relative;
+}
+
+.quick-create__button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  height: 38px;
+  padding: 0 0.9rem 0 0.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-leaf);
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.82rem;
+  transition: background-color var(--motion), transform var(--motion), box-shadow var(--motion);
+}
+
+.quick-create__button:hover {
+  background: var(--color-leaf-hover);
+  box-shadow: 0 5px 7px rgba(0, 0, 0, 0.2);
+}
+
+.quick-create__button span {
+  line-height: 1;
+}
+
+.quick-create__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.45rem);
+  min-width: 220px;
+  padding: 0.35rem;
+  background: var(--color-paper);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  z-index: 60;
+  animation: pop-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.quick-create__menu button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.quick-create__menu button:hover {
+  background: var(--color-leaf-soft);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .quick-create__button span {
+    display: none;
+  }
+
+  .quick-create__button {
+    width: 36px;
+    padding: 0;
+    justify-content: center;
+  }
+}

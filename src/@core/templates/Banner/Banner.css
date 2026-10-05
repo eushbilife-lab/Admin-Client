@@ -1,0 +1,20 @@
+.banner-heading {
+	padding: 0 0 16px;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+.heading-title {
+	margin: 0;
+	font-size: clamp(1.1rem, 1.2vw + 1vh, 1.5625rem);
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: var(--color-ink);
+}
+.banner-data {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
