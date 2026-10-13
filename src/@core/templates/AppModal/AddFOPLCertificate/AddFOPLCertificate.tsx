@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import { change } from "redux-form";
+import { reset } from "redux-form";
 import { useEffect } from "react";
 import AddFOPLCertificateForm from "./AddFOPLCertificateForm";
 import UpdateFOPLCertificateForm from "./UpdateFOPLCertificateForm";
@@ -7,23 +7,23 @@ import imagesService from "services/images.service";
 import { useTranslation } from "react-i18next";
 
 export default function AddFOPLCertificate() {
-  const form = "AddFOPLCertificateForm";
-  const { id, type, data } = useAppSelector((state) => state.modal.data);
+  const form = "AddFOPLCertificate";
+  const { id, type, data } = useAppSelector((state) => state.modal.data) || {};
   const dispatch = useAppDispatch();
   const {t}=useTranslation()
 
   useEffect(() => {
     if (!id) {
-      dispatch(change(form, "status", true));
+      dispatch(reset(form));
     }
   }, [id, dispatch]);
 
   const handleSubmit = async (values: any) => {
-    let updateData = { ...values, type, previousImageUrl:data?.url };
-    let createData = { ...values, type };
+    const name = String(values?.name || "").trim();
+    let updateData = { ...values, name, type, previousImageUrl: data?.url };
+    let createData = { ...values, name, type };
   
     if (id) {
-      console.log("update")
       imagesService.update(id, updateData, dispatch);
     } else {
       imagesService.create(createData, dispatch);

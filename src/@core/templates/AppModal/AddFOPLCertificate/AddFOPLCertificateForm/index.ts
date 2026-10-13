@@ -13,6 +13,7 @@ export const fields: ReduxFormField[] = [
     component: InputRedux,
     validate: [required],
     cellProps: { md: 12 },
+    autoComplete: "off",
   },
   {
     name: "url",

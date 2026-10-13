@@ -35,7 +35,7 @@ const imagesService = {
     });
     let formData = new FormData();
     formData.append("url", check);
-    formData.append("name", data.name);
+    formData.append("name", String(data.name || "").trim());
     formData.append("type", data.type);
     const folder = "certificate";
     http.setJWT();
@@ -52,7 +52,7 @@ const imagesService = {
           imageActions.setImage({ type: image?.type, data: image })
         )
       }else{
-        imagesService.getAll(image?.type, { page: 1, page_size: 3 },dispatch);
+        imagesService.getAll(image?.type, { page: 1, page_size: 20 },dispatch);
       }
       dispatch?.(modalActions.closeModal());
     }
@@ -102,16 +102,20 @@ const imagesService = {
   },
   update: async (id: string, data: any, dispatch: Dispatch) => {
     dispatch?.(modalActions.setLoading(true));
-   const check = await ImageService.getImageFileFromBlob({
-      blob: data.url,
-      name: data.url.name,
-      type: data.url.type,
-    });
     let formData = new FormData();
-    formData.append("url", check);
-    formData.append("name", data.name);
+    if (data.url && typeof data.url !== "string" && data.url.blob) {
+      const check = await ImageService.getImageFileFromBlob({
+        blob: data.url,
+        name: data.url.name,
+        type: data.url.type,
+      });
+      formData.append("url", check);
+    }
+    formData.append("name", String(data.name || "").trim());
     formData.append("type", data.type);
-    formData.append("previousImageUrl", data.previousImageUrl);
+    if (data.previousImageUrl) {
+      formData.append("previousImageUrl", data.previousImageUrl);
+    }
     const folder = "certificate";
     http.setJWT();
     http.setLanguage();

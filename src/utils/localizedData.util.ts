@@ -1,7 +1,7 @@
 export const localizedData = (data?: { en?: any; ar?: any } | string) => {
   if (data == null) return "";
   if (typeof data === "string") return data;
-  const value = data.en;
+  const value = data.en || (data as { name?: string }).name;
   if (value != null && String(value).trim() !== "") return value;
   return "";
 };

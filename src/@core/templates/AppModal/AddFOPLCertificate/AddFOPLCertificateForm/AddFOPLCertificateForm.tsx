@@ -31,4 +31,8 @@ function AddFOPLCertificate({ handleSubmit }: any) {
   );
 }
 
-export default reduxForm({ form: "AddFOPLCertificate" })(AddFOPLCertificate);
+export default reduxForm({
+  form: "AddFOPLCertificate",
+  destroyOnUnmount: true,
+  forceUnregisterOnUnmount: true,
+})(AddFOPLCertificate);
