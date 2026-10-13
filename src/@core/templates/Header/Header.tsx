@@ -103,7 +103,9 @@ export default function Header() {
                       Avatarsx={{ border: "1px solid black" }}
                       src={
                         user?.profileImage
-                          ? config.API_URL + user?.profileImage
+                          ? /^https?:\/\//i.test(user.profileImage)
+                            ? user.profileImage
+                            : config.API_URL + user.profileImage
                           : ""
                       }
                     >

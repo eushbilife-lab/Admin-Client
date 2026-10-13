@@ -26,7 +26,11 @@ export default function AdminHeader({ onMenuClick, onSearchClick }: AdminHeaderP
   const name = displayNameOf(user);
   const firstName = name.split(" ")[0];
   const initial = name.charAt(0).toUpperCase();
-  const avatarSrc = user?.profileImage ? config.API_URL + user.profileImage : "";
+  const avatarSrc = user?.profileImage
+    ? /^https?:\/\//i.test(user.profileImage)
+      ? user.profileImage
+      : config.API_URL + user.profileImage
+    : "";
   const shortcut = useMemo(() => (isMac ? "⌘K" : "Ctrl K"), []);
   const canSeeNotes = user?.role === "admin";
 

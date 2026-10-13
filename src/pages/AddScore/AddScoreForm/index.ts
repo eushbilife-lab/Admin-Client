@@ -8,7 +8,7 @@ export { default } from "./AddScoreForm";
 export const ScoreFields = (t: any): ReduxFormField[] => [
   {
     name: "HNSSProductCategoryID",
-    label: "HNSS Product Categories",
+    label: "ENLI",
     validate: [required],
     component: SelectHNSSProductCategory,
     cellProps: { md: 6 },

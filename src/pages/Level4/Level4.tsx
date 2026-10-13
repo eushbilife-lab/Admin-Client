@@ -66,7 +66,7 @@ export default function Level4() {
                 <TableRow>
                   <StyledTableCell>Name</StyledTableCell>
                   <StyledTableCell>Status</StyledTableCell>
-                  <StyledTableCell>HNSS category</StyledTableCell>
+                  <StyledTableCell>ENLI</StyledTableCell>
                   <StyledTableCell>Level 3</StyledTableCell>
                   <StyledTableCellAction>Action</StyledTableCellAction>
                 </TableRow>

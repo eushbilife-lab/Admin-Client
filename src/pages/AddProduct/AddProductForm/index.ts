@@ -314,7 +314,7 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
     },
     {
       name: "HNSSProductCategory",
-      label: "HNSS Product Category",
+      label: "ENLI",
       component: SelectHNSSProductCategory,
       ComboBoxProps: {
         multiple: false,
@@ -359,7 +359,7 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
     },
     {
       name: "HNSSProductCategory",
-      label: "HNSS Product Category",
+      label: "ENLI",
       component: SelectHNSSProductCategory,
       ComboBoxProps: {
         multiple: false,

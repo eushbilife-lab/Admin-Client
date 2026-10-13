@@ -70,7 +70,7 @@ export const fields = (
     },
     {
       name: "HNSSProductCategory",
-      label: "HNSS Product Categories",
+      label: "ENLI",
       component: SelectHNSSProductCategory,
       cellProps: { md: 3 },
       SelectProps: { options: levels(t) },

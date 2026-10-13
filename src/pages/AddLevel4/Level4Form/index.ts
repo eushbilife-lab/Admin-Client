@@ -16,7 +16,7 @@ export const fields=(t:Function): ReduxFormField[] => [
 	},
 	{
 		name: "HNSSProductCategoryID",
-		label: "HNSS Product Category",
+		label: "ENLI",
 		component: SelectHNSSProductCategory,
 		validate: [required],
 		cellProps: { lg: 4},

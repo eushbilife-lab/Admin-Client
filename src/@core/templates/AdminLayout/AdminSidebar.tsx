@@ -20,7 +20,11 @@ export default function AdminSidebar({ open = true, onClose }: AdminSidebarProps
   const displayName = displayNameOf(user);
   const displayEmail = user?.email || "";
   const initial = String(displayName).charAt(0).toUpperCase();
-  const avatarSrc = user?.profileImage ? config.API_URL + user.profileImage : "";
+  const avatarSrc = user?.profileImage
+    ? /^https?:\/\//i.test(user.profileImage)
+      ? user.profileImage
+      : config.API_URL + user.profileImage
+    : "";
 
   return (
     <>
