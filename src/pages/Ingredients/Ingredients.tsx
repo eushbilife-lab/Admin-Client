@@ -43,6 +43,7 @@ export default function Ingredients() {
         kicker="Labels"
         title="Ingredients"
         subtitle="The ingredient dictionary printed on pack and used to map allergens and intolerance."
+        extraColumn="ingredient"
         addLabel="Add ingredient"
         empty="No ingredients yet. Add sugar, milk, wheat, and the rest of the label language."
         rows={ingredients}

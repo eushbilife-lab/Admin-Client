@@ -69,9 +69,8 @@ export default function UpdateProductForm() {
           : null,
       }));
 
-    // Consolidated field mapping
+    // productImages stay on Media tab — don’t preload CDN URLs into the file picker
     const fieldsToDispatch = {
-      productImages: productData?.productImages,
       status: productData.status === "active" ? true : false,
       ...mapLevels(productData.levels),
       barcode: productData.barcode,

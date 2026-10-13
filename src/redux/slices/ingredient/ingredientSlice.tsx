@@ -53,11 +53,13 @@ export const ingredientSlice = createSlice({
       state.refreshLoader = false;
 
       let options: SelectOption[] = [];
-      ingredients.forEach(({ _id, en, ar, status }: any) =>
+      ingredients.forEach(({ _id, en, name, key }: any) =>
         options.push({
           value: _id,
-          label: en?.name || "",
-        })
+          label: name || en?.name || "",
+          code: key || "",
+          name: name || en?.name || "",
+        } as SelectOption)
       );
       state.ingredients = ingredients;
       state.ingredientOptions = options;
@@ -72,10 +74,13 @@ export const ingredientSlice = createSlice({
     setOptions: (state, action: PayloadAction<SetIngredientOptionsPayload>) => {
       const { ingredients } = action.payload;
       const options: SelectOption[] = ingredients?.map(
-        ({ value, label }: any) => ({
-          value: value,
-          label: label?.En_name || label?.en?.name || label?.name || "",
-        })
+        ({ value, label, name, code, key, content }: any) => ({
+          value,
+          label: name || (typeof label === "string" ? label : label?.En_name || label?.en?.name || ""),
+          name: name || (typeof label === "string" ? label : label?.En_name || ""),
+          code: code || key || "",
+          content: content || "",
+        } as SelectOption)
       );
       state.ingredientOptions = options;
     },

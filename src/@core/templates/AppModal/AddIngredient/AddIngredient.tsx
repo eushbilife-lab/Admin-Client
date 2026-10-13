@@ -17,9 +17,12 @@ export default function AddIngredient() {
   }, [dispatch, id]);
 
   const handleSubmit = (values: any) => {
-    const enName = values?.en?.name;
+    const enName = values?.en?.name || values?.name;
     const data = {
       ...values,
+      name: enName,
+      code: String(values.code || "").trim(),
+      content: String(values.content || "").trim(),
       ar: { ...(values.ar || {}), name: enName },
       status: values.status === true || values.status === "active" ? "active" : "inactive",
     };

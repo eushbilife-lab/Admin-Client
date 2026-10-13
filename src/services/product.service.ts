@@ -9,9 +9,9 @@ import { modalActions } from "redux/slices/modal";
 const url = "/products";
 
 const productService = {
-  create: async (data: any, navigate: NavigateFunction,dispatch:Dispatch) => {
+  create: async (data: any, navigate: NavigateFunction, dispatch: Dispatch) => {
     http.setJWT();
-    http.setLanguage()
+    http.setLanguage();
     dispatch?.(productActions.setLoading(true));
     const [success, error]: any = await Promisable.asPromise(
       http.post(`${url}`, data)
@@ -19,98 +19,102 @@ const productService = {
     if (success) {
       const { product } = success?.data?.data;
       dispatch?.(productActions.setProduct(product));
-      if (product._id) navigate(`/update-product/${product._id}`);
     }
     dispatch?.(productActions.setLoading(false));
-    return [success, error];
+    return success ? [success, error, success?.data?.data?.product] : [success, error];
   },
-  getAll: async (data: any,dispatch:Dispatch) => {
-    const updatedData={
-      ...data,
-      isDelete:false
-    }
+
+  getAll: async (data: any, dispatch: Dispatch) => {
     dispatch?.(productActions.setLoading(true));
     http.setJWT();
-    http.setLanguage()
+    http.setLanguage();
     const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/query`, updatedData)
+      http.post(`${url}/query`, { ...data, isDelete: false })
     );
     if (success) {
       const { products, totalCount } = success?.data?.data;
       dispatch?.(
-        productActions.setProducts({ products: products, count: totalCount })
+        productActions.setProducts({ products, count: totalCount })
       );
     }
     dispatch?.(productActions.setLoading(false));
     return [success, error];
   },
-  get: async (id: string,dispatch:Dispatch) => {
+
+  get: async (id: string, dispatch: Dispatch) => {
     dispatch?.(productActions.setLoading(true));
     http.setJWT();
-    http.setLanguage()
+    http.setLanguage();
     const [success, error]: any = await Promisable.asPromise(
       http.get(`${url}/${id}`)
     );
     if (success) {
-      const { product } = success.data.data;
-      dispatch?.(productActions.setProduct(product));
+      dispatch?.(productActions.setProduct(success.data.data.product));
     }
     dispatch?.(productActions.setLoading(false));
     return [success, error];
   },
-  update: async (id: string, data: any, navigate: NavigateFunction,dispatch:Dispatch) => {
+
+  /** Pass `navigate` to leave the page after success; pass `null` to stay. */
+  update: async (
+    id: string,
+    data: any,
+    navigate: NavigateFunction | null,
+    dispatch: Dispatch
+  ) => {
     dispatch?.(productActions.setLoading(true));
     http.setJWT();
-    http.setLanguage()
+    http.setLanguage();
     const [success, error]: any = await Promisable.asPromise(
       http.patch(`${url}/${id}`, data)
     );
     if (success) {
-      const { updatedProduct } = success.data.data;
-      dispatch?.(productActions.setProduct(updatedProduct));
-      navigate("/products");
+      dispatch?.(productActions.setProduct(success.data.data.updatedProduct));
+      navigate?.("/products");
     }
-    if(error)
     dispatch?.(productActions.setLoading(false));
-  
     return [success, error];
   },
-  updateImage: async (id: string, files: any, prevImages: string[], navigate: NavigateFunction, dispatch: Dispatch) => {
-    // Convert new images to file objects
+
+  updateImage: async (
+    id: string,
+    files: any[],
+    prevImages: string[],
+    dispatch: Dispatch
+  ) => {
+    if (!files?.length) return [null, null];
     const imageFiles = await Promise.all(
       files.map((file: any) =>
         ImageService.getImageFileFromBlob({
           blob: file,
-          name: file.name, 
+          name: file.name,
           type: file.type,
         })
       )
     );
-    let formData = new FormData();
-    imageFiles.forEach((file) => {
-      formData.append("productImages", file); 
-    });
+    const formData = new FormData();
+    imageFiles.forEach((file) => formData.append("productImages", file));
+
     http.setJWT();
-    http.setLanguage()
-    dispatch?.(productActions.setLoading(true));  
+    http.setLanguage();
+    dispatch?.(productActions.setLoading(true));
     const [success, error]: any = await Promisable.asPromise(
       http.post(`${url}/${id}/images`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        params: { previousImages: JSON.stringify(prevImages) } 
+        params: { previousImages: JSON.stringify(prevImages) },
       })
     );
     if (success) {
-      const { updatedProduct } = success.data.data;
-      dispatch?.(productActions.setProduct(updatedProduct));
+      dispatch?.(productActions.setProduct(success.data.data.updatedProduct));
       dispatch?.(productActions.refresh());
     }
-  
     dispatch?.(productActions.setLoading(false));
     return [success, error];
   },
-  updateStatus: async (id: string, data: any,dispatch:Dispatch) => {
+
+  updateStatus: async (id: string, data: any, dispatch: Dispatch) => {
     http.setJWT();
-    http.setLanguage()
+    http.setLanguage();
     dispatch?.(productActions.setLoading(true));
     const [success, error]: any = await Promisable.asPromise(
       http.patch(`${url}/${id}/status`, data)
@@ -124,25 +128,44 @@ const productService = {
     dispatch?.(productActions.setLoading(false));
     return [success, error];
   },
-  updateProductImage: async (id: string, data: any,dispatch:Dispatch) => {
+
+  keepImages: async (id: string, productImages: string[], dispatch: Dispatch) => {
     http.setJWT();
-    http.setLanguage()
+    http.setLanguage();
+    dispatch?.(productActions.setLoading(true));
+    const [success, error]: any = await Promisable.asPromise(
+      http.patch(`${url}/${id}/gallery`, { productImages })
+    );
+    if (success) {
+      dispatch?.(productActions.setProduct(success.data.data.updatedProduct));
+    }
+    dispatch?.(productActions.setLoading(false));
+    return [success, error];
+  },
+
+  updateProductImage: async (id: string, data: any, dispatch: Dispatch) => {
+    http.setJWT();
+    http.setLanguage();
     dispatch?.(productActions.setLoading(true));
     const [success, error]: any = await Promisable.asPromise(
       http.patch(`${url}/${id}/image`, data)
     );
     if (success) {
-      const { updatedProductImage } = success.data.data;
-      dispatch?.(productActions.setProduct(updatedProductImage));
+      dispatch?.(
+        productActions.setProduct(success.data.data.updatedProductImage)
+      );
     }
     dispatch?.(productActions.setLoading(false));
     return [success, error];
   },
+
   remove: async (id: string, dispatch: Dispatch) => {
     http.setJWT();
-    http.setLanguage()
+    http.setLanguage();
     dispatch?.(productActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(http.delete(`${url}/${id}`));
+    const [success, error]: any = await Promisable.asPromise(
+      http.delete(`${url}/${id}`)
+    );
     if (success) {
       dispatch(productActions.removeProduct(id));
       dispatch?.(modalActions.closeModal());
@@ -150,5 +173,6 @@ const productService = {
     dispatch?.(productActions.setLoading(false));
     return [success, error];
   },
-}  
+};
+
 export default productService;

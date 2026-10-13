@@ -23,6 +23,18 @@ const fields: ReduxFormField[] = [
     validate: [required],
     cellProps: { md: 12 },
   },
+  {
+    name: "code",
+    label: "Code",
+    component: InputRedux,
+    cellProps: { md: 6 },
+  },
+  {
+    name: "content",
+    label: "Content",
+    component: InputRedux,
+    cellProps: { md: 6 },
+  },
 ];
 
 function AddIngredientForm({ handleSubmit }: any) {

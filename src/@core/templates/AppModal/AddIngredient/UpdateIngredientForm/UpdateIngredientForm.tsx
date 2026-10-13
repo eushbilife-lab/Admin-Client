@@ -9,9 +9,11 @@ export default function UpdateIngredientForm() {
 
   useEffect(() => {
     if (!data?.data || Object.keys(data.data).length === 0) return;
-    const { en, status } = data.data;
+    const { en, name, status, code, content } = data.data;
     dispatch(change(form, "status", status === "active"));
-    dispatch(change(form, "en.name", en?.name || ""));
+    dispatch(change(form, "en.name", name || en?.name || ""));
+    dispatch(change(form, "code", code || ""));
+    dispatch(change(form, "content", content || ""));
   }, [data, dispatch]);
 
   return null;

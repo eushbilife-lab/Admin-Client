@@ -19,8 +19,8 @@ function AddIngredientInProductForm() {
 
   const dispatch = useAppDispatch();
   const form = "AddProductForm";
-  const ingredientSection = useAppSelector(
-    (state) => state.form[form]?.values?.ingredientSection
+  const currentIngredients = useAppSelector(
+    (state) => state.form[form]?.values?.ingredients
   );
   const { ingredientOptions, loading } = useAppSelector((state) => state?.ingredient);
 
@@ -37,8 +37,8 @@ function AddIngredientInProductForm() {
 
   // Sync selected items with ingredientSection
   useEffect(() => {
-    setSelectedItems(ingredientSection || []);
-  }, [ingredientSection]);
+    setSelectedItems([]);
+  }, []);
 
   // Toggle item selection
   const handleToggle = (ingredient: any) => {
@@ -56,7 +56,12 @@ function AddIngredientInProductForm() {
     if (selectedItems.length === 0) {
       ToasterService.showError("Please select at least one Ingredient!");
     } else {
-      dispatch(change(form, "ingredientSection", selectedItems));
+      const rows = selectedItems.map((item: any) => ({
+        ingredientDescription: item.name || item.label || "",
+        ingredientCode: item.code || "",
+        ingredientContent: item.content || "",
+      }));
+      dispatch(change(form, "ingredients", [...(currentIngredients || []), ...rows]));
       dispatch(modalActions.closeModal());
     }
   };
@@ -78,7 +83,13 @@ function AddIngredientInProductForm() {
         <Field
           key={ingredient.value}
           name={ingredient.label}
-          label={ingredient.label}
+          label={[
+            ingredient.name || ingredient.label,
+            ingredient.code ? `code ${ingredient.code}` : "",
+            ingredient.content ? `content ${ingredient.content}` : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
           component={ChipboxRedux}
           sign={
             selectedItems.some((selected:any) => selected.value === ingredient.value) ? (

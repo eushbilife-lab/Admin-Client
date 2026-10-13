@@ -122,10 +122,10 @@ export default function Product() {
               gap: "10px",
             }}
           >
-            {item.image && (
+            {(item.productImages?.[0] || item.image) && (
               <img
-                src={item.image}
-                alt={item.name}
+                src={item.productImages?.[0] || item.image}
+                alt={item.productName}
                 style={{
                   width: "35px",
                   height: "35px",
@@ -136,6 +136,16 @@ export default function Product() {
             )}
             {item?.productName}
           </Typography>
+          {item?.ingredients?.length ? (
+            <Typography variant="caption" color="text.secondary" display="block">
+              {item.ingredients
+                .map((ingredient: any) =>
+                  [ingredient.name, ingredient.code, ingredient.content].filter(Boolean).join(" · ")
+                )
+                .filter(Boolean)
+                .join(", ")}
+            </Typography>
+          ) : null}
           <Typography variant="caption" color="text.secondary">
             {localizedData({
               en: item?.levels?.level1_id?.en?.name,

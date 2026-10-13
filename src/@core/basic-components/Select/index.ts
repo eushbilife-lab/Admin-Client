@@ -8,6 +8,9 @@ export interface SelectOption {
   dataUnit?:any
   dataId?:any
   key?:any
+  name?: string
+  code?: string
+  content?: string
 }
 export interface SelectOwnProps {
   options?: SelectOption[];

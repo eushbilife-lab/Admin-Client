@@ -16,9 +16,12 @@ import { englishName } from "utils/localizedData.util";
 
 export type LibraryRow = {
   _id: string;
+  name?: string;
   en?: { name?: string };
   status?: string;
   sign?: string;
+  code?: string;
+  content?: string;
 };
 
 type LibraryPanelProps = {
@@ -35,7 +38,7 @@ type LibraryPanelProps = {
   count?: number;
   page?: number;
   pageSize?: number;
-  extraColumn?: "sign";
+  extraColumn?: "sign" | "ingredient";
   onAdd: () => void;
   onEdit: (row: LibraryRow) => void;
   onPage?: (page: number) => void;
@@ -77,7 +80,7 @@ export default function LibraryPanel({
         <TableContainer>
           <Table aria-label={heading || title || "library"} sx={adminTableSx}>
             <TableLoadingWrapper
-              coloumns={extraColumn ? 4 : 3}
+              coloumns={extraColumn === "ingredient" ? 5 : extraColumn ? 4 : 3}
               loading={!!loading}
               length={refreshLoader ? 0 : rows.length}
               message={empty}
@@ -85,6 +88,8 @@ export default function LibraryPanel({
               <TableHead>
                 <TableRow>
                   <StyledTableCell>Name</StyledTableCell>
+                  {extraColumn === "ingredient" ? <StyledTableCell>Code</StyledTableCell> : null}
+                  {extraColumn === "ingredient" ? <StyledTableCell>Content</StyledTableCell> : null}
                   <StyledTableCell>Status</StyledTableCell>
                   {extraColumn === "sign" ? <StyledTableCell>Unit</StyledTableCell> : null}
                   <StyledTableCellAction>Action</StyledTableCellAction>
@@ -94,6 +99,8 @@ export default function LibraryPanel({
                 {rows.map((row) => (
                   <StyledTableRow key={row._id}>
                     <StyledTableCell>{englishName(row) || "Untitled"}</StyledTableCell>
+                    {extraColumn === "ingredient" ? <StyledTableCell>{row.code || "—"}</StyledTableCell> : null}
+                    {extraColumn === "ingredient" ? <StyledTableCell>{row.content || "—"}</StyledTableCell> : null}
                     <StyledTableCell>
                       <StatusChip
                         label={row.status || "inactive"}
