@@ -231,9 +231,9 @@ export const ADMIN_COMMANDS: AdminCommand[] = [
   {
     id: "lifestyle",
     label: "Activity, goals & diet",
-    hint: "Activity level, goal, food interest, diet, temporary concern",
+    hint: "Activity level, goal, food interest, diet, temporary concern, health issue",
     href: "/activity-level",
-    keywords: "diet goal exercise lifestyle activity food interest temporary concern",
+    keywords: "diet goal exercise lifestyle activity food interest temporary concern health issue",
     group: "Nutrition science",
     icon: MdFavorite,
     kind: "page",

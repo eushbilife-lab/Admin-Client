@@ -99,6 +99,7 @@ export const private_routes: IRoute[] = [
   { path: "/food-interest", element: <Lifestyle /> },
   { path: "/diets", element: <Lifestyle /> },
   { path: "/temporary-concerns", element: <Lifestyle /> },
+  { path: "/health-issues", element: <Lifestyle /> },
   { path: "/products", element: <Product /> },
   { path: "/add-product", element: <AddProduct /> },
   { path: "/update-product/:id", element: <UpdateProduct /> },

@@ -67,6 +67,7 @@ export const sidebarGroups: NavGroup[] = [
       { label: "Food Interest", path: "/food-interest", icon: MdSpa, roles: ["admin"] },
       { label: "Diet", path: "/diets", icon: MdNoMeals, roles: ["admin"] },
       { label: "Temporary concern", path: "/temporary-concerns", icon: MdEventNote, roles: ["admin"] },
+      { label: "Health issue", path: "/health-issues", icon: MdHealthAndSafety, roles: ["admin"] },
     ],
   },
   {

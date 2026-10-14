@@ -52,6 +52,14 @@ const SECTIONS: {
     emptyMessage: "No temporary concerns yet.",
     blurb: "Pregnancy, fasting, rehab, and other short-term states.",
   },
+  {
+    path: "/health-issues",
+    type: "health_issue",
+    label: "Health issue",
+    addLabel: "Add health issue",
+    emptyMessage: "No health issues yet.",
+    blurb: "Diabetes, hypertension, and other conditions used on user profiles.",
+  },
 ];
 
 export default function Lifestyle() {
