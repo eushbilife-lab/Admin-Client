@@ -52,7 +52,7 @@ export const hnssProductCategorySlice = createSlice({
       action: PayloadAction<SetHnssProductCategoryOptionsPayload>
     ) => {
       const { hnssProductCategories } = action.payload;
-      const options: SelectOption[] = hnssProductCategories?.map(
+      const options: SelectOption[] = (hnssProductCategories || []).map(
         ({ value, label, code }: any) => {
           const name =
             (typeof label === "string" && label) ||
@@ -60,7 +60,7 @@ export const hnssProductCategorySlice = createSlice({
             label?.name ||
             "";
           return {
-            value,
+            value: value != null ? String(value) : value,
             label: code ? `${code} — ${name}` : name,
             code,
           };

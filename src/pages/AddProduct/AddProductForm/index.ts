@@ -36,6 +36,8 @@ export const fields = (userRole: string): ReduxFormField[] => {
       : []),
   ];
 };
+const levelCell = { xs: 12, sm: 6, md: 3 };
+
 export const levelFields = (isDraft: boolean): ReduxFormField[] => {
   const requiredFields = [
     {
@@ -43,7 +45,7 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       label: "Level 1",
       component: SelectLevel1,
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
     {
       name: "level2_id",
@@ -51,7 +53,7 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       component: SelectLevel2,
       cascadeParent: "level1_id",
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
     {
       name: "level3_id",
@@ -59,7 +61,7 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       component: SelectLevel3,
       cascadeParent: "level2_id",
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
     {
       name: "level4_id",
@@ -67,7 +69,7 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       component: SelectLevel4,
       cascadeParent: "level3_id",
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
   ];
 
@@ -76,33 +78,35 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       name: "level1_id",
       label: "Level 1",
       component: SelectLevel1,
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
     {
       name: "level2_id",
       label: "Level 2",
       component: SelectLevel2,
       cascadeParent: "level1_id",
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
     {
       name: "level3_id",
       label: "Level 3",
       component: SelectLevel3,
       cascadeParent: "level2_id",
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
     {
       name: "level4_id",
       label: "Level 4",
       component: SelectLevel4,
       cascadeParent: "level3_id",
-      cellProps: { md: 3 },
+      cellProps: levelCell,
     },
   ];
 
   return isDraft === true ? simpleFields : requiredFields;
 };
+const detailCell = { xs: 12, sm: 6, md: 4, lg: 3 };
+
 export const productCardFields = (
   t: (key: string) => string,
   isDraft: boolean
@@ -113,92 +117,92 @@ export const productCardFields = (
       label: "Barcode",
       validate: [required],
       component: InputRedux,
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "brand",
       label: "Brand",
       component: InputRedux,
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "productName",
       label: "Product Name",
       validate: [required],
       component: InputRedux,
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "attribute_01_Flavour",
-      label: "Attribute 01 Flavour",
+      label: "Flavour",
       component: InputRedux,
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "attribute_02_Other",
-      label: "Attribute 02 Other",
+      label: "Other attribute",
       component: InputRedux,
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "netWeight",
-      label: "Net Wt",
+      label: "Net weight",
       validate: [required],
       component: InputRedux,
       normalize: digitOrFloat,
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "weightUOM",
-      label: "Wt.UOM",
+      label: "Weight unit",
       component: SelectUOM,
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "servingSize",
-      label: "Serving Size",
+      label: "Serving size",
       validate: [required],
       component: InputRedux,
       normalize: digitOrFloat,
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "servingUOM",
-      label: "Serving Size UOM",
+      label: "Serving unit",
       component: SelectUOM,
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "servingsPerContainer",
-      label: "Serving Container",
+      label: "Servings per pack",
       component: InputRedux,
       validate: [required],
       normalize: digits,
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "manufacturer",
       label: "Manufacturer",
       component: InputRedux,
       validate: [required],
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "productionCountry",
-      label: "Production Country",
+      label: "Country of origin",
       validate: [required],
       component: InputRedux,
-      cellProps: { md: 3 },
+      cellProps: detailCell,
     },
     {
       name: "FOPLcertificates",
-      label: "FOPL Certificate",
+      label: "FOPL certificates",
       component: SelectCertificate,
-      cellProps: { md: 3 },
+      cellProps: { xs: 12, sm: 12, md: 6 },
       ComboBoxProps: {
         multiple: true,
         options: [],
@@ -206,100 +210,20 @@ export const productCardFields = (
     },
   ];
 
-  const simpleFields = [
-    {
-      name: "barcode",
-      label: "Barcode",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "brand",
-      label: "Brand",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "productName",
-      label: "Product Name",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "attribute_01_Flavour",
-      label: "Attribute 01 Flavour",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "attribute_02_Other",
-      label: "Attribute 02 Other",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "netWeight",
-      label: "Net Wt",
-      component: InputRedux,
-      normalize: digitOrFloat,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "weightUOM",
-      label: "Wt.UOM",
-      component: SelectUOM,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "servingSize",
-      label: "Serving Size",
-      component: InputRedux,
-      normalize: digitOrFloat,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "servingUOM",
-      label: "Serving Size UOM",
-      component: SelectUOM,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "servingsPerContainer",
-      label: "Serving Container",
-      component: InputRedux,
-      normalize: digits,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "manufacturer",
-      label: "Manufacturer",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "productionCountry",
-      label: "Production Country",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
-      name: "productionCountry",
-      label: "Production Country",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-  ];
+  const simpleFields = requiredFields.map(({ validate, ...field }) => field);
 
   return isDraft ? simpleFields : requiredFields;
 };
+const scoreCell = { xs: 12, sm: 6, md: 4 };
+
 export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
   const requiredFields = [
     {
       name: "foodType",
-      label: "Food Type",
+      label: "Food type",
       validate: [required],
       component: SelectFoodConcern,
-      cellProps: { md: 2.4 },
+      cellProps: { xs: 12, sm: 12, md: 6 },
       ComboBoxProps: {
         multiple: true,
         options: [],
@@ -307,17 +231,10 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
     },
     {
       name: "processingLevel",
-      label: "Processing Level",
+      label: "Processing level",
       validate: [required],
       component: SelectProcessingLevel,
-      cellProps: { md: 2.4 },
-    },
-    {
-      name: "fruitsVegNutsPercent",
-      label: "Fruits Vegetable and Nuts",
-      component: InputRedux,
-      InputProps: { readOnly: true },
-      cellProps: { md: 2.4 },
+      cellProps: scoreCell,
     },
     {
       name: "HNSSProductCategory",
@@ -328,61 +245,26 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
         multiple: false,
         options: [],
       },
-      cellProps: { md: 2.4 },
+      cellProps: scoreCell,
+    },
+    {
+      name: "fruitsVegNutsPercent",
+      label: "Fruit / veg / nuts %",
+      component: InputRedux,
+      InputProps: { readOnly: true },
+      cellProps: scoreCell,
     },
     {
       name: "carbsCount",
-      label: "Carbs Count",
+      label: "Carbs count",
       component: InputRedux,
       InputProps: { readOnly: true },
       normalize: digitOrFloat,
-      cellProps: { md: 2.4 },
+      cellProps: scoreCell,
     },
   ];
 
-  const simpleFields = [
-    {
-      name: "foodType",
-      label: "Food Type",
-      component: SelectFoodConcern,
-      cellProps: { md: 2.4 },
-      ComboBoxProps: {
-        multiple: true,
-        options: [],
-      },
-    },
-    {
-      name: "processingLevel",
-      label: "Processing Level",
-      component: SelectProcessingLevel,
-      cellProps: { md: 2.4 },
-    },
-    {
-      name: "fruitsVegNutsPercent",
-      label: "Fruits Vegetable and Nuts",
-      component: InputRedux,
-      InputProps: { readOnly: true },
-      cellProps: { md: 2.4 },
-    },
-    {
-      name: "HNSSProductCategory",
-      label: "HSN / ENLI",
-      component: SelectHNSSProductCategory,
-      ComboBoxProps: {
-        multiple: false,
-        options: [],
-      },
-      cellProps: { md: 2.4 },
-    },
-    {
-      name: "carbsCount",
-      label: "Carbs Count",
-      component: InputRedux,
-      InputProps: { readOnly: true },
-      normalize: digitOrFloat,
-      cellProps: { md: 2.4 },
-    },
-  ];
+  const simpleFields = requiredFields.map(({ validate, ...field }) => field);
 
   return isDraft ? simpleFields : requiredFields;
 };

@@ -43,9 +43,13 @@ export const level1Slice = createSlice({
     },
     setOptions: (state, action: PayloadAction<SetLevel1OptionsPayload>) => {
       const { levels1 } = action.payload;
-      const options: SelectOption[] = levels1?.map(({value, label }: any) => ({
-        value: value,
-        label:label?.en?.name || label?.name,
+      const options: SelectOption[] = (levels1 || []).map(({ value, label }: any) => ({
+        value: value != null ? String(value) : value,
+        label:
+          (typeof label === "string" && label) ||
+          label?.en?.name ||
+          label?.name ||
+          "",
       }));
       state.level1Options = options;
     },

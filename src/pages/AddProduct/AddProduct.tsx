@@ -166,8 +166,14 @@ export default function AddProduct() {
 
   return (
     <PageShell
-      title={`${id ? "Update" : "Add"} food`}
-      actions={<GoBack path="/Products" title="Back to catalog" />}
+      kicker="Catalog"
+      title={id ? "Edit food" : "Add food"}
+      subtitle={
+        id
+          ? "Keep label data accurate so scores and scans stay trustworthy."
+          : "Enter what is on the pack — categories, details, ingredients, then nutrition."
+      }
+      actions={<GoBack path="/products" title="Back to catalog" />}
     >
       {(loading || draftLoading) && <CircleLoader />}
       {id ? (

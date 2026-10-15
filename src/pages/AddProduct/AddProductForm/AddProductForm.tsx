@@ -9,7 +9,7 @@ import {
   ingredientFields,
   nutritionFields,
 } from ".";
-import { Box, CircularProgress } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { change, reduxForm } from "redux-form";
 import BlockComponent from "@core/api-components/BlockComponent";
 import { useParams, useSearchParams } from "react-router-dom";
@@ -19,6 +19,7 @@ import MeasurementScaleService from "services/measurementScale.service";
 import { FormSection } from "utils/FormSection";
 import { field as imageFields } from "../AddProductImage";
 import useUnsavedChanges from "hooks/useUnsavedChanges";
+import "../AddProduct.css";
 
 function AddProductForm({ handleSubmit, submitting, dirty, pristine }: any) {
   const form = "AddProductForm";
@@ -28,6 +29,7 @@ function AddProductForm({ handleSubmit, submitting, dirty, pristine }: any) {
   const userRole = useAppSelector((state) => state.auth?.user?.role);
   const [isDraft, setIsDraft] = useState(false);
   const [searchParams] = useSearchParams();
+  const showStatus = userRole !== "data_entry";
 
   useUnsavedChanges(Boolean(dirty && !pristine && !submitting));
 
@@ -35,100 +37,137 @@ function AddProductForm({ handleSubmit, submitting, dirty, pristine }: any) {
     MeasurementScaleService.getOptions({ type: "uom" }, dispatch);
   }, [dispatch]);
 
-  const submitLabel = (label: string) => (
+  const label = (text: string) => (
     <>
-      {submitting ? <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} /> : null}
-      {t(label)}
+      {submitting ? (
+        <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} />
+      ) : null}
+      {t(text)}
     </>
   );
 
   return (
-    <div className="form">
-      <form onSubmit={handleSubmit}>
-        <ReduxFormFields fields={fields(userRole)} />
-        <br />
-        <FormSection title={t("Product Categories")} fields={levelFields(isDraft)} />
-        <FormSection title={t("Product Card")} fields={productCardFields(t, isDraft)} />
+    <div className="add-food">
+      <form onSubmit={handleSubmit} noValidate>
+        {showStatus ? (
+          <div className="add-food__intro">
+            <p className="add-food__intro-copy">
+              {id
+                ? "Update the label details below. Categories cascade — pick Level 1 first."
+                : "Fill the sections in order. Required fields are marked when you submit."}
+            </p>
+            <div className="add-food__status">
+              <ReduxFormFields fields={fields(userRole)} />
+            </div>
+          </div>
+        ) : (
+          <div className="add-food__intro">
+            <p className="add-food__intro-copy">
+              Fill the sections in order. Categories cascade — pick Level 1 first.
+            </p>
+          </div>
+        )}
+
         <FormSection
-          title={t("Product Preference and Scoring Element")}
+          step={1}
+          title="Category"
+          hint="Choose aisle → category → sub-category → nest. Each level unlocks the next."
+          fields={levelFields(isDraft)}
+        />
+
+        <FormSection
+          step={2}
+          title="Product details"
+          hint="Barcode, brand, name, weight, and serving size as printed on pack."
+          fields={productCardFields(t, isDraft)}
+        />
+
+        <FormSection
+          step={3}
+          title="Scoring"
+          hint="Food type, processing level, and HSN / ENLI. HSN auto-fills from Level 4 when available."
           fields={productPreferenceFields(isDraft)}
         />
+
         <FormSection
-          title={t("Product Ingredients")}
+          step={4}
+          title="Ingredients"
+          hint="Search the dictionary, add chips, and set content % where needed."
           fields={ingredientFields(isDraft)}
         />
+
         {!id ? (
-          <FormSection title={t("Product images")} fields={imageFields} />
+          <FormSection
+            step={5}
+            title="Photos"
+            hint="Drop clear pack shots here. Up to 5 images — you can add more on the Media tab after saving."
+            fields={imageFields}
+          />
         ) : null}
+
         <FormSection
-          title={t("Product Nutirion Facts Label")}
+          step={id ? 5 : 6}
+          title="Nutrition facts"
+          hint="Per-serving values from the label. Calories and key macros are pre-listed."
           fields={nutritionFields(t, isDraft)}
         />
-        <br />
-        {!id ? (
-          <Box sx={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-            <Button
-              variant="contained"
-              type="submit"
-              sx={{ fontSize: "14px" }}
-              disabled={submitting}
-            >
-              {submitLabel("Submit")}
-            </Button>
-            <BlockComponent allowedRoles={["admin"]}>
+
+        <div className="add-food__actions">
+          {!id ? (
+            <>
               <Button
                 variant="contained"
                 type="submit"
-                sx={{ fontSize: "14px" }}
-                disabled={submitting}
-                onClick={() => dispatch(change(form, "status", "pending"))}
-              >
-                {submitLabel("Submit for Review")}
-              </Button>
-            </BlockComponent>
-            <BlockComponent allowedRoles={["admin"]}>
-              <Button
-                variant="contained"
-                type="submit"
-                sx={{ fontSize: "14px" }}
-                disabled={submitting}
-                onClick={() => {
-                  dispatch(change(form, "status", "draft"));
-                  setIsDraft(true);
-                }}
-              >
-                {submitLabel("Save as Draft")}
-              </Button>
-            </BlockComponent>
-          </Box>
-        ) : (
-          <BlockComponent allowedRoles={["admin", "data_author"]}>
-            <Box sx={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
-              <Button
-                variant="contained"
-                type="submit"
-                sx={{ fontSize: "14px" }}
                 disabled={submitting}
               >
-                {submitLabel("Submit")}
+                {label("Save food")}
               </Button>
-              {searchParams.get("isDraft") === "true" && (
+              <BlockComponent allowedRoles={["admin"]}>
                 <Button
-                  variant="contained"
+                  variant="outlined"
                   type="submit"
-                  sx={{ fontSize: "14px" }}
+                  disabled={submitting}
+                  onClick={() => dispatch(change(form, "status", "pending"))}
+                >
+                  {label("Submit for review")}
+                </Button>
+              </BlockComponent>
+              <span className="add-food__actions-spacer" />
+              <BlockComponent allowedRoles={["admin"]}>
+                <Button
+                  variant="text"
+                  type="submit"
                   disabled={submitting}
                   onClick={() => {
                     dispatch(change(form, "status", "draft"));
                     setIsDraft(true);
                   }}
                 >
-                  {submitLabel("Save as Draft")}
+                  {label("Save draft")}
                 </Button>
-              )}
-            </Box>
-          </BlockComponent>
-        )}
+              </BlockComponent>
+            </>
+          ) : (
+            <BlockComponent allowedRoles={["admin", "data_author"]}>
+              <Button variant="contained" type="submit" disabled={submitting}>
+                {label("Save changes")}
+              </Button>
+              {searchParams.get("isDraft") === "true" ? (
+                <Button
+                  variant="text"
+                  type="submit"
+                  disabled={submitting}
+                  onClick={() => {
+                    dispatch(change(form, "status", "draft"));
+                    setIsDraft(true);
+                  }}
+                >
+                  {label("Save draft")}
+                </Button>
+              ) : null}
+            </BlockComponent>
+          )}
+        </div>
       </form>
     </div>
   );
@@ -146,7 +185,10 @@ export default reduxForm({
     if (!values.weightUOM) errors.weightUOM = "Required";
     if (!values.servingUOM) errors.servingUOM = "Required";
     if (!values.HNSSProductCategory) errors.HNSSProductCategory = "Required";
-    if (!values.foodType || (Array.isArray(values.foodType) && values.foodType.length === 0)) {
+    if (
+      !values.foodType ||
+      (Array.isArray(values.foodType) && values.foodType.length === 0)
+    ) {
       errors.foodType = "Required";
     }
     if (!values.processingLevel) errors.processingLevel = "Required";

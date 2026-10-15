@@ -31,8 +31,13 @@ export default function ComboBox({
       loading={loading}
       {...rest}
       options={options || []}
-      getOptionLabel={(option: any) => option.label || ""}
-      isOptionEqualToValue={(option: any, value: any) => option?.value === value?.value}
+      getOptionLabel={(option: any) => {
+        if (typeof option === "string") return option;
+        return option?.label || option?.name || "";
+      }}
+      isOptionEqualToValue={(option: any, value: any) =>
+        String(option?.value ?? "") === String(value?.value ?? value ?? "")
+      }
       disabled={disabled}
       renderTags={
         rest.multiple

@@ -1,18 +1,28 @@
 import ReduxFormFields from "@core/redux-fields/ReduxFormFields";
-import Heading from "@core/basic-components/Heading";
+
+type FormSectionProps = {
+  title: string;
+  fields: any;
+  hint?: string;
+  step?: number | string;
+  className?: string;
+};
 
 export const FormSection = ({
   title,
   fields,
-}: {
-  title: string;
-  fields: any;
-}) => (
-  <>
-    <Heading size="h3" className="text-lg">
-      {title}
-    </Heading>
+  hint,
+  step,
+  className = "",
+}: FormSectionProps) => (
+  <section className={`add-food__section ${className}`.trim()}>
+    <header className="add-food__section-head">
+      <h2 className="add-food__section-title">
+        {step != null ? <span className="add-food__section-step">{step}</span> : null}
+        {title}
+      </h2>
+      {hint ? <p className="add-food__section-hint">{hint}</p> : null}
+    </header>
     <ReduxFormFields fields={fields} />
-    <br />
-  </>
+  </section>
 );

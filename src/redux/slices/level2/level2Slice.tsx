@@ -54,11 +54,17 @@ export const level2Slice = createSlice({
     },
     setOptions: (state, action: PayloadAction<SetLevel2OptionsPayload>) => {
       const { levels2 } = action.payload;
-      const options: SelectOption[] = levels2?.map(({mainCategoryID,value, label }: any) => ({
-        mainCategoryID:mainCategoryID,
-        value: value,
-        label:label?.en?.name || label?.name,
-      }));
+      const options: SelectOption[] = (levels2 || []).map(
+        ({ mainCategoryID, value, label }: any) => ({
+          mainCategoryID,
+          value: value != null ? String(value) : value,
+          label:
+            (typeof label === "string" && label) ||
+            label?.en?.name ||
+            label?.name ||
+            "",
+        })
+      );
       state.level2Options = options;
     },
     setPage: (state, action: PayloadAction<number>) => {

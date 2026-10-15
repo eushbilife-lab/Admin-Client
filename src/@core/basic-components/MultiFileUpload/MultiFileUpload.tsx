@@ -1,147 +1,94 @@
-import Input from "../Input";
 import { FileUploadOwnProps } from ".";
 import ToasterService from "utils/toaster.util";
-import InputLabel from "@mui/material/InputLabel";
-import { Box, Grid } from "@mui/material";
-import { useEffect, useState } from "react";
-import { config } from "config";
 import CircleLoader from "../CircleLoader";
 import { useTranslation } from "react-i18next";
-import { useAppDispatch, useAppSelector } from "redux/hooks";
-import { formLoaderActions } from "redux/slices/formLoader";
-export type FileUploadProps = FileUploadOwnProps &
-  React.ComponentProps<typeof Input>;
+import { useId } from "react";
+import "./MultiFileUpload.css";
+
+export type FileUploadProps = FileUploadOwnProps & {
+  onChange?: (files: File[]) => void;
+  loading?: boolean;
+  disabled?: boolean;
+  title?: string;
+  id?: string;
+  className?: string;
+};
 
 export default function MultiFileUpload({
-  value,
-  accept,
-  maxSize,
+  accept = [".jpg", ".jpeg", ".png"],
+  maxSize = 5,
   onChange,
   loading,
-  sx,
-  uploadIcon = true,
-  multiple = false,
-  ...rest
-}: FileUploadProps & { onChange: any; rest?: any; loading?: boolean }) {
+  disabled,
+  title,
+  id,
+  className = "",
+}: FileUploadProps) {
   const { t } = useTranslation();
-  const reset = useAppSelector((state) => state.formLoader.reset);
-  const dispatch = useAppDispatch();
-  const [previews, setPreviews] = useState<any[]>([]);
+  const autoId = useId();
+  const inputId = id || autoId;
 
-  useEffect(() => {
-    if (reset) {
-      dispatch?.(formLoaderActions.setReset(false));
-      setPreviews([]);
+  const pickFiles = (list: FileList | null) => {
+    if (!list?.length) return;
+    let files = Array.from(list);
+
+    if (files.length > 5) {
+      ToasterService.showError(t("You can only upload a maximum of 5 files."));
+      files = files.slice(0, 5);
     }
-  }, [reset, dispatch]);
+
+    if (accept?.length) {
+      files = files.filter((file) => {
+        const type = file.name.split(".").pop()?.toLowerCase() || "";
+        if (!accept.includes(`.${type}`)) {
+          ToasterService.showError(`${type} not allowed!`);
+          return false;
+        }
+        return true;
+      });
+    }
+
+    if (maxSize) {
+      const limit = maxSize * 1024 * 1024;
+      files = files.filter((file) => {
+        if (file.size > limit) {
+          ToasterService.showError(`Max file size is ${maxSize} MB`);
+          return false;
+        }
+        return true;
+      });
+    }
+
+    if (files.length) onChange?.(files);
+  };
 
   return (
-    <Box>
-      <InputLabel
-        htmlFor={rest.id}
-        sx={{
-          cursor: "pointer",
-          width: rest.width || "100%",
-          minHeight: "240px",
-          height: "100%",
-          // marginTop: "15px",
-          borderRadius: "4px",
-          border: "1px solid #0000002e",
-          position: "relative",
-          fontSize: "14px",
-          ...sx,
-        }}
+    <div className={`multi-upload ${className}`.trim()}>
+      <label
+        htmlFor={inputId}
+        className={`multi-upload__drop${disabled ? " is-disabled" : ""}`}
       >
-        {previews.length > 0 && (
-          <Grid container spacing={2}>
-            {previews.map((preview, index) => (
-              <Grid item md={3}>
-                <img
-                  key={index}
-                  src={preview}
-                  alt=""
-                  style={{
-                    height: "100%",
-                    maxHeight: "240px",
-                    objectFit: "cover",
-                    width: "100%",
-                  }}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        )}
-
-        {previews?.length == 0 && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              height: "240px",
-              // fontWeight: 500,
-              flexDirection: "column",
-              textAlign: "center",
-            }}
-          >
-            <div>
-              <h4 style={{ margin: 0, padding: 0 }}>
-                {rest.title || "Upload here"}
-              </h4>
-              {t("Max size 5 MB")} <br /> {t("acceptable jpg, jpeg, png")}
-            </div>
-          </Box>
-        )}
-
-        {loading && <CircleLoader />}
-        <div hidden>
-          <input
-            type="file"
-            id={rest.id}
-            hidden
-            disabled={previews?.length >= 4}
-            capture={"environment"}
-            multiple
-            accept="image/jpg, image/jpeg, image/png"
-            onChange={(e: any) => {
-              let files = Array.from(e.target.files);
-              if (files?.length > 5) {
-                ToasterService.showError(
-                  t("You can only upload a maximum of 5 files.")
-                );
-                return null;
-              }
-              if (accept) {
-                files = files.filter((file: any) => {
-                  let types = file.name.split(".");
-                  let type = types[types.length - 1].toLowerCase();
-                  if (!accept.includes(`.${type}`)) {
-                    ToasterService.showError(`${type} not allowed!`);
-                    return false;
-                  }
-                  return true;
-                });
-              }
-              if (maxSize) {
-                const size = maxSize * 1024 * 1024;
-                files = files.filter((file: any) => {
-                  if (file.size > size) {
-                    ToasterService.showError(`Max file size is ${maxSize} MB`);
-                    return false;
-                  }
-                  return true;
-                });
-              }
-
-              // const previewUrls = files.map((file: any) =>
-              //   URL.createObjectURL(file)
-              // );
-              // setPreviews(previewUrls);
-              onChange(files);
-            }}
-          />
-        </div>
-      </InputLabel>
-    </Box>
+        <span className="multi-upload__icon" aria-hidden>
+          +
+        </span>
+        <p className="multi-upload__title">{title || t("Drop photos here or click to browse")}</p>
+        <p className="multi-upload__meta">
+          JPG / PNG · up to {maxSize} MB each · max 5 images
+        </p>
+        <input
+          id={inputId}
+          className="multi-upload__input"
+          type="file"
+          multiple
+          disabled={disabled}
+          accept="image/jpeg,image/jpg,image/png"
+          onChange={(e) => {
+            pickFiles(e.target.files);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {loading ? <CircleLoader /> : null}
+    </div>
   );
 }

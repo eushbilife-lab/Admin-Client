@@ -1,0 +1,171 @@
+/* Add / Update food — airy, flexible form */
+
+.add-food {
+  --add-food-gap: clamp(1.15rem, 2.4vw, 1.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--add-food-gap);
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0.25rem 0 6.5rem;
+}
+
+.add-food__intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.25rem;
+  padding: 1.1rem 1.25rem;
+  border-radius: 12px;
+  background:
+    linear-gradient(120deg, rgba(159, 197, 58, 0.16), transparent 48%),
+    var(--color-canvas, #f5f9eb);
+  border: 1px solid rgba(159, 197, 58, 0.28);
+}
+
+.add-food__intro-copy {
+  margin: 0;
+  flex: 1 1 16rem;
+  max-width: 40rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--text-secondary, #515151);
+}
+
+.add-food__status {
+  flex: 0 0 auto;
+  min-width: 7.5rem;
+}
+
+.add-food__status .MuiGrid-container {
+  margin: 0 !important;
+}
+
+.add-food__section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: clamp(1.25rem, 2.5vw, 1.65rem);
+  border: 1px solid var(--border-color, #e8e8e8);
+  border-radius: 12px;
+  background: var(--color-paper, #fefefe);
+  margin-top: 20px;
+}
+
+.add-food__section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--border-color, #e8e8e8);
+}
+
+.add-food__section-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: clamp(1rem, 0.4vw + 0.95rem, 1.125rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--text-primary, #0a0a0a);
+}
+
+.add-food__section-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: 1.65rem;
+  height: 1.65rem;
+  padding: 0 0.4rem;
+  border-radius: 8px;
+  background: var(--color-brand-primary, #9fc53a);
+  color: #0a0a0a;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.add-food__section-hint {
+  margin: 0;
+  padding-left: calc(1.65rem + 0.65rem);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-secondary, #515151);
+}
+
+.add-food__section .MuiGrid-container {
+  margin-top: 0 !important;
+  width: 100% !important;
+}
+
+.add-food__section .MuiGrid-container {
+  --Grid-rowSpacing: 1.1rem;
+  --Grid-columnSpacing: 1rem;
+}
+
+.add-food__section .MuiGrid-item {
+  padding-top: 12px !important;
+  padding-bottom: 12px !important;
+}
+
+.add-food__section .MuiFormControl-root,
+.add-food__section .MuiAutocomplete-root {
+  width: 100%;
+}
+
+.add-food__actions {
+  position: sticky;
+  bottom: 0.85rem;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 1.1rem;
+  border: 1px solid var(--border-color, #e8e8e8);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-paper, #fefefe) 90%, transparent);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 10px 32px rgba(10, 10, 10, 0.09);
+}
+
+.add-food__actions-spacer {
+  flex: 1 1 auto;
+  min-width: 0.5rem;
+}
+
+.add-food__actions .MuiButton-root {
+  min-height: 42px;
+  padding-inline: 1.15rem;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+@media (max-width: 900px) {
+  .add-food__section-hint {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .add-food {
+    gap: 1rem;
+    padding-bottom: 7rem;
+  }
+
+  .add-food__intro,
+  .add-food__section {
+    padding: 1rem;
+  }
+
+  .add-food__actions {
+    bottom: 0.5rem;
+  }
+
+  .add-food__actions .MuiButton-root {
+    flex: 1 1 calc(50% - 0.35rem);
+  }
+}

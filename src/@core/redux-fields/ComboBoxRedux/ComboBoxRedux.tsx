@@ -1,5 +1,26 @@
 import ComboBox from "@core/basic-components/ComboBox";
 
+/** Props that must not reach MUI Autocomplete / DOM. */
+const STRIP = new Set([
+  "cascadeParent",
+  "validate",
+  "normalize",
+  "format",
+  "parse",
+  "warn",
+  "withRef",
+  "forwardRef",
+  "immutableProps",
+  "cellProps",
+  "reduxFormComponent",
+  "fieldsArray",
+  "upperLayout",
+  "FileUploadProps",
+  "SelectProps",
+  "PageSizeProps",
+  "heading",
+]);
+
 export default function ComboBoxRedux({
   input,
   label,
@@ -7,29 +28,48 @@ export default function ComboBoxRedux({
   handleBlur,
   handleFocus,
   ComboBoxProps,
-  meta: { error, touched, invalid },
+  meta: { error, touched, invalid } = {} as any,
+  options,
+  disabled,
   ...rest
 }: any) {
-  const { onChange, ...inputRest } = input;
+  const { onChange, value, name, onBlur, onFocus } = input || {};
+
+  const cleanRest: Record<string, any> = {};
+  for (const [key, val] of Object.entries(rest || {})) {
+    if (!STRIP.has(key)) cleanRest[key] = val;
+  }
+
+  const isMultiple = Boolean(ComboBoxProps?.multiple);
+  const resolvedOptions = options ?? ComboBoxProps?.options ?? [];
+  const resolvedValue = (() => {
+    if (value === undefined || value === null || value === "") {
+      return isMultiple ? [] : null;
+    }
+    return value;
+  })();
+
   return (
     <ComboBox
       {...ComboBoxProps}
-      {...rest}
-      value={input?.value ? input?.value || [] : ComboBoxProps?.multiple ? [] : null}
-      onChange={(_e, value) => onChange(value)}
+      {...cleanRest}
+      name={name}
+      options={resolvedOptions}
+      disabled={disabled ?? ComboBoxProps?.disabled}
+      value={resolvedValue}
+      onChange={(_e: any, next: any) => onChange?.(next)}
       InputProps={{
         label,
         ...InputProps,
-        ...inputRest,
         helperText: touched && invalid && error,
-        error: touched && invalid && error && true,
-        onBlur: (e) => {
+        error: Boolean(touched && invalid && error),
+        onBlur: (e: any) => {
           handleBlur?.(e);
-          e.preventDefault();
+          onBlur?.(e);
         },
-        onFocus: (e) => {
+        onFocus: (e: any) => {
           handleFocus?.(e);
-          e.preventDefault();
+          onFocus?.(e);
         },
       }}
     />

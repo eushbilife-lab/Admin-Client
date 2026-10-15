@@ -55,12 +55,18 @@ export const level4Slice = createSlice({
     },
     setOptions: (state, action: PayloadAction<SetLevel4OptionsPayload>) => {
       const { levels4 } = action.payload;
-      const options: SelectOption[] = levels4?.map(({HNSSProductCategoryID,subCategoryID, value, label }: any) => ({
-        HNSSProductCategoryID:HNSSProductCategoryID,
-        subCategoryID:subCategoryID,
-        value: value,
-        label:label?.en?.name || label?.name,
-      }));
+      const options: SelectOption[] = (levels4 || []).map(
+        ({ HNSSProductCategoryID, subCategoryID, value, label }: any) => ({
+          HNSSProductCategoryID,
+          subCategoryID,
+          value: value != null ? String(value) : value,
+          label:
+            (typeof label === "string" && label) ||
+            label?.en?.name ||
+            label?.name ||
+            "",
+        })
+      );
       state.level4Options = options;
     },
     setPage: (state, action: PayloadAction<number>) => {

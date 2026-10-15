@@ -11,7 +11,7 @@ const hnssProductCategoryService = {
     http.setJWT();
     http.setLanguage();
     const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-Options`, data)
+      http.post(`${url}/get-options`, data)
     );
     if (success) {
       const { HNSSCategories } = success?.data?.data;

@@ -1,6 +1,8 @@
 import MultiFileUpload from "@core/basic-components/MultiFileUpload";
-import { useState, useEffect } from "react";
-import { useAppDispatch } from "redux/hooks";
+import { useEffect, useState } from "react";
+import "@core/basic-components/MultiFileUpload/MultiFileUpload.css";
+
+type Preview = { name: string; blob: string; type?: string };
 
 export default function MultiFileUploadRedux({
   input,
@@ -11,129 +13,99 @@ export default function MultiFileUploadRedux({
   ...rest
 }: any) {
   const { error, touched, invalid } = meta || {};
-  const [loading, setLoading] = useState(false);
-  const dispatch = useAppDispatch();
-  const [previews, setPreviews] = useState<{ name: string; blob: string }[]>(() => input.value || []);
+  const [previews, setPreviews] = useState<Preview[]>(() =>
+    Array.isArray(input.value) ? input.value : []
+  );
+  const maxCount = FileUploadProps?.maxCount ?? 5;
 
   useEffect(() => {
-    if (input.value && Array.isArray(input.value)) {
-      setPreviews(input.value);
-    }
-  }, [input.value]);
-
-  useEffect(() => {
-    if (!input.value || input.value.length === 0) {
+    if (!input.value || !Array.isArray(input.value) || input.value.length === 0) {
       setPreviews([]);
-    } else if (Array.isArray(input.value)) {
-      setPreviews(input.value);
+      return;
     }
+    setPreviews(input.value);
   }, [input.value]);
-  
-  // Handle file selection
-  const handleFileChange = (files: File[]) => {
-    if (!files || files.length === 0) return;
 
-    const newFiles = files.map((file) => ({
+  const handleFileChange = (files: File[]) => {
+    if (!files?.length) return;
+    const room = Math.max(0, maxCount - previews.length);
+    if (!room) return;
+
+    const incoming = files.slice(0, room).map((file) => ({
       name: file.name,
       type: file.type,
-      blob: URL.createObjectURL(file), // Create a preview URL
+      blob: URL.createObjectURL(file),
     }));
 
-    // Append new files, ensuring no duplicates
-    const updatedPreviews = [...previews, ...newFiles].reduce((acc, file) => {
-      if (!acc.find((f) => f.name === file.name)) acc.push(file);
-      return acc;
-    }, [] as { name: string; blob: string }[]);
+    const merged = [...previews];
+    for (const file of incoming) {
+      if (!merged.some((f) => f.name === file.name && f.blob === file.blob)) {
+        merged.push(file);
+      }
+    }
 
-    setPreviews(updatedPreviews);
-    input.onChange(updatedPreviews);
+    setPreviews(merged);
+    input.onChange(merged);
   };
 
-  // Handle image removal
   const removeImage = (index: number) => {
-    const updatedPreviews = previews.filter((_, i) => i !== index);
-    setPreviews(updatedPreviews);
-    input.onChange(updatedPreviews);
+    const next = previews.filter((_, i) => i !== index);
+    setPreviews(next);
+    input.onChange(next);
   };
 
   return (
-    <div style={{ position: "relative", width: "50%" }}>
+    <div className="multi-upload" style={{ width: "100%" }}>
       <MultiFileUpload
         {...FileUploadProps}
         {...rest}
-        loading={loading}
-        helperText={touched && invalid ? error : ""}
-        error={touched && invalid && !!error}
-        onChange={(files: File[]) => {
-          if (files && Array.isArray(files)) {
-            handleFileChange(files);
-          }
-        }}
-        onSubmit={(setPreviews)=>[]}
-        onBlur={(e) => {
+        disabled={previews.length >= maxCount}
+        title={
+          previews.length
+            ? `Add more photos (${previews.length}/${maxCount})`
+            : FileUploadProps?.title || "Drop pack photos here or click to browse"
+        }
+        onChange={handleFileChange}
+        onBlur={(e: any) => {
           handleBlur?.(e);
           e.preventDefault();
         }}
-        onFocus={(e) => {
+        onFocus={(e: any) => {
           handleFocus?.(e);
           e.preventDefault();
         }}
       />
-      {previews.length > 0 && (
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "10px",
-            padding: "10px",
-            marginTop: "10px",
-            border: "1px solid #ddd",
-            borderRadius: "5px",
-            background: "#f9f9f9",
-          }}
-        >
-          {previews.map((file, index) => (
-            <div key={index} style={{ position: "relative", display: "inline-block" }}>
-              {/* Image Preview */}
-              <img
-                src={file.blob}
-                alt={file.name}
-                style={{
-                  width: "60px",
-                  height: "60px",
-                  objectFit: "cover",
-                  borderRadius: "5px",
-                }}
-              />
-              <button
-                onClick={() => removeImage(index)}
-                style={{
-                  position: "absolute",
-                  top: "-5px",
-                  right: "-5px",
-                  background: "#FF9800",
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: "50%",
-                  width: "22px",
-                  height: "22px",
-                  fontSize: "14px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontWeight: "bold",
-                  boxShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)",
-                  transition: "0.3s ease-in-out",
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.background = "#FF9800")} // Darker orange on hover
-                                          >
-                ✖
-              </button>
-            </div>
-          ))}
-        </div>
+
+      {previews.length > 0 ? (
+        <>
+          <div className="multi-upload__grid">
+            {previews.map((file, index) => (
+              <div className="multi-upload__tile" key={`${file.name}-${index}`}>
+                <img src={file.blob} alt={file.name || `Photo ${index + 1}`} />
+                <button
+                  type="button"
+                  className="multi-upload__remove"
+                  aria-label={`Remove ${file.name || `photo ${index + 1}`}`}
+                  onClick={() => removeImage(index)}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="multi-upload__caption">
+            {previews.length} of {maxCount} photos selected. Tap × to remove.
+          </p>
+        </>
+      ) : (
+        <p className="multi-upload__caption">
+          Clear pack shots help reviewers and the catalog. You can add more later.
+        </p>
       )}
+
+      {touched && invalid && error ? (
+        <p className="multi-upload__error">{error}</p>
+      ) : null}
     </div>
   );
 }

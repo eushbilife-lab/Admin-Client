@@ -2,6 +2,7 @@ import healthPreferenceService from "services/healthPreference.service";
 import ComboBoxRedux from "@core/redux-fields/ComboBoxRedux";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { useEffect, useMemo } from "react";
+import { optionId, optionLabel } from "utils/selectOption.util";
 
 /** Controlled multi-select for product Food Type (healthPreference type=food_concern). */
 export default function SelectFoodConcern(props: any) {
@@ -23,27 +24,27 @@ export default function SelectFoodConcern(props: any) {
   const options = useMemo(() => {
     const list = Array.isArray(foodConcerns) ? foodConcerns : [];
     return list
-      .map((item: any) => ({
-        value: item.value || item._id,
-        label:
-          (typeof item.label === "string" && item.label) ||
-          item.label?.en?.name ||
-          item.name ||
-          item.en?.name ||
-          "",
-      }))
-      .filter((item: any) => item.value && item.label);
+      .map((item: any) => {
+        const value = optionId(item);
+        const label = optionLabel(item.label, item.name || "Food type");
+        return value ? { value, label } : null;
+      })
+      .filter(Boolean) as { value: string; label: string }[];
   }, [foodConcerns]);
+
+  const { ComboBoxProps, ...rest } = props;
 
   return (
     <ComboBoxRedux
-      {...props}
+      {...rest}
       options={options}
       ComboBoxProps={{
         multiple: true,
         disableCloseOnSelect: true,
         loading: Boolean(loading) && options.length === 0,
-        ...(props.ComboBoxProps || {}),
+        ...(ComboBoxProps || {}),
+        // Never let field config wipe loaded options
+        options: undefined,
       }}
     />
   );

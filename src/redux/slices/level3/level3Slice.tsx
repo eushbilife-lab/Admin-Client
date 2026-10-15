@@ -55,11 +55,17 @@ export const level3Slice = createSlice({
     },
     setOptions: (state, action: PayloadAction<SetLevel3OptionsPayload>) => {
       const { levels3 } = action.payload;
-      const options: SelectOption[] = levels3?.map(({categoryID, value, label }: any) => ({
-        categoryID:categoryID,
-        value: value,
-        label:label?.en?.name || label?.name,
-      }));
+      const options: SelectOption[] = (levels3 || []).map(
+        ({ categoryID, value, label }: any) => ({
+          categoryID,
+          value: value != null ? String(value) : value,
+          label:
+            (typeof label === "string" && label) ||
+            label?.en?.name ||
+            label?.name ||
+            "",
+        })
+      );
       state.level3Options = options;
     },
     setPage: (state, action: PayloadAction<number>) => {
