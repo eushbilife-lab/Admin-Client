@@ -1,4 +1,4 @@
-import { StyledTableCell, StyledTableCellAction, StyledTableRow , adminTableSx } from "@core/templates/Tables";
+import { StyledTableCell, StyledTableCellAction, StyledTableRow, adminTableSx } from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
@@ -17,154 +17,176 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useTranslation } from "react-i18next";
-import { localizedData } from "utils/localizedData.util";
 import healthPreferenceService from "services/healthPreference.service";
 import { healthPrefernceActions } from "redux/slices/healthPrefernce";
 import Tooltip from "@core/basic-components/Tooltip";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import BlockComponent from "@core/api-components/BlockComponent";
+import StatusChip from "@core/templates/PageShell/StatusChip";
+import { optionLabel } from "utils/selectOption.util";
 
 export default function FoodType({ type }: any) {
   const dispatch = useAppDispatch();
-  const { t } = useTranslation();
-
   const { refresh, refreshLoader } = useAppSelector((state) => state.healthPreference);
-  const { count, hps, loading, filters } = useAppSelector( (state) => state.healthPreference.food_concern);
+  const { count, hps, loading, filters } = useAppSelector(
+    (state) => state.healthPreference.food_concern
+  );
 
   useEffect(() => {
     healthPreferenceService.getAllHp(type, filters, dispatch);
-  }, [dispatch, refresh, filters]);
+  }, [dispatch, refresh, filters, type]);
 
   useEffect(() => {
     return () => {
       dispatch(healthPrefernceActions.resetPage(type));
     };
-  }, [dispatch]);
+  }, [dispatch, type]);
+
+  const openEditor = (item?: any) => {
+    dispatch(
+      modalActions.openModal({
+        type: MODAL.ADD_FOODTYPE,
+        data: {
+          type,
+          id: item?._id,
+          data: item,
+        },
+        width: "560px",
+      })
+    );
+  };
 
   return (
     <>
-      <Box className="table-toolbar">
-        <Button
-          variant="contained"
-          onClick={() =>
-            dispatch(
-              modalActions.openModal({
-                type: MODAL.ADD_FOODTYPE,
-                data: {
-                  type,
-                },
-                width: "500px",
-              })
-            )
-          }
+      <Box
+        className="table-toolbar"
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 1.5,
+          mb: 1.5,
+        }}
+      >
+        <Typography
+          variant="body2"
+          sx={{ color: "var(--text-secondary)", maxWidth: "36rem", lineHeight: 1.5 }}
         >
-          {t("Add Food Type")}
+          Food types tag products (high protein, organic, low sugar, and more).
+          Add a name and description so the Add Food form and profiles stay clear.
+        </Typography>
+        <Button variant="contained" onClick={() => openEditor()}>
+          Add food type
         </Button>
       </Box>
       {loading && <CircleLoader />}
 
       <TableWrapper>
         <TableContainer>
-          <Table
-            aria-label="customized table"
-            sx={adminTableSx}
-          >
+          <Table aria-label="food type table" sx={adminTableSx}>
             <TableLoadingWrapper
-              coloumns={3}
+              coloumns={4}
               loading={loading}
               length={refreshLoader ? 0 : hps?.length}
-              message={t("No Food Type currently available.")}
+              message="No food types yet."
             >
               <TableHead>
                 <TableRow>
-                  <StyledTableCell align="left">{t("Name")}</StyledTableCell>
-                  <StyledTableCell align="left">{t("Status")}</StyledTableCell>
-                  <StyledTableCellAction>
-                    {t("Action")}
-                  </StyledTableCellAction>
+                  <StyledTableCell align="left">Name</StyledTableCell>
+                  <StyledTableCell align="left">Description</StyledTableCell>
+                  <StyledTableCell align="left">Status</StyledTableCell>
+                  <StyledTableCellAction>Action</StyledTableCellAction>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {hps?.map((item: any) => (
-                  <StyledTableRow key={item._id}>
-                    <StyledTableCell>
-                      <Typography variant="body2">
-                        {localizedData({
-                          en: item?.en?.name,
-                          ar: item?.ar?.name,
-                        })}
-                      </Typography>
-                    </StyledTableCell>
-                    <StyledTableCell>
-                      <Typography variant="body2">{t(item.status)}</Typography>
-                    </StyledTableCell>
-                    <StyledTableCellAction>
-                      <Tooltip title={t("Edit")}>
-                        <IconButton
-                          onClick={() =>
-                            dispatch(
-                              modalActions.openModal({
-                                type: MODAL.ADD_FOODTYPE,
-                                data: {
-                                  id: item?._id,
-                                  data: item,
-                                  type,
-                                },
-                                width: "500px",
-                              })
-                            )
-                          }
+                {hps?.map((item: any) => {
+                  const name = optionLabel(item, "");
+                  const description =
+                    item.description || item.en?.description || "";
+                  return (
+                    <StyledTableRow key={item._id}>
+                      <StyledTableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {name}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: description
+                              ? "var(--text-secondary)"
+                              : "var(--text-tertiary)",
+                            maxWidth: 360,
+                          }}
                         >
-                          <EditNoteIcon />
-                        </IconButton>
-                      </Tooltip>
-
-                      <BlockComponent allowedRoles={["admin"]}>
-                        <Tooltip title={t("Delete")}>
-                          <IconButton
-                            onClick={() =>
-                              dispatch(
-                                modalActions.openModal({
-                                  type: MODAL.CONFIRMATION_FORM,
-                                  data: {
-                                    heading: t("Delete Food Type"),
-                                    message: t(
-                                      "Are you sure you want to delete this Food Type?"
-                                    ),
-                                    confirmAction: () => {
-                                      healthPreferenceService.remove(item._id, dispatch,type,filters);
-                                    },
-                                  },
-                                  width: "500px",
-                                })
-                              )
-                            }
-                          >
-                            <DeleteOutlineIcon />
+                          {description || "—"}
+                        </Typography>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <StatusChip
+                          label={item.status || "inactive"}
+                          tone={item.status === "inactive" ? "warn" : "ok"}
+                        />
+                      </StyledTableCell>
+                      <StyledTableCellAction>
+                        <Tooltip title="Edit">
+                          <IconButton onClick={() => openEditor(item)}>
+                            <EditNoteIcon />
                           </IconButton>
                         </Tooltip>
-                      </BlockComponent>
-                    </StyledTableCellAction>
-                  </StyledTableRow>
-                ))}
+                        <BlockComponent allowedRoles={["admin"]}>
+                          <Tooltip title="Delete">
+                            <IconButton
+                              onClick={() =>
+                                dispatch(
+                                  modalActions.openModal({
+                                    type: MODAL.CONFIRMATION_FORM,
+                                    data: {
+                                      heading: "Delete food type",
+                                      message:
+                                        "Are you sure you want to delete this food type?",
+                                      confirmAction: () => {
+                                        healthPreferenceService.remove(
+                                          item._id,
+                                          dispatch,
+                                          type,
+                                          filters
+                                        );
+                                      },
+                                    },
+                                    width: "500px",
+                                  })
+                                )
+                              }
+                            >
+                              <DeleteOutlineIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </BlockComponent>
+                      </StyledTableCellAction>
+                    </StyledTableRow>
+                  );
+                })}
               </TableBody>
             </TableLoadingWrapper>
           </Table>
         </TableContainer>
 
         <div className="pagination-list-bottom">
-        <p>  {count > 0 && `${count} ${count > 1 ? t("Counts") : t("Count")}`}</p>
-
+          <p>{count > 0 && `${count} ${count > 1 ? "items" : "item"}`}</p>
           {count > 0 && (
             <Pagination
               variant="outlined"
               color="primary"
               page={filters.page}
               disabled={refreshLoader}
-              count={Math.ceil(count / filters.page_size)}
-              onChange={(_e, page) => dispatch(healthPrefernceActions.setPage({type,page}))}
+              count={Math.ceil(count / filters.page_size) || 1}
+              onChange={(_e, page) =>
+                dispatch(healthPrefernceActions.setPage({ type, page }))
+              }
             />
           )}
         </div>

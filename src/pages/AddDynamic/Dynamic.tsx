@@ -12,14 +12,20 @@ export default function Dynamics() {
     <PageShell
       kicker="Science"
       title="Pack labels"
-      subtitle="Front-of-pack certificates, food types, and units printed on the label."
+      subtitle="Front-of-pack certificates, food types used on Add Food, and units of measure printed on the pack."
     >
       <Tabs
         value={tab}
         onChange={(next) => setTabs(next)}
         tabs={[
-          { label: "FOPL certificates", element: <FOPLCertificates type="product_certificate" /> },
-          { label: "Food type", element: <FoodType type="food_concern" /> },
+          {
+            label: "FOPL certificates",
+            element: <FOPLCertificates type="product_certificate" />,
+          },
+          {
+            label: "Food type",
+            element: <FoodType type="food_concern" />,
+          },
           { label: "UOM", element: <UOM type="uom" /> },
         ]}
       />

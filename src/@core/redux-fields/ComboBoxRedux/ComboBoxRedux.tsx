@@ -20,6 +20,7 @@ const STRIP = new Set([
   "SelectProps",
   "PageSizeProps",
   "heading",
+  "hint",
   "input",
   "meta",
   "component",
@@ -108,7 +109,10 @@ export default function ComboBoxRedux({
       InputProps={{
         label,
         ...InputProps,
-        helperText: touched && invalid && error,
+        helperText:
+          touched && invalid && error
+            ? error
+            : InputProps?.helperText || "",
         error: Boolean(touched && invalid && error),
         // Pass current option object — NOT the DOM event — so redux-form
         // does not replace `{ value, label }` with the typed label string.

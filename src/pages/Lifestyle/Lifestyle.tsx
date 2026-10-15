@@ -18,7 +18,8 @@ const SECTIONS: {
     label: "Activity level",
     addLabel: "Add activity level",
     emptyMessage: "No activity levels yet.",
-    blurb: "Sedentary to athlete — used on user profiles.",
+    blurb:
+      "How active a member is day to day (sedentary → athlete). Used to set calorie burn and plan intensity.",
   },
   {
     path: "/goals",
@@ -26,7 +27,8 @@ const SECTIONS: {
     label: "Goal",
     addLabel: "Add goal",
     emptyMessage: "No goals yet.",
-    blurb: "Lose, maintain, or gain weight.",
+    blurb:
+      "What the member wants to achieve — lose, maintain, or gain. Drives calorie and macro targets.",
   },
   {
     path: "/food-interest",
@@ -34,7 +36,8 @@ const SECTIONS: {
     label: "Food Interest",
     addLabel: "Add food interest",
     emptyMessage: "No food interests yet.",
-    blurb: "Organic, high protein, low sugar, and similar interests.",
+    blurb:
+      "Food preferences and product tags such as high protein, organic, or low sugar. Shared with Food type on pack labels.",
   },
   {
     path: "/diets",
@@ -42,7 +45,8 @@ const SECTIONS: {
     label: "Diet",
     addLabel: "Add diet",
     emptyMessage: "No diets yet.",
-    blurb: "Vegan, keto, Mediterranean, and other diet types.",
+    blurb:
+      "Long-term eating patterns (vegan, keto, Mediterranean, and more) used on profiles and meal guidance.",
   },
   {
     path: "/temporary-concerns",
@@ -50,7 +54,8 @@ const SECTIONS: {
     label: "Temporary concern",
     addLabel: "Add temporary concern",
     emptyMessage: "No temporary concerns yet.",
-    blurb: "Pregnancy, fasting, rehab, and other short-term states.",
+    blurb:
+      "Short-term states like pregnancy, fasting, or recovery that temporarily change advice.",
   },
   {
     path: "/health-issues",
@@ -58,7 +63,8 @@ const SECTIONS: {
     label: "Health issue",
     addLabel: "Add health issue",
     emptyMessage: "No health issues yet.",
-    blurb: "Diabetes, hypertension, and other conditions used on user profiles.",
+    blurb:
+      "Ongoing conditions (diabetes, hypertension, etc.) that inform safer food recommendations.",
   },
 ];
 
@@ -89,6 +95,7 @@ export default function Lifestyle() {
                 type={section.type}
                 addLabel={section.addLabel}
                 emptyMessage={section.emptyMessage}
+                blurb={section.blurb}
               />
             ) : (
               <></>

@@ -224,9 +224,8 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
       validate: [required],
       component: SelectFoodConcern,
       cellProps: { xs: 12, sm: 12, md: 6 },
-      ComboBoxProps: {
-        multiple: true,
-        options: [],
+      InputProps: {
+        helperText: "Product tags such as high protein, organic, or low sugar.",
       },
     },
     {
@@ -235,22 +234,25 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
       validate: [required],
       component: SelectProcessingLevel,
       cellProps: scoreCell,
+      InputProps: {
+        helperText: "NOVA-style processing class for scoring.",
+      },
     },
     {
       name: "HNSSProductCategory",
       label: "HSN / ENLI",
       component: SelectHNSSProductCategory,
       validate: [required],
-      ComboBoxProps: {
-        multiple: false,
-        options: [],
-      },
       cellProps: scoreCell,
+      InputProps: {
+        helperText: "Usually filled from Level 4; override only if needed.",
+      },
     },
     {
       name: "fruitsVegNutsPercent",
       label: "Fruit / veg / nuts %",
       component: InputRedux,
+      hint: "Auto-calculated from ingredients when available.",
       InputProps: { readOnly: true },
       cellProps: scoreCell,
     },
@@ -258,6 +260,7 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
       name: "carbsCount",
       label: "Carbs count",
       component: InputRedux,
+      hint: "Derived from nutrition facts for scoring.",
       InputProps: { readOnly: true },
       normalize: digitOrFloat,
       cellProps: scoreCell,

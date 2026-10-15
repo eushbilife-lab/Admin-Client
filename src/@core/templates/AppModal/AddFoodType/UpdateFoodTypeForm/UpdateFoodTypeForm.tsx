@@ -1,17 +1,26 @@
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { change } from "redux-form";
 import { useEffect } from "react";
-import { localizedData } from "utils/localizedData.util";
+import { optionLabel } from "utils/selectOption.util";
 
 export default function UpdateFoodTypeForm() {
   const form = "AddFoodTypeForm";
   const dispatch = useAppDispatch();
   const data = useAppSelector((state) => state.modal.data);
+
   useEffect(() => {
-    if (!data?.data || Object.keys(data?.data).length === 0) return;
-    const { en, status, ar } = data?.data;
-    dispatch(change(form, "status", status == "active" ? true : false));
-    dispatch(change(form, "en.name", localizedData({ en: en?.name }) || ""));
+    const row = data?.data;
+    if (!row || Object.keys(row).length === 0) return;
+
+    dispatch(change(form, "status", row.status === "active"));
+    dispatch(change(form, "en.name", optionLabel(row, "")));
+    dispatch(
+      change(
+        form,
+        "description",
+        row.description || row.en?.description || row.ar?.description || ""
+      )
+    );
   }, [data, dispatch]);
 
   return null;

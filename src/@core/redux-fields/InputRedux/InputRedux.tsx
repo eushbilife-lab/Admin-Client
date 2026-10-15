@@ -5,16 +5,18 @@ export default function InputRedux({
   InputProps,
   handleBlur,
   handleFocus,
-  meta: { error, touched, invalid, ...extra },
+  hint,
+  meta: { error, touched, invalid } = {} as any,
   ...rest
 }: any) {
+  const showError = Boolean(touched && invalid && error);
   return (
     <Input
       {...InputProps}
       {...rest}
       {...input}
-      helperText={touched && invalid && error}
-      error={touched && invalid && error && true}
+      helperText={showError ? error : hint || InputProps?.helperText || ""}
+      error={showError}
       onBlur={(e) => {
         handleBlur?.(e);
         e.preventDefault();
