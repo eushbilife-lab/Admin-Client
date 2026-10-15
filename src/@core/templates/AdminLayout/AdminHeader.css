@@ -7,7 +7,7 @@
   min-height: var(--header-height);
   flex-shrink: 0;
   padding: var(--fluid-pad-sm, 0.5rem) var(--fluid-pad, 1rem);
-  background: var(--header-gradient);
+  background: var(--color-brand-primary);
   position: relative;
   z-index: 50;
   box-sizing: border-box;
