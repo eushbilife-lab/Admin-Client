@@ -18,6 +18,9 @@ export const adminTableSx = {
     color: "var(--text-secondary)",
     fontWeight: 600,
     whiteSpace: "nowrap",
+    position: "sticky",
+    top: 0,
+    zIndex: 2,
   },
   "& .MuiTableBody .MuiTableRow-root:last-child .MuiTableCell-root": {
     borderBottom: "none",

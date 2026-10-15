@@ -40,6 +40,14 @@ const FoodIntolerance = lazy(() => import("pages/FoodIntolerance"));
 // Dynamic Routes
 const Dynamics = lazy(() => import("pages/AddDynamic"));
 const Dashboard = lazy(() => import("pages/Dashboard"));
+const Analytics = lazy(() => import("pages/Analytics"));
+const Recipes = lazy(() => import("pages/Recipes"));
+const RecipeEditor = lazy(() => import("pages/Recipes/RecipeEditor"));
+const MealPlans = lazy(() => import("pages/MealPlans"));
+const MealPlanEditor = lazy(() => import("pages/MealPlans/MealPlanEditor"));
+const Subscriptions = lazy(() => import("pages/Subscriptions"));
+const Dietitians = lazy(() => import("pages/Dietitians"));
+const Settings = lazy(() => import("pages/Settings"));
 const MemberDetail = lazy(() => import("pages/Members"));
 const DietitianQueue = lazy(() => import("pages/Queue"));
 const Lifestyle = lazy(() => import("pages/Lifestyle"));
@@ -90,6 +98,16 @@ export const public_routes: IRoute[] = [
 export const private_routes: IRoute[] = [
 
   { path: "/dashboard", element: <Dashboard /> },
+  { path: "/analytics", element: <Analytics /> },
+  { path: "/recipes", element: <Recipes /> },
+  { path: "/recipes/new", element: <RecipeEditor /> },
+  { path: "/recipes/:id", element: <RecipeEditor /> },
+  { path: "/meal-plans", element: <MealPlans /> },
+  { path: "/meal-plans/new", element: <MealPlanEditor /> },
+  { path: "/meal-plans/:id", element: <MealPlanEditor /> },
+  { path: "/subscriptions", element: <Subscriptions /> },
+  { path: "/dietitians", element: <Dietitians /> },
+  { path: "/settings", element: <Settings /> },
   { path: "/queue", element: <DietitianQueue /> },
   { path: "/app", element: <AppDesk /> },
   { path: "/scans", element: <ScanDesk /> },

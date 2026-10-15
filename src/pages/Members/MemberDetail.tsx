@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@mui/material";
 import CircleLoader from "@core/basic-components/CircleLoader";
@@ -7,6 +7,7 @@ import UserService from "services/user.service";
 import { userActions } from "redux/slices/user";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
+import ToasterService from "utils/toaster.util";
 
 function MacroRow({ label, value, color }: { label: string; value: number; color: string }) {
   return (
@@ -26,6 +27,7 @@ export default function MemberDetail() {
   const dispatch = useAppDispatch();
   const { user, loading } = useAppSelector((state) => state.user);
   const nutrition = user?.nutrition || user?.profiles?.[0];
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (id) UserService.getUser(id, dispatch);
@@ -35,6 +37,35 @@ export default function MemberDetail() {
   }, [id, dispatch]);
 
   const name = user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "Member";
+
+  const confirmAction = (message: string, onOk: () => void) => {
+    if (window.confirm(message)) onOk();
+  };
+
+  const exportData = () => {
+    if (!user) return;
+    setBusy(true);
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      account: {
+        id: user._id || id,
+        email: user.email,
+        name,
+        phone: user.phone,
+        status: user.currentStatus,
+      },
+      nutrition,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `eushbi-member-${id}-export.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    ToasterService.showSuccess("Member data exported (client-side GDPR pack)");
+    setBusy(false);
+  };
 
   return (
     <PageShell
@@ -105,6 +136,54 @@ export default function MemberDetail() {
               <MacroRow label="Fat" value={nutrition?.macros?.fat || 0} color="#EAB308" />
             </section>
           </div>
+
+          <section className="member-panel member-privacy">
+            <h2>Privacy & account actions</h2>
+            <p>GDPR-aware controls. Export is local until the server export endpoint ships. Destructive actions require confirmation.</p>
+            <div className="member-privacy__actions">
+              <Button variant="outlined" disabled={busy} onClick={exportData}>
+                Export data
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={busy}
+                onClick={() =>
+                  confirmAction("Send a password reset email to this member?", () => {
+                    ToasterService.showSuccess("Password reset queued (mock)");
+                  })
+                }
+              >
+                Reset password
+              </Button>
+              <Button
+                color="warning"
+                variant="outlined"
+                disabled={busy}
+                onClick={() =>
+                  confirmAction("Suspend this member’s access?", () => {
+                    ToasterService.showSuccess("Member suspended (mock)");
+                  })
+                }
+              >
+                Suspend
+              </Button>
+              <Button
+                color="error"
+                variant="outlined"
+                disabled={busy}
+                onClick={() =>
+                  confirmAction(
+                    "Permanently delete / anonymize this member per GDPR? This cannot be undone.",
+                    () => {
+                      ToasterService.showSuccess("Delete requested (mock — wire to API)");
+                    }
+                  )
+                }
+              >
+                Delete (GDPR)
+              </Button>
+            </div>
+          </section>
 
           <div className="member-hero">
             <section className="member-panel">

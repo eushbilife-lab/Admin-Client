@@ -25,7 +25,7 @@ function WorkBoard({
       <header className="work-board__head">
         <div>
           <h2>Review queue</h2>
-          <p>Nothing goes live until facts, allergens, and scores are ready.</p>
+          <p>Foods waiting on facts or sign-off.</p>
         </div>
         <button type="button" className="dash-list-card__view-all-btn" onClick={onQueue}>
           Open queue
@@ -45,7 +45,7 @@ function WorkBoard({
 
       {missing.length ? (
         <ul className="dash-list work-board__list">
-          {missing.slice(0, 4).map((item) => (
+          {missing.slice(0, 3).map((item) => (
             <li
               key={item.id}
               className="dash-list__row is-clickable"

@@ -6,6 +6,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
 } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
@@ -42,6 +43,9 @@ type LibraryPanelProps = {
   onAdd: () => void;
   onEdit: (row: LibraryRow) => void;
   onPage?: (page: number) => void;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
   wrapPage?: boolean;
 };
 
@@ -63,6 +67,9 @@ export default function LibraryPanel({
   onAdd,
   onEdit,
   onPage,
+  searchValue,
+  onSearchChange,
+  searchPlaceholder = "Search…",
   wrapPage = false,
 }: LibraryPanelProps) {
   const body = (
@@ -72,13 +79,25 @@ export default function LibraryPanel({
           {heading ? <h2 className="section-heading">{heading}</h2> : null}
           {blurb ? <p className="section-blurb">{blurb}</p> : null}
         </div>
-        <Button variant="contained" onClick={onAdd}>
-          {addLabel}
-        </Button>
+        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          {onSearchChange ? (
+            <TextField
+              size="small"
+              value={searchValue ?? ""}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
+              sx={{ minWidth: 200 }}
+            />
+          ) : null}
+          <Button variant="contained" onClick={onAdd}>
+            {addLabel}
+          </Button>
+        </div>
       </div>
       <TableWrapper>
-        <TableContainer>
-          <Table aria-label={heading || title || "library"} sx={adminTableSx}>
+        <TableContainer sx={{ maxHeight: "70vh", overflowX: "auto" }}>
+          <Table stickyHeader aria-label={heading || title || "library"} sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={extraColumn === "ingredient" ? 5 : extraColumn ? 4 : 3}
               loading={!!loading}

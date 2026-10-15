@@ -9,7 +9,7 @@ import {
   ingredientFields,
   nutritionFields,
 } from ".";
-import { Box } from "@mui/material";
+import { Box, CircularProgress } from "@mui/material";
 import { change, reduxForm } from "redux-form";
 import BlockComponent from "@core/api-components/BlockComponent";
 import { useParams, useSearchParams } from "react-router-dom";
@@ -17,10 +17,10 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import MeasurementScaleService from "services/measurementScale.service";
 import { FormSection } from "utils/FormSection";
-import { MODAL, modalActions } from "redux/slices/modal";
 import { field as imageFields } from "../AddProductImage";
+import useUnsavedChanges from "hooks/useUnsavedChanges";
 
-function AddProductForm({ handleSubmit }: any) {
+function AddProductForm({ handleSubmit, submitting, dirty, pristine }: any) {
   const form = "AddProductForm";
   const { id } = useParams();
   const { t } = useTranslation();
@@ -29,9 +29,18 @@ function AddProductForm({ handleSubmit }: any) {
   const [isDraft, setIsDraft] = useState(false);
   const [searchParams] = useSearchParams();
 
+  useUnsavedChanges(Boolean(dirty && !pristine && !submitting));
+
   useEffect(() => {
     MeasurementScaleService.getOptions({ type: "uom" }, dispatch);
   }, [dispatch]);
+
+  const submitLabel = (label: string) => (
+    <>
+      {submitting ? <CircularProgress size={16} color="inherit" sx={{ mr: 1 }} /> : null}
+      {t(label)}
+    </>
+  );
 
   return (
     <div className="form">
@@ -48,21 +57,6 @@ function AddProductForm({ handleSubmit }: any) {
           title={t("Product Ingredients")}
           fields={ingredientFields(isDraft)}
         />
-        <Button
-          variant="outlined"
-          type="button"
-          onClick={() =>
-            dispatch(
-              modalActions.openModal({
-                type: MODAL.ADD_INGREDIENT_IN_PRODUCT,
-                data: {},
-                width: "700px",
-              })
-            )
-          }
-        >
-          {t("Add from ingredient list")}
-        </Button>
         {!id ? (
           <FormSection title={t("Product images")} fields={imageFields} />
         ) : null}
@@ -72,18 +66,24 @@ function AddProductForm({ handleSubmit }: any) {
         />
         <br />
         {!id ? (
-          <Box sx={{ display: "flex", gap: "15px" }}>
-            <Button variant="contained" type="submit" sx={{ fontSize: "14px" }}>
-              {t("Submit")}
+          <Box sx={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
+            <Button
+              variant="contained"
+              type="submit"
+              sx={{ fontSize: "14px" }}
+              disabled={submitting}
+            >
+              {submitLabel("Submit")}
             </Button>
             <BlockComponent allowedRoles={["admin"]}>
               <Button
                 variant="contained"
                 type="submit"
                 sx={{ fontSize: "14px" }}
+                disabled={submitting}
                 onClick={() => dispatch(change(form, "status", "pending"))}
               >
-                {t("Submit for Review")}
+                {submitLabel("Submit for Review")}
               </Button>
             </BlockComponent>
             <BlockComponent allowedRoles={["admin"]}>
@@ -91,32 +91,39 @@ function AddProductForm({ handleSubmit }: any) {
                 variant="contained"
                 type="submit"
                 sx={{ fontSize: "14px" }}
+                disabled={submitting}
                 onClick={() => {
                   dispatch(change(form, "status", "draft"));
                   setIsDraft(true);
                 }}
               >
-                {t("Save as Draft")}
+                {submitLabel("Save as Draft")}
               </Button>
             </BlockComponent>
           </Box>
         ) : (
           <BlockComponent allowedRoles={["admin", "data_author"]}>
-            <Box sx={{ display: "flex", gap: "15px" }}>
-              <Button variant="contained" type="submit" sx={{ fontSize: "14px" }}>
-                {t("Submit")}
+            <Box sx={{ display: "flex", gap: "15px", flexWrap: "wrap" }}>
+              <Button
+                variant="contained"
+                type="submit"
+                sx={{ fontSize: "14px" }}
+                disabled={submitting}
+              >
+                {submitLabel("Submit")}
               </Button>
               {searchParams.get("isDraft") === "true" && (
                 <Button
                   variant="contained"
                   type="submit"
                   sx={{ fontSize: "14px" }}
+                  disabled={submitting}
                   onClick={() => {
                     dispatch(change(form, "status", "draft"));
                     setIsDraft(true);
                   }}
                 >
-                  {t("Save as Draft")}
+                  {submitLabel("Save as Draft")}
                 </Button>
               )}
             </Box>
@@ -139,7 +146,9 @@ export default reduxForm({
     if (!values.weightUOM) errors.weightUOM = "Required";
     if (!values.servingUOM) errors.servingUOM = "Required";
     if (!values.HNSSProductCategory) errors.HNSSProductCategory = "Required";
-    if (!values.foodType) errors.foodType = "Required";
+    if (!values.foodType || (Array.isArray(values.foodType) && values.foodType.length === 0)) {
+      errors.foodType = "Required";
+    }
     if (!values.processingLevel) errors.processingLevel = "Required";
     if (values.nf && Array.isArray(values.nf)) {
       const nfErrors = values.nf.map((item: any) => {

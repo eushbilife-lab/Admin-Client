@@ -14,20 +14,21 @@ const AuthService = {
       http.post(`/auth/login`, data)
     );
     if (success) {
-      const { user, jwtToken } = success?.data?.data;
+      const { user, jwtToken, refreshToken } = success?.data?.data;
       LocalStorage.setItem("token", `Bearer ${jwtToken}`);
+      if (refreshToken) LocalStorage.setItem("refreshToken", refreshToken);
       dispatch?.(authActions.setUser(user));
       OneSignalService.connect(user._id);
-      // SocketService.connect(admin);
     }
     dispatch?.(authActions.setLoading(false));
     return [success, error];
   },
   logout: () => {
     const dispatch = getAppDispatch();
-    // SocketService.disconnect();
+    void Promisable.asPromise(http.post(`/auth/logout`, {})).catch(() => undefined);
     OneSignalService.disconnect();
     localStorage.removeItem("token");
+    localStorage.removeItem("refreshToken");
     dispatch?.(authActions.logout());
     dispatch?.(authActions.setUser(null));
   },

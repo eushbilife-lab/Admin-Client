@@ -11,6 +11,7 @@ import { LicenseInfo } from "@mui/x-license";
 import { SnackbarProvider } from "notistack";
 import { CssBaseline } from "@mui/material";
 import AppRoutes from "routes/AppRoutes";
+import RouteProgress from "@core/basic-components/RouteProgress/RouteProgress";
 import createCache from "@emotion/cache";
 import { Provider } from "react-redux";
 import { store } from "./redux/store";
@@ -54,6 +55,7 @@ export default function App() {
                 <Provider store={store}>
                   <RegisterAppDispatch />
                   <BrowserRouter>
+                    <RouteProgress />
                     <ErrorBoundary>
                       <AppModal />
                     </ErrorBoundary>

@@ -1,0 +1,1 @@
+import{m as e}from"./Button-kngS3e8z.js";import{s as t}from"./useSlotProps-C7-ZTQQu.js";function n(e,t=166){let n;function r(...r){clearTimeout(n),n=setTimeout(()=>{e.apply(this,r)},t)}return r.clear=()=>{clearTimeout(n)},r}function r(e){return t(e).defaultView||window}var i=n,a=t,o=r,s=e;export{r as a,i,o as n,n as o,a as r,s as t};

@@ -70,11 +70,11 @@ const ForgotPassword = () => {
               <h1 className="login-panel__title">Enter your code</h1>
               <p className="login-panel__lede">
                 {otpExp
-                  ? `A 4-digit code was sent. It stays valid until ${otpExp}.`
-                  : "A 4-digit code is on its way."}
+                  ? `A 6-digit code was sent. It stays valid until ${otpExp}.`
+                  : "A 6-digit code is on its way."}
               </p>
               <OTPInput
-                length={4}
+                length={6}
                 reset={otpReset}
                 onComplete={(otp) => {
                   if (!otp) return;

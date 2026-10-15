@@ -26,16 +26,6 @@ export default function Calculate() {
   const formValues = useAppSelector((state) => state.form[form]?.values);
   const { netWeight, weightUOM, servingSize, servingUOM } = formValues || {};
 
-  // level 4
-  const level4 = useAppSelector((state) => state.form[form]?.values?.level4_id);
-  const level3 = useAppSelector((state) => state.form[form]?.values?.level3_id);
-  const level2 = useAppSelector((state) => state.form[form]?.values?.level2_id);
-
-  // levels Options
-  const level3Options = useAppSelector((state) => state.level3?.level3Options);
-  const level2Options = useAppSelector((state) => state.level2?.level2Options);
-  const level1Options = useAppSelector((state) => state.level1?.level1Options);
-
   // rda
   const rdaSection = useAppSelector(
     (state) => state.form[form]?.values?.rdaSection
@@ -208,70 +198,6 @@ export default function Calculate() {
       dispatch(change(form, "nf", nfData));
     }
   }, [rdaSection, dispatch]);
-
-  //level 4
-  useEffect(() => {
-    if (!level4) return;
-
-    const subCategoryID = level4?.subCategoryID;
-    const HNSSProductCategory = level4?.HNSSProductCategoryID;
-    const categoryID = subCategoryID?.categoryID;
-    const mainCategoryID = categoryID?.mainCategoryID;
-
-    const level3Match = level3Options.find(
-      (item: any) => item.value === subCategoryID?._id
-    );
-    const level2Match = level2Options.find(
-      (item: any) => item.value === categoryID?._id
-    );
-    const level1Match = level1Options.find(
-      (item: any) => item.value === mainCategoryID
-    );
-
-    if (level3Match) dispatch(change(form, "level3_id", level3Match));
-    if (level2Match) dispatch(change(form, "level2_id", level2Match));
-    if (level1Match) dispatch(change(form, "level1_id", level1Match));
-
-    if (HNSSProductCategory?._id) {
-      dispatch(
-        change(form, "HNSSProductCategory", {
-          label: HNSSProductCategory?.en?.name,
-          value: HNSSProductCategory?._id,
-        })
-      );
-    }
-  }, [level4, level3Options, level2Options, level1Options, dispatch, form]);
-
-  // level 3
-  useEffect(() => {
-    if (!level3 || level3?.length === 0) return;
-
-    const categoryID = level3?.categoryID;
-    const mainCategoryID = level3?.categoryID?.mainCategoryID;
-
-    const level2Match = level2Options.find(
-      (item: any) => item.value === categoryID?._id
-    );
-    const level1Match = level1Options.find(
-      (item: any) => item.value === mainCategoryID
-    );
-
-    if (level2Match) dispatch(change(form, "level2_id", level2Match));
-    if (level1Match) dispatch(change(form, "level1_id", level1Match));
-  }, [level3, level2Options, level1Options, dispatch]);
-
-  // level2
-  useEffect(() => {
-    if (!level2 || level2?.length === 0) return;
-
-    const mainCategoryID = level2?.mainCategoryID;
-
-    const level1Match = level1Options.find(
-      (item: any) => item.value === mainCategoryID?._id
-    );
-
-    if (level1Match) dispatch(change(form, "level1_id", level1Match));
-  }, [level2, level1Options, dispatch]);
 
   useEffect(() => {
     if (!nf) return;

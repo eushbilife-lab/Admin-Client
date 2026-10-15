@@ -13,7 +13,23 @@ import {
 import CircleLoader from "@core/basic-components/CircleLoader";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAppSelector } from "redux/hooks";
-import AuthService from "services/auth.service";
+
+function routesForRole(user: { role?: string; addExpense?: boolean }): IRoute[] {
+  const role = String(user.role || "");
+  if (role === "data_entry") return [...data_entry_private_routes];
+  if (role === "data_author") return [...data_author_private_routes];
+  if (role === "admin") {
+    const routes = [
+      ...private_routes,
+      ...admin_private_routes,
+      ...globalAdmin_private_routes,
+    ];
+    if (user.addExpense) routes.push(...conditionalRoutes);
+    return routes;
+  }
+  // restaurant_user / unknown — least privilege (dashboard-only if present)
+  return data_entry_private_routes.filter((r) => r.path === "/dashboard");
+}
 
 export default function AppRoutes() {
   const user = useAppSelector((state) => state.auth?.user);
@@ -21,27 +37,12 @@ export default function AppRoutes() {
   const [loading, setLoading] = useState<Boolean>(true);
 
   useEffect(() => {
-    // private_routes
     if (user) {
-      let private_routesCheck = [];
-      if (user.role !== "data_entry")
-        private_routesCheck.push(...admin_private_routes);
-      if(user.role === "data_entry")
-        private_routesCheck.push(...data_entry_private_routes);
-      if(user.role === "data_author")
-        private_routesCheck.push(...data_author_private_routes);
-      if (user.role === "admin")
-        private_routesCheck.push(...globalAdmin_private_routes);
-      private_routesCheck.push(...private_routes);
-      if (["admin"].includes(user.role) || user.addExpense) {
-        private_routesCheck.push(...conditionalRoutes);
-      }
-      setRoutesAccess(private_routesCheck);
-      setLoading(false);
+      setRoutesAccess(routesForRole(user));
     } else {
-      AuthService.logout();
-      setLoading(false);
+      setRoutesAccess([]);
     }
+    setLoading(false);
   }, [user]);
 
   return (

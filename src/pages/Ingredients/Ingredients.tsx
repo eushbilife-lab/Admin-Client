@@ -5,12 +5,14 @@ import { ingredientActions } from "redux/slices/ingredient";
 import ingredientService from "services/ingredient.service";
 import LibraryPanel from "@core/templates/LibraryPanel/LibraryPanel";
 import CircleLoader from "@core/basic-components/CircleLoader";
+import useListQueryParams from "hooks/useListQueryParams";
 
 export default function Ingredients() {
   const dispatch = useAppDispatch();
-  const { ingredients, loading, refreshLoader, filters, count, refresh } = useAppSelector(
+  const { ingredients, loading, refreshLoader, count, refresh } = useAppSelector(
     (state) => state.ingredient
   );
+  const { filters, searchInput, setSearch, setPage } = useListQueryParams();
 
   useEffect(() => {
     ingredientService.getAllIngredients(filters, dispatch);
@@ -52,9 +54,12 @@ export default function Ingredients() {
         count={count}
         page={filters.page}
         pageSize={filters.page_size}
+        searchValue={searchInput}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search ingredients…"
         onAdd={() => openEditor()}
         onEdit={(row) => openEditor(row)}
-        onPage={(page) => dispatch(ingredientActions.setPage(page))}
+        onPage={setPage}
       />
     </>
   );

@@ -6,7 +6,6 @@ interface ImportMetaEnv {
   readonly REACT_APP_URL?: string;
   readonly REACT_APP_LOCAL_API_URL?: string;
   readonly REACT_APP_ONE_SIGNAL_APP_ID?: string;
-  readonly REACT_APP_ONE_SIGNAL_API_KEY?: string;
   readonly REACT_APP_SENTRY_PUBLIC_KEY?: string;
   readonly REACT_APP_SENTRY_RELEASE_KEY?: string;
   readonly REACT_APP_MUIX_LICENSE?: string;

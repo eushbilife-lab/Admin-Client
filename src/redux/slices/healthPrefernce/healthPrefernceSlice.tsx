@@ -80,10 +80,15 @@ export const healthPrefernceSlice = createSlice({
       action: PayloadAction<SetHealthPrefernceOptionsPayload>
     ) => {
       const { healthPreferences, type } = action.payload;
-      const options: SelectOption[] = healthPreferences?.map(
+      if (!state[type]) return;
+      const options: SelectOption[] = (healthPreferences || []).map(
         ({ value, label }: any) => ({
-          value: value,
-          label: label?.en?.name || label?.name,
+          value,
+          label:
+            (typeof label === "string" && label) ||
+            label?.en?.name ||
+            label?.name ||
+            "",
         })
       );
       state[type].hpOptions = options;

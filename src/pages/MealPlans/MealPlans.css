@@ -1,0 +1,124 @@
+.meal-plans-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background: var(--color-paper);
+}
+
+.meal-plans-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.meal-plans-table th,
+.meal-plans-table td {
+  padding: var(--fluid-row-pad-y) 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  font-size: var(--text-base);
+}
+
+.meal-plans-table th {
+  position: sticky;
+  top: 0;
+  background: var(--color-gray-50);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.meal-plans-table tbody tr:hover {
+  background: #fafbfc;
+}
+
+.meal-plans-link {
+  border: 0;
+  background: transparent;
+  color: var(--color-leaf-deep);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.meal-plan-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.85fr);
+  gap: var(--fluid-gap);
+}
+
+.meal-plan-editor__fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.15rem;
+  background: var(--color-paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+}
+
+.meal-plan-editor__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.meal-plan-editor__recipes {
+  padding: 1.15rem;
+  background: var(--color-paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+}
+
+.meal-plan-editor__recipes h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.meal-plan-editor__recipes > p {
+  margin: 0.3rem 0 0.85rem;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.meal-plan-editor__recipes ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.meal-plan-editor__recipes label {
+  display: flex;
+  gap: 0.65rem;
+  align-items: flex-start;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+}
+
+.meal-plan-editor__recipes label span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.meal-plan-editor__recipes em {
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 900px) {
+  .meal-plan-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .meal-plan-editor__row {
+    grid-template-columns: 1fr;
+  }
+}

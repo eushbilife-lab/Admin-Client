@@ -34,6 +34,7 @@ const dynamicService = {
       type,
       page: filters.page,
       page_size: filters.page_size,
+      ...(filters.name ? { name: filters.name } : {}),
     };
     const [success, error]: any = await Promisable.asPromise(
       http.post(`${url}/get-All-Dynamics`, payload)

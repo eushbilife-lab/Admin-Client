@@ -7,16 +7,11 @@ import {
   loadDashboardOverview,
   type DashboardOverview,
 } from "services/dashboard.service";
+import ProductMetricsService, { type ProductKpis } from "services/productMetrics.service";
 import { displayNameOf } from "constants/brand";
 import KpiCards from "./KpiCards";
-import AnalyticsOverview from "./AnalyticsOverview";
-import LabelCoverage from "./PopularCategories";
 import DashListCard from "./DashListCard";
-import NutritionLabs from "./NutritionLabs";
-import CatalogFlow from "./CatalogFlow";
 import WorkBoard from "./WorkBoard";
-import SafetyStrip from "./SafetyStrip";
-import AppHandling from "./AppHandling";
 import "./Dashboard.css";
 
 function timeAgo(value?: string) {
@@ -33,14 +28,16 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
   const [data, setData] = useState<DashboardOverview>(emptyDashboard);
+  const [product, setProduct] = useState<ProductKpis | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
 
   const load = () => {
     setLoading(true);
-    loadDashboardOverview()
-      .then((overview) => {
+    Promise.all([loadDashboardOverview(), ProductMetricsService.overview("7d")])
+      .then(([overview, metrics]) => {
         setData(overview);
+        setProduct(metrics.kpis);
         setUpdatedAt(new Date());
       })
       .finally(() => setLoading(false));
@@ -52,7 +49,7 @@ export default function Dashboard() {
 
   const recentItems = useMemo(
     () =>
-      data.recentProducts.map((item) => ({
+      data.recentProducts.slice(0, 6).map((item) => ({
         id: item._id,
         name: item.productName || "Untitled food",
         email: item.brand,
@@ -65,10 +62,10 @@ export default function Dashboard() {
 
   const missingItems = useMemo(
     () =>
-      data.missingLabels.map((item) => ({
+      data.missingLabels.slice(0, 3).map((item) => ({
         id: item._id,
         name: item.productName || "Untitled food",
-        email: item.brand || "Needs energy, macros, micros",
+        email: item.brand || "Needs nutrition facts",
         trailing: "Incomplete",
         badge: "warn" as const,
         href: `/update-product/${item._id}`,
@@ -93,8 +90,8 @@ export default function Dashboard() {
           <h1>Hi, {firstName}</h1>
           <p>
             {waiting > 0
-              ? `${firstName}, ${waiting} ${waiting === 1 ? "food still needs" : "foods still need"} facts, review, or a score before they belong in the live catalog.`
-              : data.insight}
+              ? `${waiting} ${waiting === 1 ? "food needs" : "foods need"} review before going live.`
+              : "Catalog looks clear. Add a food or check the queue when you are ready."}
           </p>
           <div className="dash-banner__cta">
             <button type="button" className="desk-btn is-primary" onClick={() => navigate("/add-product")}>
@@ -113,30 +110,38 @@ export default function Dashboard() {
         <KpiCards kpis={data.kpis} />
       </section>
 
-      <AppHandling />
+      {product ? (
+        <button type="button" className="product-pulse" onClick={() => navigate("/analytics")}>
+          <span className="product-pulse__label">Product · 7d</span>
+          <span>
+            <strong>{product.dau.toLocaleString()}</strong> DAU
+          </span>
+          <span>
+            <strong>{product.mealsLogged.toLocaleString()}</strong> meals
+          </span>
+          <span>
+            <strong>${product.mrr.toLocaleString()}</strong> MRR
+          </span>
+          <span>
+            <strong>{product.premiumConversion}%</strong> premium
+          </span>
+          <em>Open analytics →</em>
+        </button>
+      ) : null}
 
-      <div className="dash-bento">
+      <div className="dash-bento dash-bento--simple">
         <WorkBoard
           pending={data.kpis.pending}
           drafts={Number(data.pendingActions.find((item) => item.id === "drafts")?.count || 0)}
           missing={missingItems}
           onQueue={() => navigate("/queue")}
         />
-        <LabelCoverage
-          items={data.coverage}
-          completeness={data.kpis.completeness}
-          fopl={data.kpis.foplCoverage}
-        />
-        <SafetyStrip labs={data.labs} />
-        <AnalyticsOverview data={data.series.products} />
         <DashListCard
           title="Just added"
           empty="No foods in the catalog yet."
           onViewAll={() => navigate("/products")}
           items={recentItems}
         />
-        <CatalogFlow />
-        <NutritionLabs labs={data.labs} />
       </div>
     </div>
   );

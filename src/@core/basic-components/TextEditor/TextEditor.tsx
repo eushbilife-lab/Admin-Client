@@ -1,6 +1,7 @@
 import { InputLabel } from "@mui/material";
 import { useEffect, useRef } from "react";
 import ReactQuill from "react-quill";
+import DOMPurify from "dompurify";
 import "react-quill/dist/quill.snow.css";
 
 const modules = {
@@ -13,12 +14,11 @@ const modules = {
       { indent: "-1" },
       { indent: "+1" },
     ],
-    ["link", "image"],
+    ["link"],
     ["clean"],
   ],
 };
 
-// Formats objects for setting up the Quill editor
 export const formats = [
   "header",
   "font",
@@ -35,11 +35,16 @@ export const formats = [
   "bullet",
   "indent",
   "link",
-  "image",
-  "video",
   "color",
-  "code-block",
 ];
+
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html || "", {
+    USE_PROFILES: { html: true },
+    FORBID_TAGS: ["script", "iframe", "object", "embed", "form"],
+    FORBID_ATTR: ["onerror", "onclick", "onload", "style"],
+  });
+}
 
 export default function TextEditor({
   label,
@@ -53,9 +58,8 @@ export default function TextEditor({
 
   useEffect(() => {
     if (!input.value || isSet.current) return;
-
-    input.onChange(input.value.replaceAll("&lt;", "<"));
-
+    // Sanitize once on hydrate — never unescape entities back to raw HTML.
+    input.onChange(sanitizeHtml(String(input.value)));
     isSet.current = true;
   }, [input]);
 
@@ -70,7 +74,7 @@ export default function TextEditor({
         {...rest}
         theme="snow"
         onChange={(html) => {
-          input.onChange(html);
+          input.onChange(sanitizeHtml(html));
         }}
         value={input.value}
         defaultValue={input.value}

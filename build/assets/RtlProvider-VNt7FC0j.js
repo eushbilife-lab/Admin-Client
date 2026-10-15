@@ -1,0 +1,1 @@
+import{c as e,n as t,t as n}from"./jsx-runtime-Dx9TgJjK.js";import{a as r,i,o as a,r as o}from"./react-is-Bzw4LM_u.js";a(),i();var s=e(t()),c=n(),l=[`value`],u=s.createContext();function d(e){let{value:t}=e,n=o(e,l);return(0,c.jsx)(u.Provider,r({value:t??!0},n))}var f=()=>s.useContext(u)??!1;export{f as n,d as t};

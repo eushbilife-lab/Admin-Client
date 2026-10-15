@@ -7,17 +7,23 @@ import PageShell from "@core/templates/PageShell";
 import LibraryPanel from "@core/templates/LibraryPanel/LibraryPanel";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import type { DynamicType } from "redux/slices/dynamic";
+import useListQueryParams from "hooks/useListQueryParams";
 
 export default function Brands() {
   const dispatch = useAppDispatch();
   const refresh = useAppSelector((state) => state.dynamic.refresh);
   const brand = useAppSelector((state) => state.dynamic.brand);
   const manufacturer = useAppSelector((state) => state.dynamic.manufacturer);
+  const brandQuery = useListQueryParams({ prefix: "b_" });
+  const makerQuery = useListQueryParams({ prefix: "m_" });
 
   useEffect(() => {
-    dynamicService.getAllDynamics("brand", brand.filters, dispatch);
-    dynamicService.getAllDynamics("manufacturer", manufacturer.filters, dispatch);
-  }, [dispatch, refresh, brand.filters, manufacturer.filters]);
+    dynamicService.getAllDynamics("brand", brandQuery.filters, dispatch);
+  }, [dispatch, refresh, brandQuery.filters]);
+
+  useEffect(() => {
+    dynamicService.getAllDynamics("manufacturer", makerQuery.filters, dispatch);
+  }, [dispatch, refresh, makerQuery.filters]);
 
   const openEditor = (type: DynamicType, row?: { _id: string }) => {
     dispatch(
@@ -45,11 +51,14 @@ export default function Brands() {
         loading={brand.loading}
         refreshLoader={brand.loading}
         count={brand.count}
-        page={brand.filters.page}
-        pageSize={brand.filters.page_size}
+        page={brandQuery.page}
+        pageSize={brandQuery.limit}
+        searchValue={brandQuery.searchInput}
+        onSearchChange={brandQuery.setSearch}
+        searchPlaceholder="Search brands…"
         onAdd={() => openEditor("brand")}
         onEdit={(row) => openEditor("brand", row)}
-        onPage={(page) => dispatch(dynamicActions.setPage({ type: "brand", page }))}
+        onPage={brandQuery.setPage}
       />
       <LibraryPanel
         heading="Manufacturers"
@@ -60,11 +69,14 @@ export default function Brands() {
         loading={manufacturer.loading}
         refreshLoader={manufacturer.loading}
         count={manufacturer.count}
-        page={manufacturer.filters.page}
-        pageSize={manufacturer.filters.page_size}
+        page={makerQuery.page}
+        pageSize={makerQuery.limit}
+        searchValue={makerQuery.searchInput}
+        onSearchChange={makerQuery.setSearch}
+        searchPlaceholder="Search manufacturers…"
         onAdd={() => openEditor("manufacturer")}
         onEdit={(row) => openEditor("manufacturer", row)}
-        onPage={(page) => dispatch(dynamicActions.setPage({ type: "manufacturer", page }))}
+        onPage={makerQuery.setPage}
       />
     </PageShell>
   );

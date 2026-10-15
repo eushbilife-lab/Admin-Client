@@ -35,16 +35,19 @@ export default function UpdateProductForm() {
     // Utility functions for mapping
     const mapNutrition = (field: any) => field?._id && field?.name ? { key: field?.key, value: field._id, label: field?.name } : null;
   
-    const mapField = (field: any, keyLabel = "name") =>
-      field?._id
-        ? {
-            value: field._id,
-            label: localizedData({
-              en: field?.en?.[keyLabel],
-              ar: field?.ar?.[keyLabel],
-            }),
-          }
-        : null;
+    const mapField = (field: any, keyLabel = "name") => {
+      const id = field?._id || field?.value;
+      if (!id) return null;
+      const label =
+        localizedData({
+          en: field?.en?.[keyLabel],
+          ar: field?.ar?.[keyLabel],
+        }) ||
+        field?.label ||
+        field?.name ||
+        "";
+      return { value: String(id), label };
+    };
 
     const mapLevels = (levels: any) =>
       levels
@@ -102,9 +105,11 @@ export default function UpdateProductForm() {
       })) : null,
       ingredients:
         productData?.ingredients?.map((item: any) => ({
-          ingredientDescription: item.ingredientDescription,
-          ingredientContent: item.ingredientContent,
-          ingredientCode: item.ingredientCode,
+          value: item._id || item.value || item.ingredientCode || "",
+          ingredientDescription:
+            item.ingredientDescription || item.name || "",
+          ingredientContent: item.ingredientContent || item.content || "",
+          ingredientCode: item.ingredientCode || item.code || "",
         })) || [],
         processingLevel: productData?.processingLevel?.label &&
         productData?.processingLevel?.value

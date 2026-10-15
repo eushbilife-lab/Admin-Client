@@ -22,6 +22,12 @@ import {
   MdEventNote,
   MdQrCodeScanner,
   MdPhoneIphone,
+  MdInsights,
+  MdMenuBook,
+  MdCalendarMonth,
+  MdPayments,
+  MdMedicalServices,
+  MdSettings,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 
@@ -41,6 +47,7 @@ export const sidebarGroups: NavGroup[] = [
   {
     items: [
       { label: "Overview", path: "/dashboard", icon: MdDashboard },
+      { label: "Analytics", path: "/analytics", icon: MdInsights, roles: ["admin"] },
       { label: "Review queue", path: "/queue", icon: MdFactCheck },
       { label: "App desk", path: "/app", icon: MdPhoneIphone },
       { label: "Scan desk", path: "/scans", icon: MdQrCodeScanner },
@@ -52,6 +59,8 @@ export const sidebarGroups: NavGroup[] = [
       { label: "Catalog", path: "/products", icon: MdViewList },
       { label: "Ingredients", path: "/ingredients", icon: MdRestaurant },
       { label: "Brands & makers", path: "/brands", icon: MdInventory2, roles: ["admin"] },
+      { label: "Recipes", path: "/recipes", icon: MdMenuBook, roles: ["admin"] },
+      { label: "Meal plans", path: "/meal-plans", icon: MdCalendarMonth, roles: ["admin"] },
     ],
   },
   {
@@ -90,15 +99,18 @@ export const sidebarGroups: NavGroup[] = [
     label: "People",
     items: [
       { label: "Households", path: "/users", icon: MdPeople, roles: ["admin"] },
-      { label: "Roles", path: "/roles", icon: MdSecurity, roles: ["admin"] },
+      { label: "Dietitians", path: "/dietitians", icon: MdMedicalServices, roles: ["admin"] },
+      { label: "Staff", path: "/roles", icon: MdSecurity, roles: ["admin"] },
     ],
   },
   {
     label: "Ops",
     items: [
+      { label: "Subscriptions", path: "/subscriptions", icon: MdPayments, roles: ["admin"] },
       { label: "Reviews", path: "/reviews", icon: MdRateReview, roles: ["admin"] },
       { label: "Support", path: "/contacts", icon: MdSupportAgent, roles: ["admin"] },
       { label: "Notifications", path: "/notifications", icon: MdNotifications, roles: ["admin"] },
+      { label: "Settings", path: "/settings", icon: MdSettings, roles: ["admin"] },
     ],
   },
 ];

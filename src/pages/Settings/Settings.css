@@ -1,0 +1,139 @@
+.settings-panel {
+  background: var(--color-paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 1.1rem 1.15rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-panel > header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.settings-panel > header p {
+  margin: 0.25rem 0 0.9rem;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.settings-table-wrap {
+  overflow: auto;
+}
+
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+}
+
+.settings-table th,
+.settings-table td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  font-size: var(--text-sm);
+}
+
+.settings-table th {
+  background: var(--color-gray-50);
+  font-weight: 700;
+}
+
+.settings-table code {
+  font-size: 0.78rem;
+  background: var(--color-gray-100);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+}
+
+.settings-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--fluid-gap);
+}
+
+.settings-flags,
+.settings-audit {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.settings-flags li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.75rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+}
+
+.settings-flags strong {
+  font-size: var(--text-sm);
+}
+
+.settings-flags p {
+  margin: 0.2rem 0 0;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.settings-switch {
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--color-gray-300);
+  padding: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.settings-switch span {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.15s ease;
+}
+
+.settings-switch.is-on {
+  background: var(--color-brand-primary);
+}
+
+.settings-switch.is-on span {
+  transform: translateX(18px);
+}
+
+.settings-audit li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-size: var(--text-sm);
+}
+
+.settings-audit span {
+  color: var(--text-secondary);
+}
+
+.settings-audit em {
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 900px) {
+  .settings-split {
+    grid-template-columns: 1fr;
+  }
+}

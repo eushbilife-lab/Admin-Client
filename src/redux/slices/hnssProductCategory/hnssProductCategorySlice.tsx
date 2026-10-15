@@ -53,10 +53,18 @@ export const hnssProductCategorySlice = createSlice({
     ) => {
       const { hnssProductCategories } = action.payload;
       const options: SelectOption[] = hnssProductCategories?.map(
-        ({ value, label }: any) => ({
-          value: value,
-          label: label?.en?.name || label?.name,
-        })
+        ({ value, label, code }: any) => {
+          const name =
+            (typeof label === "string" && label) ||
+            label?.en?.name ||
+            label?.name ||
+            "";
+          return {
+            value,
+            label: code ? `${code} — ${name}` : name,
+            code,
+          };
+        }
       );
       state.hnssProductCategoryOptions = options;
     },

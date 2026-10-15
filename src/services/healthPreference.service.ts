@@ -74,17 +74,26 @@ const healthPreferenceService = {
   getOptions: async (data: any,dispatch:Dispatch) => {
     http.setJWT();
     http.setLanguage()
+    if (data?.type) {
+      dispatch?.(healthPrefernceActions.setLoading({ type: data.type, loading: true }));
+    }
     const [success, error]: any = await Promisable.asPromise(
       http.post(`${url}/get-Options`, data)
     );
     if (success) {
-      const { healthPreference } = success?.data?.data?.healthPreferences;
+      const nested = success?.data?.data?.healthPreferences;
+      const healthPreference = Array.isArray(nested)
+        ? nested
+        : nested?.healthPreference || [];
       dispatch?.(
         healthPrefernceActions?.setOptions({
           healthPreferences: healthPreference,
           type: data?.type,
         })
       );
+    }
+    if (data?.type) {
+      dispatch?.(healthPrefernceActions.setLoading({ type: data.type, loading: false }));
     }
     return [success, error];
   },

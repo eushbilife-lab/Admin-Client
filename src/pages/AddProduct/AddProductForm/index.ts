@@ -15,6 +15,7 @@ import SelectCertificate from "@core/api-components/SelectCertificate";
 import SelectProcessingLevel from "@core/api-components/SelectProcessingLevel";
 import SelectUOM from "@core/api-components/SelectUOM";
 import SelectHNSSProductCategory from "@core/api-components/SelectHNSSProductCategory";
+import ProductIngredientsField from "@core/api-components/ProductIngredientsField";
 export { default } from "./AddProductForm";
 
 
@@ -48,6 +49,7 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       name: "level2_id",
       label: "Level 2",
       component: SelectLevel2,
+      cascadeParent: "level1_id",
       validate: [required],
       cellProps: { md: 3 },
     },
@@ -55,6 +57,7 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       name: "level3_id",
       label: "Level 3",
       component: SelectLevel3,
+      cascadeParent: "level2_id",
       validate: [required],
       cellProps: { md: 3 },
     },
@@ -62,8 +65,9 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       name: "level4_id",
       label: "Level 4",
       component: SelectLevel4,
+      cascadeParent: "level3_id",
       validate: [required],
-      cellProps: { md: 3 }, 
+      cellProps: { md: 3 },
     },
   ];
 
@@ -78,18 +82,21 @@ export const levelFields = (isDraft: boolean): ReduxFormField[] => {
       name: "level2_id",
       label: "Level 2",
       component: SelectLevel2,
+      cascadeParent: "level1_id",
       cellProps: { md: 3 },
     },
     {
       name: "level3_id",
       label: "Level 3",
       component: SelectLevel3,
+      cascadeParent: "level2_id",
       cellProps: { md: 3 },
     },
     {
       name: "level4_id",
       label: "Level 4",
       component: SelectLevel4,
+      cascadeParent: "level3_id",
       cellProps: { md: 3 },
     },
   ];
@@ -314,12 +321,12 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
     },
     {
       name: "HNSSProductCategory",
-      label: "ENLI",
+      label: "HSN / ENLI",
       component: SelectHNSSProductCategory,
+      validate: [required],
       ComboBoxProps: {
         multiple: false,
-        options:[],
-        disabled:true
+        options: [],
       },
       cellProps: { md: 2.4 },
     },
@@ -359,12 +366,11 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
     },
     {
       name: "HNSSProductCategory",
-      label: "ENLI",
+      label: "HSN / ENLI",
       component: SelectHNSSProductCategory,
       ComboBoxProps: {
         multiple: false,
-        options:[],
-        disabled:true
+        options: [],
       },
       cellProps: { md: 2.4 },
     },
@@ -381,58 +387,21 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
   return isDraft ? simpleFields : requiredFields;
 };
 export const ingredientFields = (isDraft: boolean): ReduxFormField[] => {
-  const requiredFieldsArray = [
-    {
-      name: "ingredientDescription",
-      label: "Ingredient Description",
-      component: InputRedux,
-      validate: [required],
-      cellProps: { md: 4 },
-    },
-    {
-      name: "ingredientContent",
-      label: "Ingredient Content (%)",
-      component: InputRedux,
-      cellProps: { md: 4 },
-    },
-    {
-      name: "ingredientCode",
-      label: "Ingredient Code",
-      component: InputRedux,
-      cellProps: { md: 4 },
-    },
-  ];
-
-  const simpleFieldsArray = [
-    {
-      name: "ingredientDescription",
-      label: "Ingredient Description",
-      component: InputRedux,
-      cellProps: { md: 4 },
-    },
-    {
-      name: "ingredientContent",
-      label: "Ingredient Content (%)",
-      component: InputRedux,
-      cellProps: { md: 4 },
-    },
-    {
-      name: "ingredientCode",
-      label: "Ingredient Code",
-      component: InputRedux,
-      cellProps: { md: 4 },
-    },
-  ];
-
   return [
     {
       name: "ingredients",
-      label: "",
-      component: ReduxFieldArray,
-      reduxFormComponent: "FieldArray" as const,
-      upperLayout: false,
-      fieldsArray: isDraft ? simpleFieldsArray : requiredFieldsArray,
-    },
+      label: "Ingredients",
+      component: ProductIngredientsField,
+      validate: isDraft
+        ? undefined
+        : [
+            (value: any) =>
+              Array.isArray(value) && value.length > 0
+                ? undefined
+                : "Add at least one ingredient",
+          ],
+      cellProps: { md: 12 },
+    } as ReduxFormField,
   ];
 };
 

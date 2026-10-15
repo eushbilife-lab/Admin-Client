@@ -1,28 +1,70 @@
 .dashboard-page {
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: var(--fluid-gap);
   width: 100%;
+}
+
+.product-pulse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.product-pulse:hover {
+  border-color: var(--color-brand-primary);
+  background: var(--color-leaf-soft);
+}
+
+.product-pulse__label {
+  font-weight: 700;
+  color: var(--color-leaf-deep);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--text-xs);
+}
+
+.product-pulse strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.product-pulse em {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-leaf-deep);
 }
 
 .dash-banner {
   display: grid;
   grid-template-columns: minmax(16rem, 0.95fr) minmax(0, 1.35fr);
-  gap: 1.5rem 2rem;
+  gap: var(--fluid-gap) clamp(1rem, 2vw, 2rem);
   align-items: center;
-  padding: 1.45rem 1.55rem 1.4rem;
+  padding: var(--fluid-pad) clamp(1rem, 1.5vw, 1.55rem);
   border: 0;
-  border-radius: 16px;
-  background: linear-gradient(90deg, #9fc53a 0%, #74941f 100%);
-  box-shadow: 0 5px 7px rgba(0, 0, 0, 0.12);
+  border-radius: var(--border-radius-lg);
+  background: linear-gradient(90deg, var(--color-brand-primary) 0%, var(--color-brand-primary-hover) 100%);
+  box-shadow: var(--shadow-md);
 }
 
 .dash-banner__intro h1 {
   margin: 0;
-  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-size: clamp(1.25rem, 1.5vw + 1.2vh, var(--text-xl));
   font-weight: 700;
   letter-spacing: 0;
-  line-height: 1.4;
+  line-height: 1.2;
   color: #fefefe;
 }
 
@@ -51,15 +93,18 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  height: 40px;
-  padding: 0 1rem;
+  height: var(--fluid-control-h-sm);
+  min-height: 36px;
+  padding: var(--fluid-btn-pad-y) var(--fluid-btn-pad-x);
   border: 1px solid rgba(254, 254, 254, 0.45);
-  border-radius: 10px;
+  border-radius: var(--border-radius-md);
   background: transparent;
   color: #fefefe;
-  font-weight: 700;
-  font-size: 0.86rem;
+  font-weight: 600;
+  font-size: var(--fluid-text-sm);
   cursor: pointer;
+  transition: background-color var(--transition-fast), box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .desk-btn:hover {
@@ -137,7 +182,19 @@
 .dash-bento {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(260px, 0.9fr);
-  gap: 1.1rem;
+  gap: var(--fluid-gap);
+}
+
+.dash-bento--simple {
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+}
+
+.dash-bento--simple .work-board {
+  grid-column: 1;
+}
+
+.dash-bento--simple .dash-list-card {
+  grid-column: 2;
 }
 
 .work-board {
@@ -163,8 +220,20 @@
 
 .catalog-flow,
 .nutrition-labs,
-.safety-strip {
+.safety-strip,
+.app-handling {
   grid-column: 1 / -1;
+}
+
+@media (max-width: 960px) {
+  .dash-bento--simple {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-bento--simple .work-board,
+  .dash-bento--simple .dash-list-card {
+    grid-column: 1;
+  }
 }
 
 .work-board,

@@ -1,0 +1,52 @@
+.dietitians-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--fluid-gap);
+}
+
+.dietitian-card {
+  background: var(--color-paper);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 1.05rem 1.1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.dietitian-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.85rem;
+}
+
+.dietitian-card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.dietitian-card header p {
+  margin: 0.2rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.dietitian-card dl {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dietitian-card dt {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dietitian-card dd {
+  margin: 0.15rem 0 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
