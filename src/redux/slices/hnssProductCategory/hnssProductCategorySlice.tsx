@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { config } from "config";
-import { SelectOption } from "@core/basic-components/Select";
 import {
   HNSSProductCategoriesState,
   SetHNSSProductCategoriesItemsPayload,
@@ -52,21 +51,21 @@ export const hnssProductCategorySlice = createSlice({
       action: PayloadAction<SetHnssProductCategoryOptionsPayload>
     ) => {
       const { hnssProductCategories } = action.payload;
-      const options: SelectOption[] = (hnssProductCategories || []).map(
-        ({ value, label, code }: any) => {
+      state.hnssProductCategoryOptions = (hnssProductCategories || []).map(
+        (row: any) => {
+          const value = row?.value != null ? String(row.value) : "";
           const name =
-            (typeof label === "string" && label) ||
-            label?.en?.name ||
-            label?.name ||
+            (typeof row?.label === "string" && row.label) ||
+            (typeof row?.name === "string" && row.name) ||
             "";
+          const code = row?.code;
           return {
-            value: value != null ? String(value) : value,
-            label: code ? `${code} — ${name}` : name,
+            value,
+            label: code && name ? `${code} — ${name}` : name || code || "",
             code,
           };
         }
       );
-      state.hnssProductCategoryOptions = options;
     },
     refresh: (state) => {
       state.refresh += 1;

@@ -81,17 +81,13 @@ export const healthPrefernceSlice = createSlice({
     ) => {
       const { healthPreferences, type } = action.payload;
       if (!state[type]) return;
-      const options: SelectOption[] = (healthPreferences || []).map(
-        ({ value, label }: any) => ({
-          value,
-          label:
-            (typeof label === "string" && label) ||
-            label?.en?.name ||
-            label?.name ||
-            "",
-        })
-      );
-      state[type].hpOptions = options;
+      state[type].hpOptions = (healthPreferences || []).map((row: any) => ({
+        value: row?.value != null ? String(row.value) : row?.value,
+        label:
+          (typeof row?.label === "string" && row.label) ||
+          (typeof row?.name === "string" && row.name) ||
+          "",
+      }));
     },
     setPage: (state, action: PayloadAction<SetPagePayload>) => {
       const { type, page } = action.payload;

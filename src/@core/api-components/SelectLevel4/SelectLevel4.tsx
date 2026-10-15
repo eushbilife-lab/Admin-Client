@@ -1,48 +1,50 @@
 import ComboBoxRedux from "@core/redux-fields/ComboBoxRedux";
 import level4Service from "services/level4.service";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { change } from "redux-form";
-import { optionId, optionLabel, parentRefId } from "utils/selectOption.util";
+import { mongoOptionId, optionId, optionLabel } from "utils/selectOption.util";
+import { level4Actions } from "redux/slices/level4";
 
 function hnssOption(raw: any) {
   if (!raw) return null;
   const id = optionId(raw);
   if (!id) return null;
-  const label = optionLabel(raw.en ? raw : raw.label, raw.code || "");
+  const name = optionLabel(raw, "");
+  const code = raw.code;
   return {
     value: id,
-    label: raw.code ? `${raw.code} — ${label}` : label,
-    code: raw.code,
+    label:
+      code && name && !String(name).includes(String(code))
+        ? `${code} — ${name}`
+        : name || code || "",
+    code,
   };
 }
 
 export default function SelectLevel4(props: any) {
   const dispatch = useAppDispatch();
-  const formName = props.meta?.form as string | undefined;
+  const formName = (props.meta?.form as string | undefined) || "AddProductForm";
   const cascadeParent = props.cascadeParent as string | undefined;
-  const allOptions = useAppSelector((state) => state.level4?.level4Options) || [];
+  const options = useAppSelector((state) => state.level4?.level4Options) || [];
   const parentValue = useAppSelector((state) =>
-    cascadeParent && formName
-      ? state.form?.[formName]?.values?.[cascadeParent]
-      : null
+    cascadeParent ? state.form?.[formName]?.values?.[cascadeParent] : null
   );
-  const parentId = optionId(parentValue);
+  const parentId = mongoOptionId(parentValue);
   const prevParentId = useRef<string | null | undefined>(undefined);
   const selectedLevel4 = props.input?.value;
   const prevLevel4Id = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    level4Service.getOptions({ status: "active" }, dispatch);
-  }, [dispatch]);
-
-  const options = useMemo(() => {
-    if (!cascadeParent) return allOptions;
-    if (!parentId) return [];
-    return allOptions.filter(
-      (item: any) => parentRefId(item.subCategoryID) === parentId
-    );
-  }, [allOptions, cascadeParent, parentId]);
+    if (cascadeParent && !parentId) {
+      dispatch(level4Actions.setOptions({ levels4: [] }));
+      return;
+    }
+    const payload: Record<string, string> = { status: "active" };
+    if (parentId) payload.subCategoryID = parentId;
+    else if (cascadeParent) return;
+    level4Service.getOptions(payload, dispatch);
+  }, [dispatch, cascadeParent, parentId]);
 
   useEffect(() => {
     if (!cascadeParent || !formName) return;
@@ -74,14 +76,12 @@ export default function SelectLevel4(props: any) {
     }
 
     const match =
-      options.find((item: any) => optionId(item) === level4Id) ||
-      allOptions.find((item: any) => optionId(item) === level4Id) ||
-      selectedLevel4;
+      options.find((item: any) => optionId(item) === level4Id) || selectedLevel4;
     const hnss = hnssOption(
       match?.HNSSProductCategoryID || selectedLevel4?.HNSSProductCategoryID
     );
     if (hnss) dispatch(change(formName, "HNSSProductCategory", hnss));
-  }, [selectedLevel4, options, allOptions, formName, dispatch]);
+  }, [selectedLevel4, options, formName, dispatch]);
 
   return (
     <ComboBoxRedux

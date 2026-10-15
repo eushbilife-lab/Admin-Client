@@ -1,18 +1,18 @@
-import { Level4State,SetLevel4Payload,SetLevel4OptionsPayload} from ".";
+import { Level4State, SetLevel4Payload, SetLevel4OptionsPayload } from ".";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { SelectOption } from "@core/basic-components/Select";
 import { config } from "config";
+import { mapPlainOptions, optionId, optionLabel, parentRefId } from "utils/selectOption.util";
 
 const default_page_size = config.PAGE_SIZE;
 
 const initialState: Level4State = {
   count: 0,
-  levels4: [], 
-  level4: {}, 
+  levels4: [],
+  level4: {},
   loading: false,
   current_filters: {},
   refreshLoader: false,
-  level4Options: [], 
+  level4Options: [],
   refresh: 0,
   filters: { page: 1, page_size: default_page_size },
 };
@@ -38,13 +38,7 @@ export const level4Slice = createSlice({
       const { count, levels4 } = action.payload;
       state.count = count;
       state.refreshLoader = false;
-
-      let options: SelectOption[] = [];
-      levels4.forEach(({ _id, en,ar, status }: any) =>
-        options.push({ value: _id, label: en.name })
-      );
       state.levels4 = levels4;
-      state.level4Options = options;
     },
     refresh: (state) => {
       state.refresh += 1;
@@ -54,20 +48,20 @@ export const level4Slice = createSlice({
       state.filters.page = 1;
     },
     setOptions: (state, action: PayloadAction<SetLevel4OptionsPayload>) => {
-      const { levels4 } = action.payload;
-      const options: SelectOption[] = (levels4 || []).map(
-        ({ HNSSProductCategoryID, subCategoryID, value, label }: any) => ({
-          HNSSProductCategoryID,
-          subCategoryID,
-          value: value != null ? String(value) : value,
-          label:
-            (typeof label === "string" && label) ||
-            label?.en?.name ||
-            label?.name ||
-            "",
-        })
-      );
-      state.level4Options = options;
+      state.level4Options = mapPlainOptions(action.payload.levels4, (row) => {
+        const hnss = row.HNSSProductCategoryID;
+        const hnssId = optionId(hnss);
+        return {
+          subCategoryID: parentRefId(row.subCategoryID) || "",
+          HNSSProductCategoryID: hnssId
+            ? {
+                value: hnssId,
+                label: optionLabel(hnss, ""),
+                code: hnss?.code,
+              }
+            : null,
+        };
+      });
     },
     setPage: (state, action: PayloadAction<number>) => {
       state.refresh += 1;

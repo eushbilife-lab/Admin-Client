@@ -2,14 +2,14 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { config } from "config";
 import { Level1State, SetLevel1OptionsPayload } from ".";
 import { SetLevel1ItemsPayload } from ".";
-import { SelectOption } from "@core/basic-components/Select";
+import { mapPlainOptions } from "utils/selectOption.util";
 
 const default_page_size = config.PAGE_SIZE;
 
 const initialState: Level1State = {
   count: 0,
   levels1: [],
-  level1: {}, 
+  level1: {},
   loading: false,
   current_filters: {},
   refreshLoader: false,
@@ -42,16 +42,7 @@ export const level1Slice = createSlice({
       state.levels1 = levels1;
     },
     setOptions: (state, action: PayloadAction<SetLevel1OptionsPayload>) => {
-      const { levels1 } = action.payload;
-      const options: SelectOption[] = (levels1 || []).map(({ value, label }: any) => ({
-        value: value != null ? String(value) : value,
-        label:
-          (typeof label === "string" && label) ||
-          label?.en?.name ||
-          label?.name ||
-          "",
-      }));
-      state.level1Options = options;
+      state.level1Options = mapPlainOptions(action.payload.levels1);
     },
     refresh: (state) => {
       state.refresh += 1;

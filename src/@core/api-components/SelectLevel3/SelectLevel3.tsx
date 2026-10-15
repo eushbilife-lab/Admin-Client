@@ -1,34 +1,32 @@
 import ComboBoxRedux from "@core/redux-fields/ComboBoxRedux";
 import level3Service from "services/level3.service";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { change } from "redux-form";
-import { optionId, parentRefId } from "utils/selectOption.util";
+import { mongoOptionId } from "utils/selectOption.util";
+import { level3Actions } from "redux/slices/level3";
 
 export default function SelectLevel3(props: any) {
   const dispatch = useAppDispatch();
-  const formName = props.meta?.form as string | undefined;
+  const formName = (props.meta?.form as string | undefined) || "AddProductForm";
   const cascadeParent = props.cascadeParent as string | undefined;
-  const allOptions = useAppSelector((state) => state.level3?.level3Options) || [];
+  const options = useAppSelector((state) => state.level3?.level3Options) || [];
   const parentValue = useAppSelector((state) =>
-    cascadeParent && formName
-      ? state.form?.[formName]?.values?.[cascadeParent]
-      : null
+    cascadeParent ? state.form?.[formName]?.values?.[cascadeParent] : null
   );
-  const parentId = optionId(parentValue);
+  const parentId = mongoOptionId(parentValue);
   const prevParentId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    level3Service.getOptions({ status: "active" }, dispatch);
-  }, [dispatch]);
-
-  const options = useMemo(() => {
-    if (!cascadeParent) return allOptions;
-    if (!parentId) return [];
-    return allOptions.filter(
-      (item: any) => parentRefId(item.categoryID) === parentId
-    );
-  }, [allOptions, cascadeParent, parentId]);
+    if (cascadeParent && !parentId) {
+      dispatch(level3Actions.setOptions({ levels3: [] }));
+      return;
+    }
+    const payload: Record<string, string> = { status: "active" };
+    if (parentId) payload.categoryID = parentId;
+    else if (cascadeParent) return;
+    level3Service.getOptions(payload, dispatch);
+  }, [dispatch, cascadeParent, parentId]);
 
   useEffect(() => {
     if (!cascadeParent || !formName) return;

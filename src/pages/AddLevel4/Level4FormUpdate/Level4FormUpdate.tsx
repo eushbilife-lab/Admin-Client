@@ -3,7 +3,7 @@ import { level4Actions } from "redux/slices/level4";
 import Level4Service from "services/level4.service";
 import { change } from "redux-form";
 import { useEffect } from "react";
-import { localizedData } from "utils/localizedData.util";
+import { optionId, optionLabel } from "utils/selectOption.util";
 
 export default function Level4FormUpdate({ id }: any) {
   const form = "Level4Form";
@@ -11,30 +11,44 @@ export default function Level4FormUpdate({ id }: any) {
   const { level4 } = useAppSelector((state) => state.level4);
 
   useEffect(() => {
-    Level4Service.get(id || "",dispatch);
+    Level4Service.get(id || "", dispatch);
     return () => {
       dispatch(level4Actions.setLevel4(null));
     };
   }, [id, dispatch]);
+
   useEffect(() => {
     if (!level4) return;
-    const { en, status, subCategoryID, HNSSProductCategoryID } = level4;
-    dispatch(change(form, "en.name", localizedData({en:en?.name}) || ""));
-    dispatch(change(form, "status", status === "active" ? true : false));
-    if (subCategoryID)
+
+    const { status, subCategoryID, HNSSProductCategoryID } = level4;
+    dispatch(change(form, "en.name", optionLabel(level4, "")));
+    dispatch(change(form, "status", status === "active"));
+
+    const level3Id = optionId(subCategoryID);
+    if (level3Id) {
       dispatch(
         change(form, "level3", {
-          value: subCategoryID._id,
-          label: `${localizedData({en:subCategoryID?.en?.name,ar:subCategoryID?.ar?.name}) || ""}`,
+          value: level3Id,
+          label: optionLabel(subCategoryID, ""),
         })
       );
-      if (HNSSProductCategoryID)
-        dispatch(
-          change(form, "HNSSProductCategoryID", {
-            value: HNSSProductCategoryID._id,
-            label: `${localizedData({en:HNSSProductCategoryID?.en?.name,ar:HNSSProductCategoryID?.ar?.name}) || ""}`,
-          })
-        );
+    }
+
+    const hnssId = optionId(HNSSProductCategoryID);
+    if (hnssId) {
+      const name = optionLabel(HNSSProductCategoryID, "");
+      const code = HNSSProductCategoryID?.code;
+      dispatch(
+        change(form, "HNSSProductCategoryID", {
+          value: hnssId,
+          label:
+            code && name && !String(name).includes(String(code))
+              ? `${code} — ${name}`
+              : name,
+          code,
+        })
+      );
+    }
   }, [level4, dispatch]);
 
   return null;

@@ -1,14 +1,14 @@
-import { Level2State,SetLevel2Payload,SetLevel2OptionsPayload } from ".";
+import { Level2State, SetLevel2Payload, SetLevel2OptionsPayload } from ".";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { SelectOption } from "@core/basic-components/Select";
 import { config } from "config";
+import { mapPlainOptions, parentRefId } from "utils/selectOption.util";
 
 const default_page_size = config.PAGE_SIZE;
 
 const initialState: Level2State = {
   count: 0,
-  levels2: [], 
-  level2: {}, 
+  levels2: [],
+  level2: {},
   loading: false,
   current_filters: {},
   refreshLoader: false,
@@ -38,12 +38,8 @@ export const level2Slice = createSlice({
       const { count, levels2 } = action.payload;
       state.count = count;
       state.refreshLoader = false;
-      let options: SelectOption[] = [];
-      levels2.forEach(({ _id, en }: any) =>
-        options.push({ value: _id, label: en.name })
-      );
       state.levels2 = levels2;
-      state.level2Options = options;
+      // Do not overwrite level2Options here — list view ≠ cascade options
     },
     refresh: (state) => {
       state.refresh += 1;
@@ -53,19 +49,9 @@ export const level2Slice = createSlice({
       state.filters.page = 1;
     },
     setOptions: (state, action: PayloadAction<SetLevel2OptionsPayload>) => {
-      const { levels2 } = action.payload;
-      const options: SelectOption[] = (levels2 || []).map(
-        ({ mainCategoryID, value, label }: any) => ({
-          mainCategoryID,
-          value: value != null ? String(value) : value,
-          label:
-            (typeof label === "string" && label) ||
-            label?.en?.name ||
-            label?.name ||
-            "",
-        })
-      );
-      state.level2Options = options;
+      state.level2Options = mapPlainOptions(action.payload.levels2, (row) => ({
+        mainCategoryID: parentRefId(row.mainCategoryID) || "",
+      }));
     },
     setPage: (state, action: PayloadAction<number>) => {
       state.refresh += 1;

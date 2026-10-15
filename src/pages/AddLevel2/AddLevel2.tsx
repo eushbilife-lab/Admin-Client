@@ -10,7 +10,7 @@ import Level2Form from "./Level2Form";
 import { change } from "redux-form";
 import { useEffect } from "react";
 import ToasterService from "utils/toaster.util";
-import { withEnglishCopy } from "utils/localizedData.util";
+import { optionId, optionLabel } from "utils/selectOption.util";
 
 export default function AddLevel2() {
   const form = "Level2Form";
@@ -19,25 +19,29 @@ export default function AddLevel2() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state) => state.level1);
-  if (!id) {
-    useEffect(() => {
-      dispatch(change(form, "status", true));
-    });
-  }
+
+  useEffect(() => {
+    if (!id) dispatch(change(form, "status", true));
+  }, [id, dispatch]);
+
   const handleSubmit = async (values: any) => {
-    if (!values?.en?.name?.trim()) {
-      return ToasterService.showError("Name is required");
+    const name =
+      optionLabel(values?.name ?? values?.en?.name ?? values?.en, "").trim() ||
+      String(values?.en?.name || "").trim();
+    if (!name) return ToasterService.showError("Name is required");
+
+    const mainCategoryID = optionId(values.level1);
+    if (!mainCategoryID) {
+      return ToasterService.showError("Level 1 is required");
     }
-    values = withEnglishCopy(values);
-    const { level1, en, ar } = values;
-    const mainCategoryID = level1?.value || null;
+
     const status = values.status === true ? "active" : "inactive";
-    const payload = { en, ar, status, mainCategoryID };
+    const payload = { name, status, mainCategoryID };
 
     if (id) {
-      await level2Service.update(id, payload, navigate,dispatch);
+      await level2Service.update(id, payload, navigate, dispatch);
     } else {
-      await level2Service.create(payload, navigate,dispatch);
+      await level2Service.create(payload, navigate, dispatch);
     }
   };
 

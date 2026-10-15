@@ -1,10 +1,10 @@
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { change } from "redux-form";
 import { useEffect } from "react";
-import { englishName, localizedData } from "utils/localizedData.util";
 import draftProductService from "services/draftProduct.service";
 import productService from "services/product.service";
 import { useParams, useSearchParams } from "react-router-dom";
+import { optionId, optionLabel } from "utils/selectOption.util";
 
 export default function UpdateProductForm() {
   const form = "AddProductForm";
@@ -29,31 +29,23 @@ export default function UpdateProductForm() {
 
     const mapNutrition = (field: any) =>
       field?._id && field?.name
-        ? { key: field?.key, value: field._id, label: field?.name }
+        ? { key: field?.key, value: String(field._id), label: field.name }
         : null;
 
     const mapField = (field: any) => {
       if (!field) return null;
-      const id = field?._id || field?.value;
-      if (!id) return null;
-      const label =
-        (typeof field?.label === "string" && field.label) ||
-        englishName(field) ||
-        localizedData({
-          en: field?.en?.name,
-          ar: field?.ar?.name,
-        }) ||
-        field?.name ||
-        "";
-      return { value: String(id), label };
+      const value = optionId(field);
+      if (!value) return null;
+      return { value, label: optionLabel(field, "") };
     };
 
     const mapLevels = (levels: any) =>
       levels
         ? Object.fromEntries(
-            ["level1_id", "level2_id", "level3_id", "level4_id"].map(
-              (level) => [level, mapField(levels[level])]
-            )
+            ["level1_id", "level2_id", "level3_id", "level4_id"].map((level) => [
+              level,
+              mapField(levels[level]),
+            ])
           )
         : {};
 
@@ -65,30 +57,28 @@ export default function UpdateProductForm() {
           item?.uom && item?.uom?._id && item?.uom?.sign
             ? {
                 label: item.uom.sign || "",
-                value: item.uom._id || "",
+                value: String(item.uom._id),
               }
             : null,
       }));
 
     const mapHnss = (hnss: any) => {
-      if (!hnss) return null;
-      const value = hnss?.value || hnss?._id;
-      if (!value) return null;
-      const name =
-        (typeof hnss?.label === "string" && hnss.label) ||
-        englishName(hnss) ||
-        hnss?.name ||
-        "";
+      const mapped = mapField(hnss);
+      if (!mapped) return null;
       const code = hnss?.code;
+      const name = mapped.label;
       return {
-        value: String(value),
-        label: code && name && !String(name).includes(code) ? `${code} — ${name}` : name,
+        ...mapped,
         code,
+        label:
+          code && name && !String(name).includes(String(code))
+            ? `${code} — ${name}`
+            : name,
       };
     };
 
     const fieldsToDispatch = {
-      status: productData.status === "active" ? true : false,
+      status: productData.status === "active",
       ...mapLevels(productData.levels),
       barcode: productData.barcode,
       brand: productData.brand,
@@ -101,7 +91,7 @@ export default function UpdateProductForm() {
         productData?.servingUOM?._id && productData?.servingUOM?.sign
           ? {
               label: productData.servingUOM.sign,
-              value: productData.servingUOM._id,
+              value: String(productData.servingUOM._id),
             }
           : null,
       servingsPerContainer: productData.servingsPerContainer,
@@ -109,16 +99,14 @@ export default function UpdateProductForm() {
         productData?.weightUOM?._id && productData?.weightUOM?.sign
           ? {
               label: productData.weightUOM.sign || "",
-              value: productData.weightUOM._id || "",
+              value: String(productData.weightUOM._id),
             }
           : null,
       manufacturer: productData.manufacturer,
       productionCountry: productData.productionCountry,
       foodType:
-        productData?.foodType && productData?.foodType?.length > 0
-          ? productData.foodType
-              .map((item: any) => mapField(item))
-              .filter(Boolean)
+        productData?.foodType?.length > 0
+          ? productData.foodType.map((item: any) => mapField(item)).filter(Boolean)
           : null,
       ingredients:
         productData?.ingredients?.map((item: any) => ({

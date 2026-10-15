@@ -1,0 +1,1 @@
+import{t as e}from"./jsx-runtime-Dx9TgJjK.js";import{t}from"./PageShell-CP6md5RN.js";import{t as n}from"./UOM-C3rvU1Sf.js";var r=e();function i(){return(0,r.jsx)(t,{kicker:`Labels`,title:`Serving sizes`,subtitle:`Grams, millilitres, cups, and the units that convert per-serving facts into % daily value.`,children:(0,r.jsx)(n,{type:`uom`})})}export{i as default};

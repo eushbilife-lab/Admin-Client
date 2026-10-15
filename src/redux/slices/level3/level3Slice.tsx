@@ -1,18 +1,18 @@
-import { Level3State,SetLevel3Payload,SetLevel3OptionsPayload } from ".";
+import { Level3State, SetLevel3Payload, SetLevel3OptionsPayload } from ".";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { SelectOption } from "@core/basic-components/Select";
 import { config } from "config";
+import { mapPlainOptions, parentRefId } from "utils/selectOption.util";
 
 const default_page_size = config.PAGE_SIZE;
 
 const initialState: Level3State = {
   count: 0,
-  levels3: [], 
-  level3: {}, 
+  levels3: [],
+  level3: {},
   loading: false,
   current_filters: {},
   refreshLoader: false,
-  level3Options: [], 
+  level3Options: [],
   refresh: 0,
   filters: { page: 1, page_size: default_page_size },
 };
@@ -38,13 +38,7 @@ export const level3Slice = createSlice({
       const { count, levels3 } = action.payload;
       state.count = count;
       state.refreshLoader = false;
-
-      let options: SelectOption[] = [];
-      levels3.forEach(({ _id, en }: any) =>
-        options.push({ value: _id, label: en.name })
-      );
       state.levels3 = levels3;
-      state.level3Options = options;
     },
     refresh: (state) => {
       state.refresh += 1;
@@ -54,19 +48,9 @@ export const level3Slice = createSlice({
       state.filters.page = 1;
     },
     setOptions: (state, action: PayloadAction<SetLevel3OptionsPayload>) => {
-      const { levels3 } = action.payload;
-      const options: SelectOption[] = (levels3 || []).map(
-        ({ categoryID, value, label }: any) => ({
-          categoryID,
-          value: value != null ? String(value) : value,
-          label:
-            (typeof label === "string" && label) ||
-            label?.en?.name ||
-            label?.name ||
-            "",
-        })
-      );
-      state.level3Options = options;
+      state.level3Options = mapPlainOptions(action.payload.levels3, (row) => ({
+        categoryID: parentRefId(row.categoryID) || "",
+      }));
     },
     setPage: (state, action: PayloadAction<number>) => {
       state.refresh += 1;

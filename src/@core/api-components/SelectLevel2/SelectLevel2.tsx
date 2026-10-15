@@ -1,34 +1,33 @@
 import ComboBoxRedux from "@core/redux-fields/ComboBoxRedux";
 import level2Service from "services/level2.service";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { change } from "redux-form";
-import { optionId, parentRefId } from "utils/selectOption.util";
+import { mongoOptionId } from "utils/selectOption.util";
+import { level2Actions } from "redux/slices/level2";
 
 export default function SelectLevel2(props: any) {
   const dispatch = useAppDispatch();
-  const formName = props.meta?.form as string | undefined;
+  const formName = (props.meta?.form as string | undefined) || "AddProductForm";
   const cascadeParent = props.cascadeParent as string | undefined;
-  const allOptions = useAppSelector((state) => state?.level2?.level2Options) || [];
+  const options = useAppSelector((state) => state?.level2?.level2Options) || [];
   const parentValue = useAppSelector((state) =>
-    cascadeParent && formName
-      ? state.form?.[formName]?.values?.[cascadeParent]
-      : null
+    cascadeParent ? state.form?.[formName]?.values?.[cascadeParent] : null
   );
-  const parentId = optionId(parentValue);
+  const parentId = mongoOptionId(parentValue);
   const prevParentId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    level2Service.getOptions({ status: "active" }, dispatch);
-  }, [dispatch]);
-
-  const options = useMemo(() => {
-    if (!cascadeParent) return allOptions;
-    if (!parentId) return [];
-    return allOptions.filter(
-      (item: any) => parentRefId(item.mainCategoryID) === parentId
-    );
-  }, [allOptions, cascadeParent, parentId]);
+    if (cascadeParent && !parentId) {
+      dispatch(level2Actions.setOptions({ levels2: [] }));
+      return;
+    }
+    // Only filter by a real ObjectId — never send a label string to the API
+    const payload: Record<string, string> = { status: "active" };
+    if (parentId) payload.mainCategoryID = parentId;
+    else if (cascadeParent) return;
+    level2Service.getOptions(payload, dispatch);
+  }, [dispatch, cascadeParent, parentId]);
 
   useEffect(() => {
     if (!cascadeParent || !formName) return;

@@ -10,7 +10,7 @@ import Level4Form from "./Level4Form";
 import { change } from "redux-form";
 import { useEffect } from "react";
 import ToasterService from "utils/toaster.util";
-import { withEnglishCopy } from "utils/localizedData.util";
+import { optionId, optionLabel } from "utils/selectOption.util";
 
 export default function AddLevel4() {
   const form = "Level4Form";
@@ -19,27 +19,39 @@ export default function AddLevel4() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { loading } = useAppSelector((state) => state.level4);
-  if (!id) {
-    useEffect(() => {
-      dispatch(change(form, "status", true));
-    });
-  }
-  const handleSubmit = async (values: any) => {
-    if (!values?.en?.name?.trim()) {
-      return ToasterService.showError("Name is required");
-    }
-    values = withEnglishCopy(values);
-    const { HNSSProductCategoryID, level3, en, ar } = values;
-    const subCategoryID = level3?.value;
-    const HNSSProductCategory = HNSSProductCategoryID?.value;
-    const status = values.status === true ? "active" : "inactive";
-    const payload = { en, ar, status, subCategoryID, HNSSProductCategoryID: HNSSProductCategory };
 
-    // Conditionally update or create
+  useEffect(() => {
+    if (!id) dispatch(change(form, "status", true));
+  }, [id, dispatch]);
+
+  const handleSubmit = async (values: any) => {
+    const name =
+      optionLabel(values?.name ?? values?.en?.name ?? values?.en, "").trim() ||
+      String(values?.en?.name || "").trim();
+    if (!name) return ToasterService.showError("Name is required");
+
+    const subCategoryID = optionId(values.level3);
+    if (!subCategoryID) {
+      return ToasterService.showError("Level 3 is required");
+    }
+
+    const HNSSProductCategoryID = optionId(values.HNSSProductCategoryID);
+    if (!HNSSProductCategoryID) {
+      return ToasterService.showError("ENLI / HSN is required");
+    }
+
+    const status = values.status === true ? "active" : "inactive";
+    const payload = {
+      name,
+      status,
+      subCategoryID,
+      HNSSProductCategoryID,
+    };
+
     if (id) {
-      await level4Service.update(id, payload, navigate,dispatch);
+      await level4Service.update(id, payload, navigate, dispatch);
     } else {
-      await level4Service.create(payload, navigate,dispatch);
+      await level4Service.create(payload, navigate, dispatch);
     }
   };
 
