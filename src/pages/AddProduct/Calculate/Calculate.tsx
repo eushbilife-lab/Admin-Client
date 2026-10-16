@@ -16,6 +16,8 @@ export default function Calculate() {
     (state) => state.form[form]?.values?.ingredients
   );
   const prevNfRef = useRef<string>(JSON.stringify(nf));
+  /** Seed default NF rows once on add — do not re-add after the user removes a row. */
+  const seededRequiredNfRef = useRef(false);
   const { nutritionsOptions } = useAppSelector((state) => state?.nutrition);
   const { RDAOptions } = useAppSelector((state) => state?.rda);
   const { measurementScaleOptions } = useAppSelector(
@@ -216,26 +218,23 @@ export default function Calculate() {
     const saturatedFatItem = getNutritionItem("saturated_fat");
 
     const updateNutritionInfo = (key: string, value: number, uom: any) => {
+      // Only update rows that still exist — never re-create a removed nutrient.
+      const existingIndex = nfInfo.findIndex(
+        (item: any) => item?.nutritionId?.key === key
+      );
+      if (existingIndex === -1) return;
+
       const nutritionOption = nutritionsOptions.find(
         (option: any) => option.key === key
       );
-      if (nutritionOption) {
-        const existingIndex = nfInfo.findIndex(
-          (item: any) => item?.nutritionId?.key === key
-        );
+      if (!nutritionOption) return;
 
-        const newEntry = {
-          nutritionId: nutritionOption,
-          perServing: roundabout(value, 2),
-          uom: { label: uom.label, value: uom.value },
-        };
-
-        if (existingIndex !== -1) {
-          nfInfo[existingIndex] = newEntry; // Update existing entry
-        } else {
-          nfInfo.push(newEntry); // Add at the end
-        }
-      }
+      nfInfo[existingIndex] = {
+        ...nfInfo[existingIndex],
+        nutritionId: nutritionOption,
+        perServing: roundabout(value, 2),
+        uom: { label: uom.label, value: uom.value },
+      };
     };
 
     // Process unsaturated fat
@@ -325,7 +324,13 @@ export default function Calculate() {
   }, [nf, servingSize, netWeight, weightUOM, servingUOM, dispatch]);
 
   useEffect(() => {
-    if (!nutritionsOptions?.length || id) return;
+    // Edit product: never auto-seed. Add product: seed defaults once only.
+    if (id) {
+      seededRequiredNfRef.current = true;
+      return;
+    }
+    if (seededRequiredNfRef.current || !nutritionsOptions?.length) return;
+
     const currentNf = Array.isArray(nf) ? nf : [];
     const requiredKeys = [
       "calories",
@@ -343,21 +348,22 @@ export default function Calculate() {
       "protein",
     ];
     const existingKeys = new Set(
-      currentNf.map((item: any) => item?.nutritionId?.key)
+      currentNf.map((item: any) => item?.nutritionId?.key).filter(Boolean)
     );
 
-    const newOptions = nutritionsOptions.filter(
-      (item: any) =>
-        requiredKeys.includes(item?.key) && !existingKeys.has(item?.key)
-    );
+    const sortedNewOptions = nutritionsOptions
+      .filter(
+        (item: any) =>
+          requiredKeys.includes(item?.key) && !existingKeys.has(item?.key)
+      )
+      .sort(
+        (a: any, b: any) =>
+          requiredKeys.indexOf(a?.key) - requiredKeys.indexOf(b?.key)
+      );
 
-    const sortedNewOptions = newOptions.sort(
-      (a, b) => requiredKeys.indexOf(a?.key) - requiredKeys.indexOf(b?.key)
-    );
-
+    seededRequiredNfRef.current = true;
     if (!sortedNewOptions.length) return;
 
-    // Merge into existing rows — never replace, or filled nutrition vanishes.
     dispatch(
       change(form, "nf", [
         ...currentNf,
