@@ -9,6 +9,7 @@ const ADDFOODTYPE= lazy(() => import("./AddFoodType"));
 const ADDBrand = lazy(() => import("./AddBrand"));
 const ADDManufacturer = lazy(() => import("./AddManufacturer"));
 const ADDIngredient = lazy(() => import("./AddIngredient"));
+const ADDExercise = lazy(() => import("./AddExercise"));
 
 const ADDIngredientInProduct = lazy(() => import("./AddIngredientInProduct"));
 const ADDRdaInProduct = lazy(() => import("./AddRdaInProduct"));
@@ -32,6 +33,7 @@ export const modalMapper: ModalMapper = {
   ADD_BRAND: <ADDBrand />,
   ADD_MANUFACTURER: <ADDManufacturer />,
   ADD_INGREDIENT: <ADDIngredient />,
+  ADD_EXERCISE: <ADDExercise />,
   ADD_INGREDIENT_IN_PRODUCT:<ADDIngredientInProduct />,
   ADD_RDA_IN_PRODUCT:<ADDRdaInProduct />,
   ADD_NUTRITION:< AddNutrition/>,

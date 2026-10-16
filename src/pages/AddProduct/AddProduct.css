@@ -9,6 +9,7 @@
   max-width: 1120px;
   margin: 0 auto;
   padding: 0.25rem 0 6.5rem;
+  overflow-anchor: none;
 }
 
 .add-food__intro {

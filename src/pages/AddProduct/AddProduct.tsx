@@ -183,7 +183,10 @@ export default function AddProduct() {
           tabs={tabs}
         />
       ) : null}
-      {activeTab === 0 && <AddProductForm onSubmit={handleSubmit} />}
+      {/* Keep the form mounted so redux-form values survive Media tab / photo picks. */}
+      <div hidden={activeTab !== 0} aria-hidden={activeTab !== 0}>
+        <AddProductForm onSubmit={handleSubmit} />
+      </div>
       <Calculate />
       {activeTab === 1 ? (
         <ProductGallery

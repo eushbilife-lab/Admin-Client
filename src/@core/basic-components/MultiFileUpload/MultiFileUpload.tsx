@@ -83,8 +83,18 @@ export default function MultiFileUpload({
           disabled={disabled}
           accept="image/jpeg,image/jpg,image/png"
           onChange={(e) => {
-            pickFiles(e.target.files);
-            e.target.value = "";
+            const input = e.currentTarget;
+            // Capture scroll before the OS picker returns focus (avoids jump + blank space).
+            const scroller = input.closest(
+              ".admin-layout__content"
+            ) as HTMLElement | null;
+            const scrollTop = scroller?.scrollTop ?? 0;
+            pickFiles(input.files);
+            input.value = "";
+            input.blur();
+            requestAnimationFrame(() => {
+              if (scroller) scroller.scrollTop = scrollTop;
+            });
           }}
         />
       </label>

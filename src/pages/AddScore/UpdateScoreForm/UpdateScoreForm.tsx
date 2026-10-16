@@ -26,11 +26,16 @@ export default function UpdateScoreForm({ id }: any) {
       positiveScores = [],
       negativeScores = [],
     } = score;
-    // Populate the category dropdown
+    // Populate the category dropdown (plain name or legacy en.name)
+    const categoryLabel =
+      HNSSProductCategoryID?.name ||
+      HNSSProductCategoryID?.en?.name ||
+      HNSSProductCategoryID?.label ||
+      "";
     dispatch(
       change(form, "HNSSProductCategoryID", {
-        label: HNSSProductCategoryID?.en?.name,
-        value: HNSSProductCategoryID?._id,
+        label: categoryLabel,
+        value: HNSSProductCategoryID?._id || HNSSProductCategoryID?.value,
       })
     );
     // Populate the isPositive field

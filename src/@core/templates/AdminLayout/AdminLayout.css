@@ -27,6 +27,8 @@
   padding: var(--fluid-pad);
   background: var(--bg-primary);
   overflow: auto;
+  scroll-behavior: auto;
+  overflow-anchor: none;
   scrollbar-width: thin;
   scrollbar-color: var(--scroll-thumb) transparent;
 }

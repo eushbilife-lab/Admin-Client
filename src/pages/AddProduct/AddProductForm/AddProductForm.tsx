@@ -175,6 +175,8 @@ function AddProductForm({ handleSubmit, submitting, dirty, pristine }: any) {
 
 export default reduxForm({
   form: "AddProductForm",
+  destroyOnUnmount: false,
+  forceUnregisterOnUnmount: true,
   validate: (values: any) => {
     const errors: any = {};
     if (values.status === "draft") return errors;

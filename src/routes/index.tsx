@@ -52,6 +52,7 @@ const MemberDetail = lazy(() => import("pages/Members"));
 const DietitianQueue = lazy(() => import("pages/Queue"));
 const Lifestyle = lazy(() => import("pages/Lifestyle"));
 const Ingredients = lazy(() => import("pages/Ingredients"));
+const Exercises = lazy(() => import("pages/Exercises"));
 const Brands = lazy(() => import("pages/Brands"));
 const Servings = lazy(() => import("pages/Servings"));
 const ScanDesk = lazy(() => import("pages/Scans"));
@@ -123,6 +124,7 @@ export const private_routes: IRoute[] = [
   { path: "/update-product/:id", element: <UpdateProduct /> },
   { path: "/update-draftProduct/:id", element: <UpdateDraftProduct /> },
   { path: "/ingredients", element: <Ingredients /> },
+  { path: "/exercises", element: <Exercises /> },
   { path: "/brands", element: <Brands /> },
   { path: "/servings", element: <Servings /> },
 

@@ -32,4 +32,7 @@ function AddProductImage({ handleSubmit, submitting }: any) {
   );
 }
 
-export default reduxForm({ form: "AddProductImage" })(AddProductImage);
+export default reduxForm({
+  form: "AddProductImage",
+  destroyOnUnmount: false,
+})(AddProductImage);

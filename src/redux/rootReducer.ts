@@ -4,6 +4,8 @@ import level1Reducer from "./slices/level1/level1Slice";
 import formLoaderReducer from "./slices/formLoader";
 import { reducer as formReducer } from "redux-form";
 import ingredientReducer from "./slices/ingredient";
+import exerciseReducer from "./slices/exercise";
+import recipeReducer from "./slices/recipe";
 import nutritionReducer from "./slices/nutrition";
 import { combineReducers } from "redux";
 import authReducer from "./slices/auth";
@@ -46,6 +48,8 @@ const appReducer = combineReducers({
   dynamic:dynamicReducer,
   role:roleReducer,
   ingredient:ingredientReducer,
+  exercise:exerciseReducer,
+  recipe:recipeReducer,
   nutrition:nutritionReducer,
   healthPreference:healthPrefernceReducer,
   image:imagesReducer,

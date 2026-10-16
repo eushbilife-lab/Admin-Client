@@ -325,7 +325,8 @@ export default function Calculate() {
   }, [nf, servingSize, netWeight, weightUOM, servingUOM, dispatch]);
 
   useEffect(() => {
-    if (!nf || !nutritionsOptions?.length || id) return;
+    if (!nutritionsOptions?.length || id) return;
+    const currentNf = Array.isArray(nf) ? nf : [];
     const requiredKeys = [
       "calories",
       "total_fat",
@@ -341,7 +342,9 @@ export default function Calculate() {
       "natural_sugar",
       "protein",
     ];
-    const existingKeys = new Set(nf.map((item: any) => item?.nutritionId?.key));
+    const existingKeys = new Set(
+      currentNf.map((item: any) => item?.nutritionId?.key)
+    );
 
     const newOptions = nutritionsOptions.filter(
       (item: any) =>
@@ -354,14 +357,17 @@ export default function Calculate() {
 
     if (!sortedNewOptions.length) return;
 
-    const updatedNf = [
-      ...sortedNewOptions.map((item: any) => ({
-        nutritionId: item,
-        disabled: item?.key === "unsaturated_fat", // Add disabled property
-      })),
-    ];
-    dispatch(change(form, "nf", updatedNf));
-  }, [nutritionsOptions, dispatch]);
+    // Merge into existing rows — never replace, or filled nutrition vanishes.
+    dispatch(
+      change(form, "nf", [
+        ...currentNf,
+        ...sortedNewOptions.map((item: any) => ({
+          nutritionId: item,
+          disabled: item?.key === "unsaturated_fat",
+        })),
+      ])
+    );
+  }, [nutritionsOptions, dispatch, nf, id]);
 
   return null;
 }

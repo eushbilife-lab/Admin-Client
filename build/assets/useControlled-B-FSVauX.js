@@ -1,0 +1,1 @@
+import{n as e}from"./createSvgIcon-CIppVlPp.js";var t=e;export{t};

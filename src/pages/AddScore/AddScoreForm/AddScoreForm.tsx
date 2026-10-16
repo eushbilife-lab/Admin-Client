@@ -39,13 +39,15 @@ function AddScoreForm({ handleSubmit }: any) {
   }, [id, dispatch]);
 
   useEffect(() => {
+    // On edit, wait until isPositive is hydrated before clearing unused sides.
+    if (id && (!currentTypes || currentTypes.length === 0)) return;
     if (!selectedTypes?.includes("positive")) {
       dispatch(scoreCalculationActions.setScoreCalculation({ positiveScores: [] }));
     }
     if (!selectedTypes?.includes("negative")) {
       dispatch(scoreCalculationActions.setScoreCalculation({ negativeScores: [] }));
     }
-  }, [selectedTypes, dispatch]);
+  }, [selectedTypes, dispatch, id, currentTypes]);
 
   return (
     <Box>

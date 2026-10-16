@@ -29,8 +29,6 @@ function PositiveNutrientsTable() {
   const [localScores, setLocalScores] = useState<PositiveScore[]>([]);
   const [scoreInitializing, setScoreInitializing] = useState(true);
   
-  console.log("🚀 ~ PositiveNutrientsTable ~ localScores:", localScores)
-  console.log("🚀 ~ PositiveNutrientsTable ~ nutrientGroups:", nutrientGroups)
   const Nutrient = useAppSelector(
     (state) => state.form.AddScoreForm?.values?.NutrientID || [],
     shallowEqual
@@ -51,26 +49,23 @@ function PositiveNutrientsTable() {
     [currentTypes]
   );
 
-  if(id && updatedPositiveScore?.length > 0){
+  // Must not be wrapped in `if` — conditional hooks white-screen the edit page.
   useEffect(() => {
-    console.log("sheraz")
-      const firstScore = updatedPositiveScore[0];
-      if (firstScore?.conditions) {
-        const groups: NutrientGroup[] = Object.keys(firstScore.conditions).map(
-          (key) => ({
-            id: key,
-            nutrients: key.split(",").map((k) => ({ key: k, label: k })),
-          })
-        );
-        setNutrientGroups(groups);
-      }
+    if (!id || !updatedPositiveScore?.length) return;
+    const firstScore = updatedPositiveScore[0];
+    if (!firstScore?.conditions) return;
+    const groups: NutrientGroup[] = Object.keys(firstScore.conditions).map(
+      (key) => ({
+        id: key,
+        nutrients: key.split(",").map((k) => ({ key: k, label: k })),
+      })
+    );
+    setNutrientGroups(groups);
   }, [id, updatedPositiveScore]);
-  }
 
   useEffect(() => {
     if (!selectedTypes.includes("positive") || nutrientGroups.length === 0) return;
     if (positiveScores.length > 0) return;
-   console.log("abbas")
     setLoadingPositiveMore(true);
     setScoreInitializing(true);
     const groupKeys = nutrientGroups?.map((group) =>
@@ -169,7 +164,6 @@ function PositiveNutrientsTable() {
   }, [Nutrient, dispatch, nutrientGroups]);
 
   const handleDeleteGroup = useCallback((groupId: string) => {
-    console.log("1")
     setNutrientGroups((prev) => prev.filter((group) => group.id !== groupId));
     setLocalScores((prev) =>
       prev.map((score) => {
