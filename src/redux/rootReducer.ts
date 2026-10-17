@@ -6,6 +6,9 @@ import { reducer as formReducer } from "redux-form";
 import ingredientReducer from "./slices/ingredient";
 import exerciseReducer from "./slices/exercise";
 import recipeReducer from "./slices/recipe";
+import storeProductReducer from "./slices/storeProduct";
+import storeBannerReducer from "./slices/storeBanner";
+import storeOrderReducer from "./slices/storeOrder";
 import nutritionReducer from "./slices/nutrition";
 import { combineReducers } from "redux";
 import authReducer from "./slices/auth";
@@ -50,6 +53,9 @@ const appReducer = combineReducers({
   ingredient:ingredientReducer,
   exercise:exerciseReducer,
   recipe:recipeReducer,
+  storeProduct: storeProductReducer,
+  storeBanner: storeBannerReducer,
+  storeOrder: storeOrderReducer,
   nutrition:nutritionReducer,
   healthPreference:healthPrefernceReducer,
   image:imagesReducer,

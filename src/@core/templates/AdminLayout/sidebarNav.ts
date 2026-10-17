@@ -29,6 +29,9 @@ import {
   MdPayments,
   MdMedicalServices,
   MdSettings,
+  MdStorefront,
+  MdLocalOffer,
+  MdShoppingBag,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 
@@ -103,6 +106,14 @@ export const sidebarGroups: NavGroup[] = [
       { label: "Households", path: "/users", icon: MdPeople, roles: ["admin"] },
       { label: "Dietitians", path: "/dietitians", icon: MdMedicalServices, roles: ["admin"] },
       { label: "Staff", path: "/roles", icon: MdSecurity, roles: ["admin"] },
+    ],
+  },
+  {
+    label: "Store",
+    items: [
+      { label: "Products", path: "/store/products", icon: MdStorefront, roles: ["admin"] },
+      { label: "Banners", path: "/store/banners", icon: MdLocalOffer, roles: ["admin"] },
+      { label: "Orders", path: "/store/orders", icon: MdShoppingBag, roles: ["admin"] },
     ],
   },
   {

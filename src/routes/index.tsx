@@ -43,6 +43,11 @@ const Dashboard = lazy(() => import("pages/Dashboard"));
 const Analytics = lazy(() => import("pages/Analytics"));
 const Recipes = lazy(() => import("pages/Recipes"));
 const RecipeEditor = lazy(() => import("pages/Recipes/RecipeEditor"));
+const StoreProducts = lazy(() => import("pages/Store/Products"));
+const StoreProductEditor = lazy(() => import("pages/Store/Products/StoreProductEditor"));
+const StoreBanners = lazy(() => import("pages/Store/Banners"));
+const StoreBannerEditor = lazy(() => import("pages/Store/Banners/StoreBannerEditor"));
+const StoreOrders = lazy(() => import("pages/Store/Orders"));
 const MealPlans = lazy(() => import("pages/MealPlans"));
 const MealPlanEditor = lazy(() => import("pages/MealPlans/MealPlanEditor"));
 const Subscriptions = lazy(() => import("pages/Subscriptions"));
@@ -103,6 +108,13 @@ export const private_routes: IRoute[] = [
   { path: "/recipes", element: <Recipes /> },
   { path: "/recipes/new", element: <RecipeEditor /> },
   { path: "/recipes/:id", element: <RecipeEditor /> },
+  { path: "/store/products", element: <StoreProducts /> },
+  { path: "/store/products/new", element: <StoreProductEditor /> },
+  { path: "/store/products/:id", element: <StoreProductEditor /> },
+  { path: "/store/banners", element: <StoreBanners /> },
+  { path: "/store/banners/new", element: <StoreBannerEditor /> },
+  { path: "/store/banners/:id", element: <StoreBannerEditor /> },
+  { path: "/store/orders", element: <StoreOrders /> },
   { path: "/meal-plans", element: <MealPlans /> },
   { path: "/meal-plans/new", element: <MealPlanEditor /> },
   { path: "/meal-plans/:id", element: <MealPlanEditor /> },
