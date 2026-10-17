@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Button, IconButton, MenuItem, TextField } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import AddIcon from "@mui/icons-material/Add";
@@ -7,6 +7,7 @@ import PageShell from "@core/templates/PageShell";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeProductService from "services/storeProduct.service";
+import storeCategoryService from "services/storeCategory.service";
 import { storeProductActions } from "redux/slices/storeProduct";
 import ToasterService from "utils/toaster.util";
 import StoreImageField from "../StoreImageField";
@@ -96,16 +97,29 @@ function listToLines(list?: string[]) {
 
 export default function StoreProductEditor() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { product, loading } = useAppSelector((state) => state.storeProduct);
   const isNew = !id || id === "new";
+  const initialCategory =
+    searchParams.get("category") === "supplements"
+      ? "supplements"
+      : searchParams.get("category") === "supper_foods"
+        ? "supper_foods"
+        : "supper_foods";
 
   const [name, setName] = useState("");
   const [headline, setHeadline] = useState("");
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("supplements");
+  const [category, setCategory] = useState(initialCategory);
+  const [categoryOptions, setCategoryOptions] = useState<
+    { key: string; label: string }[]
+  >([
+    { key: "supper_foods", label: "Supper Foods" },
+    { key: "supplements", label: "Supplements" },
+  ]);
   const [status, setStatus] = useState("published");
   const [currency, setCurrency] = useState("PKR");
   const [badgeText, setBadgeText] = useState("Sale");
@@ -148,12 +162,22 @@ export default function StoreProductEditor() {
   }, [dispatch, id, isNew]);
 
   useEffect(() => {
+    storeCategoryService.getAll({}).then(([success]: any) => {
+      const list = success?.data?.data?.categories || [];
+      if (!list.length) return;
+      setCategoryOptions(
+        list.map((c: any) => ({ key: c.key, label: c.label || c.key }))
+      );
+    });
+  }, []);
+
+  useEffect(() => {
     if (!product || isNew) return;
     setName(product.name || "");
     setHeadline(product.headline || "");
     setShortDescription(product.shortDescription || "");
     setDescription(product.description || "");
-    setCategory(product.category || "supplements");
+    setCategory(product.category || "supper_foods");
     setStatus(product.status || "published");
     setCurrency(product.currency || "PKR");
     setBadgeText(product.badgeText || "");
@@ -410,9 +434,19 @@ export default function StoreProductEditor() {
           <TextField label="Short description (card)" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} fullWidth multiline minRows={2} />
           <TextField label="Full description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={4} />
           <div className="store-editor__row">
-            <TextField select label="Category" value={category} onChange={(e) => setCategory(e.target.value)} fullWidth>
-              <MenuItem value="supper_foods">Supper Foods</MenuItem>
-              <MenuItem value="supplements">Supplements</MenuItem>
+            <TextField
+              select
+              label="Shop section"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              fullWidth
+              helperText="Managed under Store → Sections (All / Supper Foods / Supplements / more)"
+            >
+              {categoryOptions.map((opt) => (
+                <MenuItem key={opt.key} value={opt.key}>
+                  {opt.label}
+                </MenuItem>
+              ))}
             </TextField>
             <TextField select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} fullWidth>
               <MenuItem value="published">Published</MenuItem>

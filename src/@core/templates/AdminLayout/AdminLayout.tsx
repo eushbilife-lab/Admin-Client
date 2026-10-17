@@ -18,7 +18,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     <div className="admin-layout">
       <AdminHeader onMenuClick={() => setSidebarOpen(true)} onSearchClick={openPalette} />
       <div className="admin-layout__body">
-        <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <AdminSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          onOpenPalette={openPalette}
+        />
         <main className="admin-layout__content">{children}</main>
       </div>
       <CommandPalette open={paletteOpen} onClose={closePalette} />

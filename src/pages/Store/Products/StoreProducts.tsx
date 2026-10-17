@@ -6,6 +6,7 @@ import StatusChip from "@core/templates/PageShell/StatusChip";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeProductService from "services/storeProduct.service";
+import storeCategoryService from "services/storeCategory.service";
 import { storeProductActions } from "redux/slices/storeProduct";
 import "../Store.css";
 
@@ -16,6 +17,59 @@ const STATUS_TONE: Record<string, "ok" | "warn" | "info"> = {
   inactive: "warn",
 };
 
+type Cat = {
+  id: string;
+  key: string;
+  label: string;
+  description?: string;
+  sortOrder?: number;
+};
+
+function ProductCard({
+  product,
+  onOpen,
+}: {
+  product: any;
+  onOpen: () => void;
+}) {
+  return (
+    <article className="store-card" onClick={onOpen}>
+      <div
+        className="store-card__media"
+        style={{
+          backgroundImage: product.imageUrl
+            ? `url(${product.imageUrl})`
+            : undefined,
+        }}
+      />
+      <div className="store-card__body">
+        <StatusChip
+          tone={STATUS_TONE[product.status] || "info"}
+          label={product.status}
+        />
+        <h3>{product.name}</h3>
+        <p>{product.shortDescription || product.categoryLabel || product.category}</p>
+        <strong>
+          {product.currency || "PKR"}{" "}
+          {Number(product.price || 0).toLocaleString()}
+          {product.compareAtPrice ? (
+            <span className="store-card__compare">
+              {" "}
+              {Number(product.compareAtPrice).toLocaleString()}
+            </span>
+          ) : null}
+          {product.discountPercent ? (
+            <span className="store-card__sale"> −{product.discountPercent}%</span>
+          ) : null}
+        </strong>
+        {product.variants?.length ? (
+          <small>{product.variants.length} pack options</small>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
 export default function StoreProducts() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -24,11 +78,27 @@ export default function StoreProducts() {
   );
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"all" | string>("all");
+  const [categories, setCategories] = useState<Cat[]>([]);
+
+  useEffect(() => {
+    storeCategoryService.getAll({}).then(([success]: any) => {
+      const list = success?.data?.data?.categories || [];
+      setCategories(
+        list.map((c: any) => ({
+          id: String(c.id || c._id || ""),
+          key: c.key,
+          label: c.label,
+          description: c.description,
+          sortOrder: c.sortOrder,
+        }))
+      );
+    });
+  }, [refresh]);
 
   useEffect(() => {
     const payload: any = {
       page: filters.page || 1,
-      page_size: filters.page_size || 24,
+      page_size: filters.page_size || 48,
       isDelete: false,
     };
     if (category !== "all") payload.category = category;
@@ -43,17 +113,45 @@ export default function StoreProducts() {
   }, [dispatch]);
 
   const items = useMemo(() => products || [], [products]);
-  const pages = Math.max(1, Math.ceil((count || 0) / (filters.page_size || 24)));
+  const pages = Math.max(1, Math.ceil((count || 0) / (filters.page_size || 48)));
+
+  const filterKeys = useMemo(
+    () =>
+      [
+        { key: "all", label: "All sections" },
+        ...categories.map((c) => ({ key: c.key, label: c.label })),
+      ] as { key: string; label: string }[],
+    [categories]
+  );
+
+  const sectioned = useMemo(() => {
+    const list =
+      categories.length > 0
+        ? categories
+        : [
+            { id: "", key: "supper_foods", label: "Supper Foods", description: "" },
+            { id: "", key: "supplements", label: "Supplements", description: "" },
+          ];
+    return list
+      .map((section) => ({
+        ...section,
+        products: items.filter((p: any) => p.category === section.key),
+      }))
+      .filter((section) => category === "all" || section.key === category);
+  }, [items, categories, category]);
 
   return (
     <PageShell
       kicker="Store"
       title="Store products"
-      subtitle="Sellable SKUs for the mobile Store tab — Supper Foods and Supplements with price, sale price, and stock."
+      subtitle="Filter by shop section. Add new sections under Store → Sections, then assign them on each product."
       actions={
-        <Button variant="contained" onClick={() => navigate("/store/products/new")}>
-          New product
-        </Button>
+        <>
+          <Button onClick={() => navigate("/store/sections")}>Manage sections</Button>
+          <Button variant="contained" onClick={() => navigate("/store/products/new")}>
+            New product
+          </Button>
+        </>
       }
     >
       {loading ? <CircleLoader /> : null}
@@ -69,13 +167,7 @@ export default function StoreProducts() {
           }}
         />
         <div className="store-filters">
-          {(
-            [
-              ["all", "All"],
-              ["supper_foods", "Supper Foods"],
-              ["supplements", "Supplements"],
-            ] as const
-          ).map(([key, label]) => (
+          {filterKeys.map(({ key, label }) => (
             <button
               key={key}
               type="button"
@@ -91,60 +183,60 @@ export default function StoreProducts() {
         </div>
       </div>
 
+      {categories.length ? (
+        <div className="store-cat-ids">
+          {categories.map((cat) => (
+            <code key={cat.id || cat.key}>
+              {cat.label}: {cat.id}
+            </code>
+          ))}
+        </div>
+      ) : null}
+
       {items.length === 0 && !loading ? (
         <div className="store-empty">
           <h2>No store products yet</h2>
-          <p>Add products here so they appear on the mobile Store screen.</p>
+          <p>Add a product and choose a shop section.</p>
           <Button variant="contained" onClick={() => navigate("/store/products/new")}>
             New product
           </Button>
         </div>
       ) : (
-        <div className="store-grid">
-          {items.map((product: any) => (
-            <article
-              key={product._id}
-              className="store-card"
-              onClick={() => navigate(`/store/products/${product._id}`)}
-            >
-              <div
-                className="store-card__media"
-                style={{
-                  backgroundImage: product.imageUrl
-                    ? `url(${product.imageUrl})`
-                    : undefined,
-                }}
-              />
-              <div className="store-card__body">
-                <StatusChip
-                  tone={STATUS_TONE[product.status] || "info"}
-                  label={product.status}
-                />
-                <h3>{product.name}</h3>
-                <p>{product.shortDescription || product.category}</p>
-                <strong>
-                  {product.currency || "PKR"}{" "}
-                  {Number(product.price || 0).toLocaleString()}
-                  {product.compareAtPrice ? (
-                    <span className="store-card__compare">
-                      {" "}
-                      {Number(product.compareAtPrice).toLocaleString()}
-                    </span>
-                  ) : null}
-                  {product.discountPercent ? (
-                    <span className="store-card__sale">
-                      {" "}
-                      −{product.discountPercent}%
-                    </span>
-                  ) : null}
-                </strong>
-                {product.variants?.length ? (
-                  <small>{product.variants.length} pack options</small>
-                ) : null}
+        sectioned.map((section) => (
+          <section key={section.key} className="store-section-block">
+            <div className="store-section-block__head">
+              <div>
+                <h2>{section.label}</h2>
+                <p>{section.description || "Shop section"}</p>
               </div>
-            </article>
-          ))}
-        </div>
+              <div className="store-section-block__meta">
+                <span>{section.products.length} shown</span>
+                {section.id ? <code>{section.id}</code> : null}
+                <Button
+                  size="small"
+                  onClick={() =>
+                    navigate(`/store/products/new?category=${section.key}`)
+                  }
+                >
+                  Add to {section.label}
+                </Button>
+              </div>
+            </div>
+            {section.products.length === 0 ? (
+              <p className="store-section-block__empty">No products in this section yet.</p>
+            ) : (
+              <div className="store-grid">
+                {section.products.map((product: any) => (
+                  <ProductCard
+                    key={product._id}
+                    product={product}
+                    onOpen={() => navigate(`/store/products/${product._id}`)}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        ))
       )}
 
       {pages > 1 ? (
