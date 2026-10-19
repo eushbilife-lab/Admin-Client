@@ -176,6 +176,19 @@
   font-size: 0.9rem;
 }
 
+.store-orders-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .store-orders-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .store-orders {
   display: grid;
   gap: 14px;
@@ -188,6 +201,14 @@
   background: #fff;
   display: grid;
   gap: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.store-order:hover,
+.store-order.is-selected {
+  border-color: #2e7d32;
+  box-shadow: 0 6px 18px rgba(20, 40, 20, 0.06);
 }
 
 .store-order header {
@@ -207,6 +228,65 @@
   margin: 0;
   padding-left: 18px;
   color: #334033;
+}
+
+.store-order-detail {
+  border: 1px solid var(--border-color, #e2e8e0);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: #fff;
+  display: grid;
+  gap: 16px;
+  position: sticky;
+  top: 16px;
+}
+
+.store-order-detail__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.store-order-detail__head p,
+.store-order-detail section p {
+  margin: 4px 0 0;
+  color: #4a554a;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.store-order-detail h3 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7a857a;
+}
+
+.store-order-detail ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.store-order-detail__totals {
+  margin-top: 10px !important;
+}
+
+.store-order-detail__actions {
+  display: grid;
+  gap: 12px;
+}
+
+.store-order-detail__btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.store-order-detail__cancel {
+  color: #b71c1c !important;
+  font-size: 0.85rem !important;
 }
 
 .store-section-list {

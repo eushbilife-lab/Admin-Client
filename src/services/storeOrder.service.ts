@@ -49,6 +49,29 @@ const storeOrderService = {
     }
     return [success, error];
   },
+
+  cancel: async (id: string, reason: string, dispatch: Dispatch) => {
+    http.setJWT();
+    const [success, error]: any = await Promisable.asPromise(
+      http.post(`${url}/${id}/cancel`, { reason })
+    );
+    if (success) {
+      dispatch?.(storeOrderActions.setOrder(success?.data?.data?.order));
+      dispatch?.(storeOrderActions.refresh());
+    }
+    return [success, error];
+  },
+
+  resyncWebhook: async (id: string, dispatch: Dispatch) => {
+    http.setJWT();
+    const [success, error]: any = await Promisable.asPromise(
+      http.post(`${url}/${id}/resync-webhook`, {})
+    );
+    if (success) {
+      dispatch?.(storeOrderActions.setOrder(success?.data?.data?.order));
+    }
+    return [success, error];
+  },
 };
 
 export default storeOrderService;
