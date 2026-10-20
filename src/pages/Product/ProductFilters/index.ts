@@ -6,7 +6,6 @@ import SelectLevel4 from "@core/api-components/SelectLevel4";
 import SelectRedux from "@core/redux-fields/SelectRedux";
 import InputRedux from "@core/redux-fields/InputRedux";
 import { levels, status } from "utils/status.util";
-import { pageSize } from "utils/normalize.util";
 import SelectHNSSProductCategory from "@core/api-components/SelectHNSSProductCategory";
 export { default } from "./ProductFilters";
 
@@ -16,14 +15,8 @@ export const fields = (
 ) => {
   const fields: ReduxFormField[] = [
     {
-      name: "doc_number",
-      label: "ID",
-      component: InputRedux,
-      cellProps: { md: 3 },
-    },
-    {
       name: "productName",
-      label: "Product Name",
+      label: "Food name",
       component: InputRedux,
       cellProps: { md: 3 },
     },
@@ -34,11 +27,24 @@ export const fields = (
       cellProps: { md: 3 },
     },
     {
+      name: "doc_number",
+      label: "ID",
+      component: InputRedux,
+      cellProps: { md: 2 },
+    },
+    {
       name: "status",
       label: "Status",
       component: SelectRedux,
-      cellProps: { md: 3 },
+      cellProps: { md: 2 },
       SelectProps: { options: status(t), disabled: statusDisabled },
+    },
+    {
+      name: "HNSSProductCategory",
+      label: "ENLI / HNSS",
+      component: SelectHNSSProductCategory,
+      cellProps: { md: 2 },
+      SelectProps: { options: levels(t) },
     },
     {
       name: "level1_id",
@@ -67,20 +73,6 @@ export const fields = (
       component: SelectLevel4,
       cellProps: { md: 3 },
       SelectProps: { options: levels(t) },
-    },
-    {
-      name: "HNSSProductCategory",
-      label: "ENLI",
-      component: SelectHNSSProductCategory,
-      cellProps: { md: 3 },
-      SelectProps: { options: levels(t) },
-    },
-    {
-      name: "page_size",
-      label: "Page Size",
-      normalize: pageSize,
-      component: InputRedux,
-      cellProps: { md: 3 },
     },
   ];
   return fields;

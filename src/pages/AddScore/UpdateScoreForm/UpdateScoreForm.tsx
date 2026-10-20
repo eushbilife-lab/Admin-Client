@@ -4,140 +4,114 @@ import { useEffect } from "react";
 import scoreCalculationService from "services/score.service";
 import { scoreCalculationActions } from "redux/slices/scoreCalculation";
 
-export default function UpdateScoreForm({ id }: any) {
+function transformSide(data: any[] = []) {
+  const scoreMap: Record<number, any> = {};
+
+  data.forEach((item) => {
+    const nutritionKeys =
+      item.nutritionID
+        ?.map((n: any) => n?.key || n?.value || n?._id || n)
+        .filter(Boolean)
+        .map(String) || [];
+    if (!nutritionKeys.length) return;
+    const groupKey = nutritionKeys.join(",");
+    const scores = item.scores || [];
+
+    scores.forEach((scoreItem: any) => {
+      const score = Number(scoreItem.score);
+      if (!Number.isFinite(score)) return;
+      if (!scoreMap[score]) {
+        scoreMap[score] = { score, conditions: {} };
+      }
+      if (!scoreMap[score].conditions[groupKey]) {
+        scoreMap[score].conditions[groupKey] = {
+          operator: { value: scoreItem?.operator ?? "-", required: false },
+          min: {
+            value:
+              scoreItem?.min === 0 || scoreItem?.min
+                ? String(scoreItem.min)
+                : "",
+            required: false,
+          },
+          max: {
+            value:
+              scoreItem?.max === 0 || scoreItem?.max
+                ? String(scoreItem.max)
+                : "",
+            required: false,
+          },
+          sign: { value: scoreItem?.sign ?? "", required: false },
+        };
+      }
+    });
+  });
+
+  return Object.values(scoreMap).sort(
+    (a: any, b: any) => Number(a.score) - Number(b.score)
+  );
+}
+
+export default function UpdateScoreForm({ id }: { id: string }) {
   const form = "AddScoreForm";
   const dispatch = useAppDispatch();
   const { score } = useAppSelector((state) => state?.scoreCalculations);
 
   useEffect(() => {
-      if (id) {
-         scoreCalculationService.get(id, dispatch);
-      }
+    if (id) scoreCalculationService.get(id, dispatch);
     return () => {
-      dispatch(scoreCalculationActions.setScoreCalculation(null));
+      dispatch(scoreCalculationActions.setScore({}));
     };
   }, [id, dispatch]);
 
   useEffect(() => {
     if (!id || !score?.HNSSProductCategoryID) return;
+
     const {
       HNSSProductCategoryID,
       isPositive,
       positiveScores = [],
       negativeScores = [],
     } = score;
-    // Populate the category dropdown (plain name or legacy en.name)
+
     const categoryLabel =
       HNSSProductCategoryID?.name ||
       HNSSProductCategoryID?.en?.name ||
       HNSSProductCategoryID?.label ||
       "";
+
     dispatch(
       change(form, "HNSSProductCategoryID", {
         label: categoryLabel,
         value: HNSSProductCategoryID?._id || HNSSProductCategoryID?.value,
       })
     );
-    // Populate the isPositive field
+
+    const types =
+      isPositive?.map((item: any) => ({
+        label: item?.label,
+        value: item?.value,
+      })) || [];
     dispatch(
       change(
         form,
         "isPositive",
-        isPositive?.map((item: any) => ({
-          label: item?.label,
-          value: item?.value,
-        })) || []
+        types.length
+          ? types
+          : [
+              { label: "positive", value: "positive" },
+              { label: "negative", value: "negative" },
+            ]
       )
     );
 
-    const transformNegativeScores = (data: any[] = []) => {
-      const scoreMap: Record<number, any> = {};
-      const nutritionGroups: Record<string, string[]> = {};
-      data?.forEach(item => {
-        const nutritionIDs = item.nutritionID?.map((n: any) => n.key) || [];
-        if (nutritionIDs.length > 1) {
-          const groupKey = nutritionIDs.join(',');
-          nutritionIDs.forEach((nutritionKey:any) => {
-            nutritionGroups[nutritionKey] = nutritionIDs;
-          });
-        } else if (nutritionIDs.length === 1) {
-          const nutritionKey = nutritionIDs[0];
-          nutritionGroups[nutritionKey] = [nutritionKey];
-        }
-      });
-      data?.forEach((item) => {
-        const { nutritionID = [], scores = [] } = item;
-        const nutritionKeys = nutritionID?.map((n: any) => n.key) || [];
-        scores?.forEach((scoreItem: any) => {
-          const score = scoreItem.score;
-          if (!scoreMap[score]) {
-            scoreMap[score] = {
-              score,
-              conditions: {},
-            };
-          }
-          const groupKey = nutritionKeys.join(',');
-          if (!scoreMap[score].conditions[groupKey]) {
-            scoreMap[score].conditions[groupKey] = {
-              operator: { value: scoreItem?.operator ?? '', required: false },
-              min: { value: scoreItem?.min ?? '', required: false },
-              max: { value: scoreItem?.max ?? '', required: false },
-              sign: { value: scoreItem?.sign ?? '', required: false },
-            };
-          }
-        });
-      });
-      return Object.values(scoreMap);
-    };
-    
-    const transformPositiveScores = (data: any[] = []) => {
-      const scoreMap: Record<number, any> = {};
-      const nutritionGroups: Record<string, string[]> = {};
-      data?.forEach(item => {
-        const nutritionIDs = item.nutritionID?.map((n: any) => n.key) || [];
-        if (nutritionIDs.length > 1) {
-          const groupKey = nutritionIDs.join(',');
-          nutritionIDs.forEach((nutritionKey:any) => {
-            nutritionGroups[nutritionKey] = nutritionIDs;
-          });
-        } else if (nutritionIDs.length === 1) {
-          const nutritionKey = nutritionIDs[0];
-          nutritionGroups[nutritionKey] = [nutritionKey];
-        }
-      });
-      data?.forEach((item) => {
-        const { nutritionID = [], scores = [] } = item;
-        const nutritionKeys = nutritionID?.map((n: any) => n.key) || [];
-        scores?.forEach((scoreItem: any) => {
-          const score = scoreItem.score;
-          if (!scoreMap[score]) {
-            scoreMap[score] = {
-              score,
-              conditions: {},
-            };
-          }
-          const groupKey = nutritionKeys.join(',');
-          if (!scoreMap[score].conditions[groupKey]) {
-            scoreMap[score].conditions[groupKey] = {
-              operator: { value: scoreItem?.operator ?? '', required: false },
-              min: { value: scoreItem?.min ?? '', required: false },
-              max: { value: scoreItem?.max ?? '', required: false },
-              sign: { value: scoreItem?.sign ?? '', required: false },
-            };
-          }
-        });
-      });
-      return Object.values(scoreMap);
-    };
     dispatch(
       scoreCalculationActions.setScore({
-        updatedPositiveScore: transformPositiveScores(positiveScores),
-        updatedNegativeScore: transformNegativeScores(negativeScores),
+        ...score,
+        updatedPositiveScore: transformSide(positiveScores),
+        updatedNegativeScore: transformSide(negativeScores),
       })
     );
-  }, [score, dispatch, id]);
-
-  if (!score) return null;
+  }, [score?._id, dispatch, id]);
 
   return null;
 }

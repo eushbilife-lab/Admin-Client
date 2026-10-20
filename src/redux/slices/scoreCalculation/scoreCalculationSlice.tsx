@@ -28,11 +28,15 @@ export const scoreCalculationSlice = createSlice({
       state.score = action.payload;
     },
     setScoreCalculation: (state, action) => {
+      if (action.payload == null) {
+        state.scoreCalculation = {};
+        return;
+      }
       state.scoreCalculation = {
         ...state.scoreCalculation,
         ...action.payload,
       };
-    },    
+    },
     addScoreCalculation: (state, action) => {
       state.scoreCalculations.unshift(action.payload);
     },

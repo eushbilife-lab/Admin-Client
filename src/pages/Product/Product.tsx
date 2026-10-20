@@ -8,6 +8,7 @@ import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import TableWrapper from "@core/templates/TableWrapper";
+import ListPagination from "@core/templates/ListPagination";
 import productService from "services/product.service";
 import { productActions } from "redux/slices/product";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -18,7 +19,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Button,
   IconButton,
-  Pagination,
   Tab,
   Table,
   TableBody,
@@ -26,11 +26,10 @@ import {
   TableHead,
   TableRow,
   Tabs,
-  Typography,
 } from "@mui/material";
 import BlockComponent from "@core/api-components/BlockComponent";
 import { useTranslation } from "react-i18next";
-import { localizedData } from "utils/localizedData.util";
+import { englishName } from "utils/localizedData.util";
 import Tooltip from "@core/basic-components/Tooltip";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -38,6 +37,14 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import { MODAL, modalActions } from "redux/slices/modal";
 import draftProductService from "services/draftProduct.service";
 import { draftProductActions } from "redux/slices/draftProduct";
+
+function statusTone(status?: string): "ok" | "warn" | "danger" | "info" {
+  const s = String(status || "").toLowerCase();
+  if (s === "active" || s === "approved") return "ok";
+  if (s === "pending") return "warn";
+  if (s === "inactive" || s === "rejected") return "danger";
+  return "info";
+}
 
 export default function Product() {
   const dispatch = useAppDispatch();
@@ -58,186 +65,137 @@ export default function Product() {
     refresh: draftRefresh,
   } = useAppSelector((state) => state.draftProduct);
 
-  // Memoize current products based on active tab
   const currentProducts = useMemo(
     () => (activeTab === 2 ? draftProducts : products),
     [activeTab, draftProducts, products]
   );
+  const currentLoading = activeTab === 2 ? draftLoading : loading;
+  const currentRefreshLoader =
+    activeTab === 2 ? draftRefreshLoader : refreshLoader;
+  const currentCount = activeTab === 2 ? draftCount : count;
+  const currentFilters = activeTab === 2 ? draftFilters : filters;
+  const pageSize = Number(currentFilters.page_size) || 25;
 
-  // Memoize current loading state
-  const currentLoading = useMemo(
-    () => (activeTab === 2 ? draftLoading : loading),
-    [activeTab, draftLoading, loading]
-  );
-
-  // Memoize current refresh loader state
-  const currentRefreshLoader = useMemo(
-    () => (activeTab === 2 ? draftRefreshLoader : refreshLoader),
-    [activeTab, draftRefreshLoader, refreshLoader]
-  );
-
-  // Memoize current count
-  const currentCount = useMemo(
-    () => (activeTab === 2 ? draftCount : count),
-    [activeTab, draftCount, count]
-  );
-
-  // Memoize current filters with explicit status for activeTab 0
-  const currentFilters = useMemo(() => {
-    if (activeTab === 2) {
-      return draftFilters;
-    }
-    return {
-      ...filters,
-      status: activeTab === 1 ? "pending" : undefined
-    };
-  }, [activeTab, draftFilters, filters]);
-
-  // Memoize table columns
   const columns = useMemo(
     () => [
-      { id: "id", label: t("ID") },
-      { id: "productName", label: t("Food") },
-      { id: "barcode", label: t("Barcode") },
-      { id: "label", label: t("Label") },
-      { id: "status", label: t("Status") },
-      { id: "action", label: t("Action") },
+      { id: "food", label: "Food" },
+      { id: "barcode", label: "Barcode" },
+      { id: "category", label: "Category" },
+      { id: "label", label: "Label" },
+      { id: "status", label: "Status" },
+      { id: "action", label: "Action" },
     ],
-    [t]
+    []
   );
 
-  // Memoize row renderer
   const renderRow = useCallback(
-    (item: any) => (
-      <StyledTableRow key={item._id}>
-        <StyledTableCell>
-          <Typography variant="body2">{item?.doc_number}</Typography>
-        </StyledTableCell>
-        <StyledTableCell>
-           <Typography
-            variant="body2"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: "10px",
-            }}
-          >
-            {(item.productImages?.[0] || item.image) && (
-              <img
-                src={item.productImages?.[0] || item.image}
-                alt={item.productName}
-                style={{
-                  width: "35px",
-                  height: "35px",
-                  objectFit: "cover",
-                  borderRadius: "5px",
-                }}
+    (item: any) => {
+      const thumb = item.productImages?.[0] || item.image_url || item.image;
+      const category =
+        englishName(item?.HNSSProductCategory) ||
+        englishName(item?.levels?.level1_id) ||
+        item?.HNSSProductCategory?.code ||
+        "—";
+      const levelPath = [
+        englishName(item?.levels?.level1_id),
+        englishName(item?.levels?.level2_id),
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      const hasFacts =
+        item.hasNutritionFacts ||
+        item.nfCount > 0 ||
+        (Array.isArray(item.nf) && item.nf.length > 0);
+
+      return (
+        <StyledTableRow key={item._id}>
+          <StyledTableCell>
+            <div className="catalog-food">
+              {thumb ? (
+                <img
+                  className="catalog-food__thumb"
+                  src={thumb}
+                  alt=""
+                  loading="lazy"
+                />
+              ) : (
+                <div className="catalog-food__thumb catalog-food__thumb--empty" />
+              )}
+              <div className="catalog-food__text">
+                <div className="catalog-food__name">{item?.productName}</div>
+                <div className="catalog-food__sub">
+                  {[item?.brand, item?.manufacturer].filter(Boolean).join(" · ") ||
+                    "—"}
+                </div>
+                {item?.doc_number != null ? (
+                  <div className="catalog-food__id">#{item.doc_number}</div>
+                ) : null}
+              </div>
+            </div>
+          </StyledTableCell>
+          <StyledTableCell>
+            <code className="catalog-barcode">{item?.barcode || "—"}</code>
+          </StyledTableCell>
+          <StyledTableCell>
+            <div className="catalog-cat">
+              <strong>{category}</strong>
+              {levelPath ? <span>{levelPath}</span> : null}
+            </div>
+          </StyledTableCell>
+          <StyledTableCell>
+            <div className="catalog-chips">
+              <StatusChip
+                label={hasFacts ? "Facts" : "No facts"}
+                tone={hasFacts ? "ok" : "warn"}
               />
-            )}
-            {item?.productName}
-          </Typography>
-          {item?.ingredients?.length ? (
-            <Typography variant="caption" color="text.secondary" display="block">
-              {item.ingredients
-                .map((ingredient: any) =>
-                  [ingredient.name, ingredient.code, ingredient.content].filter(Boolean).join(" · ")
-                )
-                .filter(Boolean)
-                .join(", ")}
-            </Typography>
-          ) : null}
-          <Typography variant="caption" color="text.secondary">
-            {localizedData({
-              en: item?.levels?.level1_id?.en?.name,
-              ar: item?.levels?.level1_id?.ar?.name,
-            }) || item.HNSSProductCategory}
-          </Typography>
-        </StyledTableCell>
-        <StyledTableCell>
-          <Typography variant="body2">{item?.barcode}</Typography>
-          {item?.brand ? (
-            <Typography variant="caption" color="text.secondary">
-              {item.brand}
-            </Typography>
-          ) : null}
-        </StyledTableCell>
-        <StyledTableCell>
-          <div className="ops-card__meta">
+              <StatusChip
+                label={
+                  item.foplCount > 0 ? `FOPL ${item.foplCount}` : "No FOPL"
+                }
+                tone={item.foplCount > 0 ? "info" : "warn"}
+              />
+            </div>
+          </StyledTableCell>
+          <StyledTableCell>
             <StatusChip
-              label={item.hasNutritionFacts || item.nfCount > 0 ? "Facts" : "No facts"}
-              tone={item.hasNutritionFacts || item.nfCount > 0 ? "ok" : "warn"}
+              label={t(item?.status) || item?.status || "—"}
+              tone={statusTone(item?.status)}
             />
-            <StatusChip
-              label={item.foplCount > 0 ? `FOPL ${item.foplCount}` : "No FOPL"}
-              tone={item.foplCount > 0 ? "info" : "warn"}
-            />
-          </div>
-        </StyledTableCell>
-        <StyledTableCell>
-          <Typography variant="body2">{t(item?.status)}</Typography>
-        </StyledTableCell>
-        <StyledTableCellAction>
-          <Tooltip title={t("Edit")}>
-            <IconButton
-              onClick={() =>
-                navigate(
-                  activeTab === 2
-                    ? `/update-draftProduct/${item._id}?isDraft=true`
-                    : `/update-product/${item._id}`
-                )
-              }
-            >
-              <EditNoteIcon />
-            </IconButton>
-          </Tooltip>
-          <BlockComponent allowedRoles={["admin"]}>
-            <Tooltip title={t("Delete")}>
+          </StyledTableCell>
+          <StyledTableCellAction>
+            <Tooltip title={t("Edit")}>
               <IconButton
+                size="small"
                 onClick={() =>
-                  dispatch(
-                    modalActions.openModal({
-                      type: MODAL.CONFIRMATION_FORM,
-                      data: {
-                        heading: t("Delete Product"),
-                        message: t(
-                          "Are you sure you want to delete this product?"
-                        ),
-                        confirmAction: () => {
-                          if (activeTab === 2) {
-                            draftProductService.remove(item?._id, dispatch);
-                          } else {
-                            productService.remove(item?._id, dispatch);
-                          }
-                        },
-                      },
-                      width: "500px",
-                    })
+                  navigate(
+                    activeTab === 2
+                      ? `/update-draftProduct/${item._id}?isDraft=true`
+                      : `/update-product/${item._id}`
                   )
                 }
               >
-                <DeleteOutlineIcon />
+                <EditNoteIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-          </BlockComponent>
-          {activeTab === 1 && (
             <BlockComponent allowedRoles={["admin"]}>
-              <Tooltip title={t("Approve")}>
+              <Tooltip title={t("Delete")}>
                 <IconButton
+                  size="small"
                   onClick={() =>
                     dispatch(
                       modalActions.openModal({
                         type: MODAL.CONFIRMATION_FORM,
                         data: {
-                          heading: t("Approve Product"),
+                          heading: t("Delete Product"),
                           message: t(
-                            "Are you sure you want to approve this product?"
+                            "Are you sure you want to delete this product?"
                           ),
                           confirmAction: () => {
-                            productService.updateStatus(
-                              item._id,
-                              "approved",
-                              dispatch
-                            );
+                            if (activeTab === 2) {
+                              draftProductService.remove(item?._id, dispatch);
+                            } else {
+                              productService.remove(item?._id, dispatch);
+                            }
                           },
                         },
                         width: "500px",
@@ -245,23 +203,54 @@ export default function Product() {
                     )
                   }
                 >
-                  <CheckCircleOutlineIcon />
+                  <DeleteOutlineIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
             </BlockComponent>
-          )}
-        </StyledTableCellAction>
-      </StyledTableRow>
-    ),
+            {activeTab === 1 ? (
+              <BlockComponent allowedRoles={["admin"]}>
+                <Tooltip title={t("Approve")}>
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      dispatch(
+                        modalActions.openModal({
+                          type: MODAL.CONFIRMATION_FORM,
+                          data: {
+                            heading: t("Approve Product"),
+                            message: t(
+                              "Are you sure you want to approve this product?"
+                            ),
+                            confirmAction: () => {
+                              productService.updateStatus(
+                                item._id,
+                                "approved",
+                                dispatch
+                              );
+                            },
+                          },
+                          width: "500px",
+                        })
+                      )
+                    }
+                  >
+                    <CheckCircleOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </BlockComponent>
+            ) : null}
+          </StyledTableCellAction>
+        </StyledTableRow>
+      );
+    },
     [activeTab, dispatch, navigate, t]
   );
 
-  // Handle tab change
   const handleTabChange = useCallback(
     (_: any, newTab: number) => {
       setActiveTab(newTab);
       const statusMap = [undefined, "pending", "draft"];
-      
+
       if (newTab === 2) {
         dispatch(
           draftProductActions.setFilters({
@@ -283,9 +272,8 @@ export default function Product() {
     [dispatch, draftFilters, filters]
   );
 
-  // Handle pagination change
   const handlePageChange = useCallback(
-    (_e: any, page: number) => {
+    (page: number) => {
       if (activeTab === 2) {
         dispatch(draftProductActions.setPage(page));
       } else {
@@ -295,13 +283,35 @@ export default function Product() {
     [activeTab, dispatch]
   );
 
-  // Fetch data based on active tab and filters
+  const handlePageSizeChange = useCallback(
+    (nextSize: number) => {
+      if (activeTab === 2) {
+        dispatch(
+          draftProductActions.setFilters({
+            ...draftFilters,
+            page: 1,
+            page_size: nextSize,
+          })
+        );
+      } else {
+        dispatch(
+          productActions.setFilters({
+            ...filters,
+            page: 1,
+            page_size: nextSize,
+          })
+        );
+      }
+    },
+    [activeTab, dispatch, draftFilters, filters]
+  );
+
   useEffect(() => {
     if (!catalogQuery) return;
     dispatch(
       productActions.setFilters({
         page: 1,
-        page_size: filters.page_size,
+        page_size: Number(filters.page_size) || 25,
         productName: catalogQuery,
       })
     );
@@ -312,14 +322,20 @@ export default function Product() {
     if (activeTab === 2) {
       draftProductService.getAll(draftFilters, dispatch);
     } else {
-      const apiFilters = activeTab === 0 
-        ? {...filters, status: undefined} 
-        : filters;
+      const apiFilters =
+        activeTab === 0 ? { ...filters, status: undefined } : filters;
       productService.getAll(apiFilters, dispatch);
     }
-  }, [dispatch, activeTab, refresh, filters, draftRefresh, draftFilters, catalogQuery]);
+  }, [
+    dispatch,
+    activeTab,
+    refresh,
+    filters,
+    draftRefresh,
+    draftFilters,
+    catalogQuery,
+  ]);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       dispatch(productActions.resetFilters());
@@ -339,78 +355,70 @@ export default function Product() {
         </Button>
       }
     >
-        {currentLoading && <CircleLoader />}
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          sx={{
-            "& .MuiTab-root": { fontSize: "14px", textTransform: "capitalize" },
-          }}
-        >
-          <Tab label={t("Approved")} />
-          <Tab label={t("Under Review")} />
-          {userRole?.includes("admin") && <Tab label={t("Draft")} />}
-        </Tabs>
-        <br />
-        <ProductFilters
-          count={currentCount}
-          productActions={activeTab === 2 ? draftProductActions : productActions}
-          refreshLoader={currentRefreshLoader}
-          filters={currentFilters}
-          activeTab={activeTab}
-        />
-        <TableWrapper>
-          <TableContainer style={{ maxHeight: "600px", overflow: "auto" }}>
-            <Table
-              aria-label="customized table"
-              sx={adminTableSx}
+      {currentLoading ? <CircleLoader /> : null}
+      <Tabs
+        value={activeTab}
+        onChange={handleTabChange}
+        sx={{
+          mb: 1.5,
+          "& .MuiTab-root": { fontSize: "14px", textTransform: "capitalize" },
+        }}
+      >
+        <Tab label={t("Approved")} />
+        <Tab label={t("Under Review")} />
+        {userRole?.includes("admin") ? <Tab label={t("Draft")} /> : null}
+      </Tabs>
+
+      <ProductFilters
+        count={currentCount}
+        productActions={
+          activeTab === 2 ? draftProductActions : productActions
+        }
+        refreshLoader={currentRefreshLoader}
+        filters={currentFilters}
+        activeTab={activeTab}
+      />
+
+      <TableWrapper>
+        <TableContainer className="catalog-table-scroll">
+          <Table aria-label="Catalog foods" sx={adminTableSx}>
+            <TableLoadingWrapper
+              coloumns={columns.length}
+              loading={currentLoading}
+              length={currentRefreshLoader ? 0 : currentProducts?.length}
+              message={t("No Products Data currently available")}
             >
-              <TableLoadingWrapper
-                coloumns={columns.length}
-                loading={currentLoading}
-                length={currentRefreshLoader ? 0 : currentProducts?.length}
-                message={t("No Products Data currently available")}
-              >
-                <TableHead>
-                  <TableRow>
-                    {columns.map((column) =>
-                      column.id === "action" ? (
-                        <StyledTableCellAction key={column.id}>
-                          {column.label}
-                        </StyledTableCellAction>
-                      ) : (
-                        <StyledTableCell key={column.id}>
-                          {column.label}
-                        </StyledTableCell>
-                      )
-                    )}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {currentProducts?.map((item) => renderRow(item))}
-                </TableBody>
-              </TableLoadingWrapper>
-            </Table>
-          </TableContainer>
-          <div className="pagination-list-bottom">
-            <p>
-              {currentCount > 0 &&
-                `${currentCount} ${
-                  currentCount > 1 ? t("Products") : t("Product")
-                }`}
-            </p>
-            {currentCount > 0 && (
-              <Pagination
-                variant="outlined"
-                color="primary"
-                page={currentFilters.page}
-                disabled={currentRefreshLoader}
-                count={Math.ceil(currentCount / currentFilters.page_size)}
-                onChange={handlePageChange}
-              />
-            )}
-          </div>
-        </TableWrapper>
+              <TableHead>
+                <TableRow>
+                  {columns.map((column) =>
+                    column.id === "action" ? (
+                      <StyledTableCellAction key={column.id}>
+                        {column.label}
+                      </StyledTableCellAction>
+                    ) : (
+                      <StyledTableCell key={column.id}>
+                        {column.label}
+                      </StyledTableCell>
+                    )
+                  )}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {currentProducts?.map((item) => renderRow(item))}
+              </TableBody>
+            </TableLoadingWrapper>
+          </Table>
+        </TableContainer>
+        <ListPagination
+          count={currentCount}
+          page={Number(currentFilters.page) || 1}
+          pageSize={pageSize}
+          disabled={currentRefreshLoader}
+          label="foods"
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
+      </TableWrapper>
     </PageShell>
   );
 }

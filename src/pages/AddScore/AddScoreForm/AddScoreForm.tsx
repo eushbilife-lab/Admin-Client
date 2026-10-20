@@ -1,11 +1,6 @@
-import {
-  Box,
-  Button,
-  Grid,
-  Typography
-} from "@mui/material";
-import { useAppSelector, useAppDispatch } from "redux/hooks";
-import { reduxForm, change } from "redux-form";
+import { Box, Button, Grid } from "@mui/material";
+import { useAppDispatch, useAppSelector } from "redux/hooks";
+import { change, reduxForm } from "redux-form";
 import { useParams } from "react-router-dom";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -22,10 +17,12 @@ function AddScoreForm({ handleSubmit }: any) {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const currentTypes = useAppSelector((state) => state.form[formName]?.values?.isPositive);
+  const currentTypes = useAppSelector(
+    (state) => state.form[formName]?.values?.isPositive
+  );
 
   const selectedTypes = useMemo(() => {
-    return currentTypes?.map((item: { value: string }) => item?.value);
+    return currentTypes?.map((item: { value: string }) => item?.value) || [];
   }, [currentTypes]);
 
   useEffect(() => {
@@ -33,53 +30,62 @@ function AddScoreForm({ handleSubmit }: any) {
       dispatch(
         change(formName, "isPositive", [
           { label: "positive", value: "positive" },
+          { label: "negative", value: "negative" },
         ])
       );
     }
   }, [id, dispatch]);
 
   useEffect(() => {
-    // On edit, wait until isPositive is hydrated before clearing unused sides.
     if (id && (!currentTypes || currentTypes.length === 0)) return;
-    if (!selectedTypes?.includes("positive")) {
-      dispatch(scoreCalculationActions.setScoreCalculation({ positiveScores: [] }));
+    if (!selectedTypes.includes("positive")) {
+      dispatch(
+        scoreCalculationActions.setScoreCalculation({ positiveScores: [] })
+      );
     }
-    if (!selectedTypes?.includes("negative")) {
-      dispatch(scoreCalculationActions.setScoreCalculation({ negativeScores: [] }));
+    if (!selectedTypes.includes("negative")) {
+      dispatch(
+        scoreCalculationActions.setScoreCalculation({ negativeScores: [] })
+      );
     }
   }, [selectedTypes, dispatch, id, currentTypes]);
 
   return (
-    <Box>
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <ReduxFormFields fields={ScoreFields(t)} />
-        </Grid>
+    <Box component="form" onSubmit={handleSubmit} noValidate>
+      <Grid container spacing={2}>
+        <ReduxFormFields fields={ScoreFields(t)} />
+      </Grid>
 
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            mt: 3,
-            mb:2
-          }}
-        >
-          <Typography variant="h6">
-            {t("Scores and Nutrient Conditions")}
-          </Typography>
-          <Button type="submit" variant="contained">
-            {t("Submit")}
-          </Button>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: 1.5,
+          mt: 3,
+          mb: 2,
+        }}
+      >
+        <Box>
+          <Box sx={{ fontWeight: 700, fontSize: "1.05rem" }}>
+            Score tables
+          </Box>
+          <Box sx={{ color: "#667066", fontSize: "0.875rem" }}>
+            Add nutrient columns, then fill points 0–20. Prefer Range operator.
+          </Box>
         </Box>
+        <Button type="submit" variant="contained" size="large">
+          {id ? "Save changes" : "Create score"}
+        </Button>
+      </Box>
 
-        {/* Dynamically render based on selection order */}
-        {selectedTypes?.map((type:any) => {
-          if (type === "positive") return <PositiveNutrientsTable key="positive" />;
-          if (type === "negative") return <NegativeNutrientsTable key="negative" />;
-          return null;
-        })}
-      </form>
+      {selectedTypes.includes("negative") ? (
+        <NegativeNutrientsTable />
+      ) : null}
+      {selectedTypes.includes("positive") ? (
+        <PositiveNutrientsTable />
+      ) : null}
     </Box>
   );
 }

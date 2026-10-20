@@ -88,16 +88,18 @@ export interface NutrientGroup {
       });
       // Transform to nutrient groups
       return Array.from(allKeys).map((key) => {
-        const keyParts = key.split(',');
-        const matched = options.filter((item) => keyParts.includes(item.key));
-  
+        const keyParts = key.split(",");
+        const matched = options.filter(
+          (item) =>
+            keyParts.includes(item.key) || keyParts.includes(item.value)
+        );
+
         return {
-          label: key, 
+          label: key,
           nutrientIDs: matched.map((item) => item.value),
         };
       });
     }, [positiveScores, options]);
-  
 
   export const useNegativeNutrientOptions = (
     negativeScores: any[],
@@ -110,17 +112,19 @@ export interface NutrientGroup {
           allKeys.add(key);
         });
       });
-  
-      // Transform to nutrient groups
+
       return Array.from(allKeys).map((key) => {
-        const keyParts = key.split(','); // handle combined keys like "vitamin_d,vitamin_c"
-        const matched = options.filter((item) => keyParts.includes(item.key));
-  
+        const keyParts = key.split(",");
+        const matched = options.filter(
+          (item) =>
+            keyParts.includes(item.key) || keyParts.includes(item.value)
+        );
+
         return {
-          label: key, // optionally format this (e.g., titleCase or predefined label map)
+          label: key,
           nutrientIDs: matched.map((item) => item.value),
         };
       });
     }, [negativeScores, options]);
-  
+
   
