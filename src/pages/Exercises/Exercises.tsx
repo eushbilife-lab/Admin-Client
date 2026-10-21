@@ -20,7 +20,6 @@ import {
   StyledTableRow,
   adminTableSx,
 } from "@core/templates/Tables";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import Button from "@core/basic-components/Button";
 import Tooltip from "@core/basic-components/Tooltip";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
@@ -28,7 +27,7 @@ import { MODAL, modalActions } from "redux/slices/modal";
 import { exerciseActions } from "redux/slices/exercise";
 import exerciseService from "services/exercise.service";
 import useListQueryParams from "hooks/useListQueryParams";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import BlockComponent from "@core/api-components/BlockComponent";
@@ -37,7 +36,6 @@ import CatalogToolbar, {
 } from "@core/templates/CatalogToolbar";
 import {
   countByStatus,
-  filterByStatus,
   type StatusFilter,
 } from "@core/templates/CatalogToolbar/catalogList.util";
 
@@ -46,15 +44,11 @@ export default function Exercises() {
   const { exercises, loading, refreshLoader, count, refresh } = useAppSelector(
     (state) => state.exercise
   );
-  const { filters, searchInput, setSearch, setPage } = useListQueryParams();
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const listQuery = useListQueryParams();
 
   useEffect(() => {
-    exerciseService.getAll(
-      { ...filters, name: filters.name || undefined },
-      dispatch
-    );
-  }, [dispatch, refresh, filters]);
+    exerciseService.getAll(listQuery.filters, dispatch);
+  }, [dispatch, refresh, listQuery.filters]);
 
   useEffect(() => {
     return () => {
@@ -102,7 +96,6 @@ export default function Exercises() {
 
   return (
     <>
-      {loading && <CircleLoader />}
       <PageShell
         kicker="Movement"
         title="Exercises"
@@ -139,13 +132,13 @@ export default function Exercises() {
             }
           />
 
-          <TableWrapper>
+          <TableWrapper refreshing={refreshLoader}>
             <TableContainer sx={{ maxHeight: "70vh", overflowX: "auto" }}>
               <Table stickyHeader aria-label="exercises" sx={adminTableSx}>
                 <TableLoadingWrapper
                   coloumns={7}
                   loading={!!loading}
-                  length={refreshLoader ? 0 : visible.length}
+                  length={visible.length}
                   message={
                     searchInput || status !== "all"
                       ? "No exercises match your search or filters."

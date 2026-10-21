@@ -5,7 +5,6 @@ import {
   adminTableSx,
 } from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { MODAL, modalActions } from "redux/slices/modal";
 import TableWrapper from "@core/templates/TableWrapper";
@@ -35,12 +34,11 @@ import CatalogToolbar, {
 } from "@core/templates/CatalogToolbar";
 import {
   countByStatus,
-  filterByStatus,
-  matchesSearch,
   sortByName,
   type NameSort,
   type StatusFilter,
 } from "@core/templates/CatalogToolbar/catalogList.util";
+import useListQueryParams from "hooks/useListQueryParams";
 
 type Props = {
   type: healthPrefernceType;
@@ -63,22 +61,13 @@ export default function PreferenceTable({
   const count = bucket?.count || 0;
   const hps = bucket?.hps || [];
   const loading = bucket?.loading;
-  const filters = bucket?.filters || { page: 1, page_size: 10 };
 
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const listQuery = useListQueryParams({ prefix: `${type}_` });
   const [sort, setSort] = useState<NameSort>("az");
 
   useEffect(() => {
-    const next = {
-      ...filters,
-      page_size: search.trim()
-        ? Math.max(Number(filters.page_size) || 10, 100)
-        : filters.page_size,
-      page: search.trim() ? 1 : filters.page,
-    };
-    healthPreferenceService.getAllHp(type, next, dispatch);
-  }, [dispatch, refresh, filters, type, search]);
+    healthPreferenceService.getAllHp(type, listQuery.filters, dispatch);
+  }, [dispatch, refresh, type, listQuery.filters]);
 
   useEffect(() => {
     return () => {
@@ -103,23 +92,17 @@ export default function PreferenceTable({
   const rowName = (item: any) => optionLabel(item, "") || "";
   const statusCounts = useMemo(() => countByStatus(hps), [hps]);
 
-  const visible = useMemo(() => {
-    let list = (hps || []).filter((item: any) =>
-      matchesSearch(
-        [rowName(item), item.description, item.en?.description],
-        search
-      )
-    );
-    list = filterByStatus(list, status);
-    return sortByName(list, rowName, sort);
-  }, [hps, search, status, sort]);
+  const visible = useMemo(
+    () => sortByName(hps || [], rowName, sort),
+    [hps, sort]
+  );
 
   return (
     <>
       <CatalogToolbar
         hint={blurb}
-        search={search}
-        onSearchChange={setSearch}
+        search={listQuery.searchInput}
+        onSearchChange={listQuery.setSearch}
         searchPlaceholder="Search by name or description… (⌘K)"
         searchAriaLabel="Search preferences"
         sort={sort}
@@ -139,8 +122,8 @@ export default function PreferenceTable({
           { id: "active", label: "Active", count: statusCounts.active },
           { id: "inactive", label: "Inactive", count: statusCounts.inactive },
         ]}
-        activeChip={status}
-        onChipChange={(id) => setStatus(id as StatusFilter)}
+        activeChip={(listQuery.status as StatusFilter) || "all"}
+        onChipChange={(id) => listQuery.setStatus(id)}
         actions={
           <Button variant="contained" onClick={() => openEditor()}>
             {addLabel}
@@ -148,39 +131,38 @@ export default function PreferenceTable({
         }
       />
 
-      {loading && <CircleLoader />}
-
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader || (!!loading && hps.length > 0)}
+      >
         <TableContainer>
-          <Table aria-label={`${type} table`} sx={adminTableSx}>
+          <Table aria-label={addLabel} sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={4}
               loading={!!loading}
-              length={refreshLoader ? 0 : visible.length}
+              length={visible.length}
               message={
-                search || status !== "all"
-                  ? "No items match your search or filters."
+                listQuery.debouncedSearch || listQuery.status !== "all"
+                  ? "No rows match your search or filters."
                   : emptyMessage
               }
             >
               <TableHead>
                 <TableRow>
-                  <StyledTableCell align="left">Name</StyledTableCell>
-                  <StyledTableCell align="left">Description</StyledTableCell>
-                  <StyledTableCell align="left">Status</StyledTableCell>
+                  <StyledTableCell>Name</StyledTableCell>
+                  <StyledTableCell>Description</StyledTableCell>
+                  <StyledTableCell>Status</StyledTableCell>
                   <StyledTableCellAction>Action</StyledTableCellAction>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {visible.map((item: any) => {
-                  const name = rowName(item);
                   const description =
                     item.description || item.en?.description || "";
                   return (
                     <StyledTableRow key={item._id}>
                       <StyledTableCell>
                         <Typography variant="body2" fontWeight={600}>
-                          {name}
+                          {rowName(item) || "Untitled"}
                         </Typography>
                       </StyledTableCell>
                       <StyledTableCell>
@@ -199,18 +181,22 @@ export default function PreferenceTable({
                       <StyledTableCell>
                         <StatusChip
                           label={item.status || "inactive"}
-                          tone={item.status === "inactive" ? "warn" : "ok"}
+                          tone={item.status === "active" ? "ok" : "warn"}
                         />
                       </StyledTableCell>
                       <StyledTableCellAction>
                         <Tooltip title="Edit">
-                          <IconButton onClick={() => openEditor(item)}>
-                            <EditNoteIcon />
+                          <IconButton
+                            size="small"
+                            onClick={() => openEditor(item)}
+                          >
+                            <EditNoteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                         <BlockComponent allowedRoles={["admin"]}>
                           <Tooltip title="Delete">
                             <IconButton
+                              size="small"
                               onClick={() =>
                                 dispatch(
                                   modalActions.openModal({
@@ -219,21 +205,20 @@ export default function PreferenceTable({
                                       heading: "Delete",
                                       message:
                                         "Are you sure you want to delete this item?",
-                                      confirmAction: () => {
+                                      confirmAction: () =>
                                         healthPreferenceService.remove(
                                           item._id,
                                           dispatch,
                                           type,
-                                          filters
-                                        );
-                                      },
+                                          listQuery.filters
+                                        ),
                                     },
-                                    width: "500px",
+                                    width: "480px",
                                   })
                                 )
                               }
                             >
-                              <DeleteOutlineIcon />
+                              <DeleteOutlineIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
                         </BlockComponent>
@@ -245,22 +230,24 @@ export default function PreferenceTable({
             </TableLoadingWrapper>
           </Table>
         </TableContainer>
-
-        <div className="pagination-list-bottom">
-          <p>{count > 0 && `${count} ${count > 1 ? "items" : "item"}`}</p>
-          {count > 0 && (
+        {count > 0 ? (
+          <div className="pagination-list-bottom">
+            <p>
+              {count} {count === 1 ? "item" : "items"}
+            </p>
             <Pagination
               variant="outlined"
               color="primary"
-              page={filters.page}
+              page={listQuery.page}
               disabled={refreshLoader}
-              count={Math.ceil(count / filters.page_size) || 1}
-              onChange={(_e, page) =>
-                dispatch(healthPrefernceActions.setPage({ type, page }))
-              }
+              count={Math.max(
+                1,
+                Math.ceil(count / (listQuery.limit || 10))
+              )}
+              onChange={(_e, page) => listQuery.setPage(page)}
             />
-          )}
-        </div>
+          </div>
+        ) : null}
       </TableWrapper>
     </>
   );

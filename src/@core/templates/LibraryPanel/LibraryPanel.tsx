@@ -61,6 +61,9 @@ type LibraryPanelProps = {
   onPage?: (page: number) => void;
   searchValue?: string;
   onSearchChange?: (value: string) => void;
+  /** When set, status chips hit the API via parent instead of filtering locally. */
+  statusValue?: StatusFilter;
+  onStatusChange?: (value: StatusFilter) => void;
   searchPlaceholder?: string;
   wrapPage?: boolean;
 };
@@ -85,15 +88,20 @@ export default function LibraryPanel({
   onPage,
   searchValue,
   onSearchChange,
+  statusValue,
+  onStatusChange,
   searchPlaceholder = "Search… (⌘K)",
   wrapPage = false,
 }: LibraryPanelProps) {
   const [localSearch, setLocalSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [localStatus, setLocalStatus] = useState<StatusFilter>("all");
   const [sort, setSort] = useState<NameSort>("az");
 
   const search = onSearchChange ? searchValue ?? "" : localSearch;
   const setSearch = onSearchChange || setLocalSearch;
+  const status = onStatusChange ? statusValue ?? "all" : localStatus;
+  const setStatus = onStatusChange || setLocalStatus;
+  const serverDriven = Boolean(onSearchChange);
 
   const rowName = (row: LibraryRow) =>
     englishName(row) || row.name || row.code || "";
@@ -107,9 +115,11 @@ export default function LibraryPanel({
         matchesSearch([rowName(row), row.code, row.content, row.sign], search)
       );
     }
-    list = filterByStatus(list, status);
+    if (!onStatusChange) {
+      list = filterByStatus(list, status);
+    }
     return sortByName(list, rowName, sort);
-  }, [rows, search, status, sort, onSearchChange]);
+  }, [rows, search, status, sort, onSearchChange, onStatusChange]);
 
   const body = (
     <section>
@@ -151,16 +161,22 @@ export default function LibraryPanel({
         </h2>
       ) : null}
 
-      <TableWrapper>
+      <TableWrapper
+        refreshing={
+          !!refreshLoader || (!!loading && rows.length > 0)
+        }
+      >
         <TableContainer sx={{ maxHeight: "70vh", overflowX: "auto" }}>
           <Table stickyHeader aria-label={heading || title || "library"} sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={extraColumn === "ingredient" ? 5 : extraColumn ? 4 : 3}
               loading={!!loading}
-              length={refreshLoader ? 0 : visible.length}
+              length={visible.length}
               message={
-                search || status !== "all"
-                  ? "No rows match your search or filters."
+                search || status !== "all" || serverDriven
+                  ? search || status !== "all"
+                    ? "No rows match your search or filters."
+                    : empty
                   : empty
               }
             >

@@ -29,6 +29,7 @@ import scoreCalculationReducer from "./slices/scoreCalculation";
 import reviewsReducer from "./slices/Reviews";
 import contactReducer from "./slices/contact";
 import measurementScaleReducer from "./slices/measurementScale";
+import processingLevelReducer from "./slices/processingLevel";
 import hnssProductCategoryReducer from "./slices/hnssProductCategory";
 import foodIntoleranceReducer from "./slices/foodIntolerance";
 import draftProductReducer from "./slices/draftProduct";
@@ -64,6 +65,7 @@ const appReducer = combineReducers({
   review:reviewsReducer,
   contact:contactReducer,
   measurementScale:measurementScaleReducer,
+  processingLevel:processingLevelReducer,
   hnssProductCategory:hnssProductCategoryReducer,
   foodIntolerance:foodIntoleranceReducer,
   draftProduct:draftProductReducer

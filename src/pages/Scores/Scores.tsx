@@ -149,13 +149,15 @@ export default function Scores() {
         }
       />
 
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table aria-label="Health scores" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={4}
               loading={loading}
-              length={refreshLoader ? 0 : items?.length}
+              length={items?.length}
               message={
                 search || side !== "all"
                   ? "No scores match your search or filters."

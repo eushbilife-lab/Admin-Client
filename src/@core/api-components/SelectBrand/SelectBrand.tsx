@@ -31,11 +31,19 @@ export default function SelectBrand(props: any) {
     if (match) input.onChange(match);
   }, [list, input]);
 
-  const openAdd = () => {
+  const openAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const parentForm = props.meta?.form;
     dispatch(
       modalActions.openModal({
         type: MODAL.ADD_BRAND,
-        data: { type: "brand" },
+        data: {
+          type: "brand",
+          ...(parentForm
+            ? { selectIntoForm: parentForm, selectField: input?.name || "brand" }
+            : {}),
+        },
         width: "520px",
       })
     );
@@ -49,6 +57,7 @@ export default function SelectBrand(props: any) {
         variant="text"
         size="small"
         onClick={openAdd}
+        onMouseDown={(e) => e.preventDefault()}
         sx={{ mt: 0.5, textTransform: "none", px: 0 }}
       >
         + Add brand

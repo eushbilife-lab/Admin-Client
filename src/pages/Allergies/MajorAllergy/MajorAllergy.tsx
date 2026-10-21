@@ -5,7 +5,6 @@ import {
   adminTableSx,
 } from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { MODAL, modalActions } from "redux/slices/modal";
 import TableWrapper from "@core/templates/TableWrapper";
@@ -30,33 +29,24 @@ import CatalogToolbar, {
 } from "@core/templates/CatalogToolbar";
 import {
   countByStatus,
-  filterByStatus,
-  matchesSearch,
   sortByName,
   type NameSort,
   type StatusFilter,
 } from "@core/templates/CatalogToolbar/catalogList.util";
+import useListQueryParams from "hooks/useListQueryParams";
 
 export default function MajorAllergy() {
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
-  const { count, allergies, loading, filters, refresh, refreshLoader } =
+  const { count, allergies, loading, refresh, refreshLoader } =
     useAppSelector((state) => state.allergy);
 
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const listQuery = useListQueryParams();
   const [sort, setSort] = useState<NameSort>("az");
 
   useEffect(() => {
-    const next = {
-      ...filters,
-      page_size: search.trim()
-        ? Math.max(Number(filters.page_size) || 10, 100)
-        : filters.page_size,
-      page: search.trim() ? 1 : filters.page,
-    };
-    allergyService.getAllMajor(next, dispatch);
-  }, [dispatch, refresh, filters, search]);
+    allergyService.getAllMajor(listQuery.filters, dispatch);
+  }, [dispatch, refresh, listQuery.filters]);
 
   useEffect(() => {
     return () => {
@@ -74,29 +64,17 @@ export default function MajorAllergy() {
     [allergies]
   );
 
-  const visible = useMemo(() => {
-    let list = (allergies || []).filter((item: any) =>
-      matchesSearch(
-        [
-          rowName(item),
-          localizedData({
-            en: item?.subCategoryID?.en?.name,
-            ar: item?.subCategoryID?.ar?.name,
-          }),
-        ],
-        search
-      )
-    );
-    list = filterByStatus(list, status);
-    return sortByName(list, rowName, sort);
-  }, [allergies, search, status, sort]);
+  const visible = useMemo(
+    () => sortByName(allergies || [], rowName, sort),
+    [allergies, sort]
+  );
 
   return (
     <>
       <CatalogToolbar
         hint="Major allergen groups (milk, eggs, nuts…) used on labels and member safety profiles."
-        search={search}
-        onSearchChange={setSearch}
+        search={listQuery.searchInput}
+        onSearchChange={listQuery.setSearch}
         searchPlaceholder="Search category… (⌘K)"
         searchAriaLabel="Search allergen categories"
         sort={sort}
@@ -116,8 +94,8 @@ export default function MajorAllergy() {
           { id: "active", label: "Active", count: statusCounts.active },
           { id: "inactive", label: "Inactive", count: statusCounts.inactive },
         ]}
-        activeChip={status}
-        onChipChange={(id) => setStatus(id as StatusFilter)}
+        activeChip={(listQuery.status as StatusFilter) || "all"}
+        onChipChange={(id) => listQuery.setStatus(id)}
         actions={
           <Button
             variant="contained"
@@ -135,17 +113,17 @@ export default function MajorAllergy() {
           </Button>
         }
       />
-
-      {loading && <CircleLoader />}
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table aria-label="Allergen categories" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={3}
               loading={loading}
-              length={refreshLoader ? 0 : visible.length}
+              length={visible.length}
               message={
-                search || status !== "all"
+                listQuery.debouncedSearch || listQuery.status !== "all"
                   ? "No categories match your search or filters."
                   : t("No category currently available")
               }
@@ -212,10 +190,10 @@ export default function MajorAllergy() {
             <Pagination
               variant="outlined"
               color="primary"
-              page={filters.page}
+              page={listQuery.page}
               disabled={refreshLoader}
-              count={Math.ceil(count / filters.page_size)}
-              onChange={(_e, page) => dispatch(allergyActions.setPage(page))}
+              count={Math.max(1, Math.ceil(count / listQuery.limit))}
+              onChange={(_e, page) => listQuery.setPage(page)}
             />
           )}
         </div>

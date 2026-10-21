@@ -46,7 +46,9 @@ export default function ContactsList({ type }: ContactListProps) {
     <>
       <ContactFilters type={type} />
       <br />
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table
             aria-label="customized table"
@@ -55,7 +57,7 @@ export default function ContactsList({ type }: ContactListProps) {
             <TableLoadingWrapper
               coloumns={4}
               loading={loading}
-              length={refreshLoader ? 0 : contacts?.length}
+              length={contacts?.length}
               message={t("No Users currently available.")}
             >
               <TableHead>

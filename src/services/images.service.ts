@@ -66,7 +66,9 @@ const imagesService = {
       type,
       page: filters.page,
       page_size: filters.page_size,
-      isDelete:false
+      isDelete: false,
+      ...(filters.name ? { name: filters.name } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
     };
     const [success, error]: any = await Promisable.asPromise(
       http.post(`${url}/get-All-images`, payload)

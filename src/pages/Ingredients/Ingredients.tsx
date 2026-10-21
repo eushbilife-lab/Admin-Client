@@ -4,7 +4,6 @@ import { MODAL, modalActions } from "redux/slices/modal";
 import { ingredientActions } from "redux/slices/ingredient";
 import ingredientService from "services/ingredient.service";
 import LibraryPanel from "@core/templates/LibraryPanel/LibraryPanel";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import useListQueryParams from "hooks/useListQueryParams";
 
 export default function Ingredients() {
@@ -12,11 +11,11 @@ export default function Ingredients() {
   const { ingredients, loading, refreshLoader, count, refresh } = useAppSelector(
     (state) => state.ingredient
   );
-  const { filters, searchInput, setSearch, setPage } = useListQueryParams();
+  const listQuery = useListQueryParams();
 
   useEffect(() => {
-    ingredientService.getAllIngredients(filters, dispatch);
-  }, [dispatch, refresh, filters]);
+    ingredientService.getAllIngredients(listQuery.filters, dispatch);
+  }, [dispatch, refresh, listQuery.filters]);
 
   useEffect(() => {
     return () => {
@@ -39,7 +38,6 @@ export default function Ingredients() {
 
   return (
     <>
-      {loading && <CircleLoader />}
       <LibraryPanel
         wrapPage
         kicker="Labels"
@@ -52,14 +50,16 @@ export default function Ingredients() {
         loading={loading}
         refreshLoader={refreshLoader}
         count={count}
-        page={filters.page}
-        pageSize={filters.page_size}
-        searchValue={searchInput}
-        onSearchChange={setSearch}
+        page={listQuery.page}
+        pageSize={listQuery.limit}
+        searchValue={listQuery.searchInput}
+        onSearchChange={listQuery.setSearch}
+        statusValue={(listQuery.status as any) || "all"}
+        onStatusChange={(id) => listQuery.setStatus(id)}
         searchPlaceholder="Search ingredients…"
         onAdd={() => openEditor()}
         onEdit={(row) => openEditor(row)}
-        onPage={setPage}
+        onPage={listQuery.setPage}
       />
     </>
   );

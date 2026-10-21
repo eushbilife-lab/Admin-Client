@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppSelector } from "redux/hooks";
+import { useAppDispatch } from "redux/hooks";
 import PersistFilters from "@core/templates/PersistFilters";
 import MyForm from "@core/templates/MyForm";
 import { change, reset } from "redux-form";
@@ -6,6 +6,8 @@ import { Pagination } from "@mui/material";
 import { config } from "config";
 import { fields } from ".";
 import { useTranslation } from "react-i18next";
+import { useCallback } from "react";
+import useLiveReduxFormSearch from "hooks/useLiveReduxFormSearch";
 
 export default function Level2Filters({
   filters,
@@ -24,13 +26,24 @@ export default function Level2Filters({
     dispatch(change(form, "page_size", default_page_size));
   };
 
-  const handleSubmit = (values: any) => {
-    const page_size= values.page_size
-    let data: any = { page: 1, page_size: page_size };
-    const { level1, ...otherValues } = values;
-    data = { ...data, mainCategoryID: level1?.value, ...otherValues };
-    dispatch(level2Actions.setFilters(data));
-  };
+  const handleSubmit = useCallback(
+    (values: any) => {
+      const page_size = values.page_size;
+      const { level1, ...otherValues } = values;
+      const data: any = {
+        page: 1,
+        page_size,
+        mainCategoryID: level1?.value,
+        ...otherValues,
+      };
+      if (data.name === "" || data.name == null) delete data.name;
+      if (data.status === "" || data.status == null) delete data.status;
+      dispatch(level2Actions.setFilters(data));
+    },
+    [dispatch, level2Actions]
+  );
+
+  useLiveReduxFormSearch(form, handleSubmit);
 
   return (
     <div className="filters">

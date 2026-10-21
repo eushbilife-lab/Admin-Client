@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, Chip, Pagination } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
-import CircleLoader from "@core/basic-components/CircleLoader";
+import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import recipeService from "services/recipe.service";
 import { recipeActions } from "redux/slices/recipe";
@@ -56,7 +56,6 @@ export default function Recipes() {
         </Button>
       }
     >
-      {loading ? <CircleLoader /> : null}
       <div className="recipes-toolbar">
         <input
           className="recipes-search"
@@ -86,7 +85,9 @@ export default function Recipes() {
         </div>
       </div>
 
-      {items.length === 0 && !loading ? (
+      {loading && items.length === 0 ? (
+        <GridSkeleton cards={8} columns="repeat(auto-fill, minmax(240px, 1fr))" />
+      ) : items.length === 0 ? (
         <div className="recipes-empty">
           <h2>No recipes yet</h2>
           <p>Add a recipe and tag the diets it suits (vegan, keto, Mediterranean…).</p>
@@ -95,7 +96,7 @@ export default function Recipes() {
           </Button>
         </div>
       ) : (
-        <div className="recipes-grid">
+        <div className="recipes-grid" style={{ position: "relative", opacity: loading ? 0.72 : 1, transition: "opacity 160ms ease" }}>
           {items.map((recipe: any) => (
             <article key={recipe._id} className="recipe-card">
               {recipe.imageUrl || recipe.thumbnailUrl ? (

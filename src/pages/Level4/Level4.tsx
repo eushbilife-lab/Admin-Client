@@ -53,13 +53,15 @@ export default function Level4() {
         refreshLoader={refreshLoader}
         filters={filters}
       />
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader || (loading && (levels4?.length ?? 0) > 0)}
+      >
         <TableContainer>
           <Table aria-label="Level 4 table" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={5}
               loading={loading}
-              length={refreshLoader ? 0 : levels4?.length}
+              length={levels4?.length}
               message="No Level 4 data currently available."
             >
               <TableHead>

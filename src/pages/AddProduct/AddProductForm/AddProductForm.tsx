@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import MeasurementScaleService from "services/measurementScale.service";
 import dynamicService from "services/dynamic.service";
+import processingLevelService from "services/processingLevel.service";
 import { FormSection } from "utils/FormSection";
 import { field as imageFields } from "../AddProductImage";
 import useUnsavedChanges from "hooks/useUnsavedChanges";
@@ -41,6 +42,7 @@ function AddProductForm({ handleSubmit, submitting, dirty, pristine }: any) {
       { type: "manufacturer", status: "active" },
       dispatch
     );
+    processingLevelService.getOptions(dispatch);
   }, [dispatch]);
 
   const label = (text: string) => (

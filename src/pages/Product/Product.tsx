@@ -5,7 +5,6 @@ import {
   adminTableSx,
 } from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import TableWrapper from "@core/templates/TableWrapper";
 import ListPagination from "@core/templates/ListPagination";
@@ -355,7 +354,6 @@ export default function Product() {
         </Button>
       }
     >
-      {currentLoading ? <CircleLoader /> : null}
       <Tabs
         value={activeTab}
         onChange={handleTabChange}
@@ -379,13 +377,15 @@ export default function Product() {
         activeTab={activeTab}
       />
 
-      <TableWrapper>
+      <TableWrapper
+        refreshing={currentRefreshLoader || (currentLoading && (currentProducts?.length ?? 0) > 0)}
+      >
         <TableContainer className="catalog-table-scroll">
           <Table aria-label="Catalog foods" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={columns.length}
               loading={currentLoading}
-              length={currentRefreshLoader ? 0 : currentProducts?.length}
+              length={currentProducts?.length}
               message={t("No Products Data currently available")}
             >
               <TableHead>

@@ -61,6 +61,7 @@ const Ingredients = lazy(() => import("pages/Ingredients"));
 const Exercises = lazy(() => import("pages/Exercises"));
 const Brands = lazy(() => import("pages/Brands"));
 const Servings = lazy(() => import("pages/Servings"));
+const ProcessingLevels = lazy(() => import("pages/ProcessingLevels"));
 const ScanDesk = lazy(() => import("pages/Scans"));
 const AppDesk = lazy(() => import("pages/AppDesk"));
 // const UpdateDynamics = lazy(() => import("../@core/templates/AppModal/AddIngredients"));
@@ -141,6 +142,7 @@ export const private_routes: IRoute[] = [
   { path: "/exercises", element: <Exercises /> },
   { path: "/brands", element: <Brands /> },
   { path: "/servings", element: <Servings /> },
+  { path: "/processing-levels", element: <ProcessingLevels /> },
 
   { path: "/level1", element: <Level1 /> },
   { path: "/add-level1", element: <AddLevel1 /> },

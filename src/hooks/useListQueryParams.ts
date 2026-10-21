@@ -7,6 +7,7 @@ export type ListQueryParams = {
   limit: number;
   search: string;
   sort?: string;
+  status?: string;
 };
 
 type Options = {
@@ -31,6 +32,7 @@ export default function useListQueryParams(options: Options = {}) {
   const limitKey = `${prefix}limit`;
   const searchKey = `${prefix}q`;
   const sortKey = `${prefix}sort`;
+  const statusKey = `${prefix}status`;
 
   const page = Math.max(1, Number(searchParams.get(pageKey) || 1) || 1);
   const limit = Math.max(
@@ -39,6 +41,9 @@ export default function useListQueryParams(options: Options = {}) {
   );
   const search = searchParams.get(searchKey) || "";
   const sort = searchParams.get(sortKey) || undefined;
+  const statusParam = searchParams.get(statusKey) || undefined;
+  const status =
+    statusParam && statusParam !== "all" ? statusParam : undefined;
 
   const [searchInput, setSearchInput] = useState(search);
   const [debouncedSearch, setDebouncedSearch] = useState(search);
@@ -101,14 +106,26 @@ export default function useListQueryParams(options: Options = {}) {
     [searchParams, setSearchParams, sortKey, pageKey]
   );
 
+  const setStatus = useCallback(
+    (value?: string) => {
+      const next = new URLSearchParams(searchParams);
+      if (value && value !== "all") next.set(statusKey, value);
+      else next.delete(statusKey);
+      next.set(pageKey, "1");
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams, statusKey, pageKey]
+  );
+
   const query: ListQueryParams = useMemo(
     () => ({
       page,
       limit,
       search: debouncedSearch,
       sort,
+      status,
     }),
-    [page, limit, debouncedSearch, sort]
+    [page, limit, debouncedSearch, sort, status]
   );
 
   /** Shape many existing admin services expect */
@@ -118,8 +135,9 @@ export default function useListQueryParams(options: Options = {}) {
       page_size: limit,
       name: debouncedSearch || undefined,
       sort,
+      ...(status ? { status } : {}),
     }),
-    [page, limit, debouncedSearch, sort]
+    [page, limit, debouncedSearch, sort, status]
   );
 
   return {
@@ -131,9 +149,11 @@ export default function useListQueryParams(options: Options = {}) {
     searchInput,
     debouncedSearch,
     sort,
+    status: status || "all",
     setPage,
     setLimit,
     setSearch,
     setSort,
+    setStatus,
   };
 }

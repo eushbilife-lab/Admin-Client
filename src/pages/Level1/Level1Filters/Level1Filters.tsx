@@ -6,6 +6,8 @@ import { Pagination } from "@mui/material";
 import { config } from "config";
 import { fields } from ".";
 import { useTranslation } from "react-i18next";
+import { useCallback } from "react";
+import useLiveReduxFormSearch from "hooks/useLiveReduxFormSearch";
 
 export default function Level1Filters({
   filters,
@@ -24,12 +26,18 @@ export default function Level1Filters({
     dispatch(change(form, "page_size", default_page_size));
   };
 
-  const handleSubmit = (values: any) => {
-    const page_size= values.page_size
-    let data: any = { page: 1, page_size: page_size };
-    data = { ...data, ...values };
-    dispatch(level1Actions.setFilters(data));
-  };
+  const handleSubmit = useCallback(
+    (values: any) => {
+      const page_size = values.page_size;
+      const data: any = { page: 1, page_size, ...values };
+      if (data.name === "" || data.name == null) delete data.name;
+      if (data.status === "" || data.status == null) delete data.status;
+      dispatch(level1Actions.setFilters(data));
+    },
+    [dispatch, level1Actions]
+  );
+
+  useLiveReduxFormSearch(form, handleSubmit);
 
   return (
     <div className="filters">

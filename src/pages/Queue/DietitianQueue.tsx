@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button, Table, TableBody, TableContainer, TableHead, TableRow } from "@mui/material";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import TableWrapper from "@core/templates/TableWrapper";
+import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import { StyledTableCell, StyledTableCellAction, StyledTableRow, adminTableSx } from "@core/templates/Tables";
 import http from "services/http.service";
 import Promisable from "services/promisable.service";
@@ -63,10 +63,15 @@ export default function DietitianQueue() {
         </Button>
       }
     >
-      {loading && <CircleLoader />}
-      <TableWrapper>
+      <TableWrapper refreshing={loading && items.length > 0}>
         <TableContainer>
           <Table aria-label="Dietitian queue table" sx={adminTableSx}>
+            <TableLoadingWrapper
+              coloumns={5}
+              loading={loading}
+              length={items.length}
+              message="Queue is clear — nothing waiting for review."
+            >
             <TableHead>
               <TableRow>
                 <StyledTableCell>Product</StyledTableCell>
@@ -137,12 +142,8 @@ export default function DietitianQueue() {
                   </StyledTableRow>
                 );
               })}
-              {!loading && items.length === 0 ? (
-                <StyledTableRow>
-                  <StyledTableCell colSpan={5}>Queue is clear. Nothing waiting for a dietitian.</StyledTableCell>
-                </StyledTableRow>
-              ) : null}
             </TableBody>
+            </TableLoadingWrapper>
           </Table>
         </TableContainer>
       </TableWrapper>

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, Pagination } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
-import CircleLoader from "@core/basic-components/CircleLoader";
+import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeProductService from "services/storeProduct.service";
 import storeCategoryService from "services/storeCategory.service";
@@ -154,7 +154,6 @@ export default function StoreProducts() {
         </>
       }
     >
-      {loading ? <CircleLoader /> : null}
       <div className="store-toolbar">
         <input
           className="store-search"
@@ -193,7 +192,9 @@ export default function StoreProducts() {
         </div>
       ) : null}
 
-      {items.length === 0 && !loading ? (
+      {loading && items.length === 0 ? (
+        <GridSkeleton cards={8} columns="repeat(auto-fill, minmax(220px, 1fr))" />
+      ) : items.length === 0 ? (
         <div className="store-empty">
           <h2>No store products yet</h2>
           <p>Add a product and choose a shop section.</p>

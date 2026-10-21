@@ -1,6 +1,5 @@
 import { StyledTableCell, StyledTableCellAction, StyledTableRow, adminTableSx } from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import TableWrapper from "@core/templates/TableWrapper";
 import { useEffect } from "react";
@@ -40,20 +39,21 @@ export default function Reviews() {
       title="Reviews"
       subtitle="Taste, texture, and appearance scores left by members."
     >
-      {loading && <CircleLoader />}
       <ReviewsFilters
         count={count}
         reviewsActions={reviewsActions}
         refreshLoader={refreshLoader}
         filters={filters}
       />
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table aria-label="Reviews table" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={6}
               loading={loading}
-              length={refreshLoader ? 0 : Reviews?.length}
+              length={Reviews?.length}
               message="No product reviews currently available."
             >
               <TableHead>

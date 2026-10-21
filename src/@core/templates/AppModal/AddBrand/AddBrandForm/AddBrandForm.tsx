@@ -15,8 +15,10 @@ function AddBrandForm({ handleSubmit }: any) {
         <br />
         <Stack direction="row" spacing={2}>
           <Button
+            type="button"
             variant="outlined"
-            onClick={() => dispatch(modalActions.closeModal())}>
+            onClick={() => dispatch(modalActions.closeModal())}
+          >
             Cancel
           </Button>
           <Button type="submit" disableElevation variant="contained">

@@ -5,7 +5,6 @@ import {
   adminTableSx,
 } from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { MODAL, modalActions } from "redux/slices/modal";
 import TableWrapper from "@core/templates/TableWrapper";
@@ -14,6 +13,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   IconButton,
   Pagination,
+  Skeleton,
   Table,
   TableBody,
   TableContainer,
@@ -32,10 +32,10 @@ import CatalogToolbar, {
   CatalogMetaPill,
 } from "@core/templates/CatalogToolbar";
 import {
-  matchesSearch,
   sortByName,
   type NameSort,
 } from "@core/templates/CatalogToolbar/catalogList.util";
+import useListQueryParams from "hooks/useListQueryParams";
 
 export default function FOPLCertificates({ type }: any) {
   const dispatch = useAppDispatch();
@@ -46,12 +46,12 @@ export default function FOPLCertificates({ type }: any) {
     (state) => state.image.product_certificate
   );
 
-  const [search, setSearch] = useState("");
+  const listQuery = useListQueryParams();
   const [sort, setSort] = useState<NameSort>("az");
 
   useEffect(() => {
-    imagesService.getAll(type, filters, dispatch);
-  }, [dispatch, refresh, filters, type]);
+    imagesService.getAll(type, listQuery.filters, dispatch);
+  }, [dispatch, refresh, type, listQuery.filters]);
 
   useEffect(() => {
     return () => {
@@ -61,19 +61,17 @@ export default function FOPLCertificates({ type }: any) {
 
   const rowName = (item: any) => String(item?.name || "");
 
-  const visible = useMemo(() => {
-    const list = (images || []).filter((item: any) =>
-      matchesSearch([rowName(item)], search)
-    );
-    return sortByName(list, rowName, sort);
-  }, [images, search, sort]);
+  const visible = useMemo(
+    () => sortByName(images || [], rowName, sort),
+    [images, sort]
+  );
 
   return (
     <>
       <CatalogToolbar
         hint="Front-of-pack certificate badges shown on product labels."
-        search={search}
-        onSearchChange={setSearch}
+        search={listQuery.searchInput}
+        onSearchChange={listQuery.setSearch}
         searchPlaceholder="Search certificate… (⌘K)"
         searchAriaLabel="Search certificates"
         sort={sort}
@@ -106,17 +104,17 @@ export default function FOPLCertificates({ type }: any) {
         }
       />
 
-      {loading && <CircleLoader />}
-
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table aria-label="FOPL certificates" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={3}
               loading={loading}
-              length={refreshLoader ? 0 : visible.length}
+              length={visible.length}
               message={
-                search
+                listQuery.debouncedSearch
                   ? "No certificates match your search."
                   : t("No certificate currently available.")
               }
@@ -140,7 +138,13 @@ export default function FOPLCertificates({ type }: any) {
                     </StyledTableCell>
                     <StyledTableCell>
                       {!item.url ? (
-                        <CircleLoader />
+                        <Skeleton
+                          variant="rounded"
+                          width={50}
+                          height={50}
+                          animation="wave"
+                          sx={{ borderRadius: "8px" }}
+                        />
                       ) : (
                         <img
                           src={item.url}
@@ -223,11 +227,11 @@ export default function FOPLCertificates({ type }: any) {
             <Pagination
               variant="outlined"
               color="primary"
-              page={filters.page}
+              page={listQuery.page}
               disabled={refreshLoader}
-              count={Math.ceil(count / filters.page_size)}
+              count={Math.max(1, Math.ceil(count / listQuery.limit))}
               onChange={(_e, page) =>
-                dispatch(imageActions.setPage({ type, page }))
+                listQuery.setPage(page)
               }
             />
           )}

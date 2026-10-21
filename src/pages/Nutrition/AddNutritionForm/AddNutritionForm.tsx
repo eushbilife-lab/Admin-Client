@@ -11,13 +11,13 @@ import {
 } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TableWrapper from "@core/templates/TableWrapper";
+import TableLoader from "@core/templates/TableLoader";
 import {
   StyledTableCell,
   StyledTableCellAction,
   StyledTableRow,
   adminTableSx,
 } from "@core/templates/Tables";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import "../Nutrition.css";
 
 type NutrientRow = {
@@ -220,7 +220,21 @@ export default function AddNutritionForm({ onSubmit }: Props) {
   }, [rows, canSave]);
 
   if (loading && !rows.length) {
-    return <CircleLoader />;
+    return (
+      <div>
+        <p className="nutrients-hint">
+          Search, filter, and edit the nutrient library used on product labels and
+          health scores. Keys are generated on save from the nutrient name.
+        </p>
+        <TableWrapper>
+          <TableContainer>
+            <Table aria-label="Nutrients loading" sx={adminTableSx}>
+              <TableLoader rows={10} coloumns={3} showHeader />
+            </Table>
+          </TableContainer>
+        </TableWrapper>
+      </div>
+    );
   }
 
   return (

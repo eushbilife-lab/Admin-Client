@@ -22,7 +22,6 @@ import {
   TableRow,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import { config } from "config";
 import CatalogToolbar, {
   CatalogMetaPill,
@@ -83,7 +82,6 @@ export default function Roles() {
       title="Staff"
       subtitle="Accounts that can enter, review, and publish catalog data."
     >
-      {loading && <CircleLoader />}
 
       <CatalogToolbar
         hint="Search staff by name, email, or role."
@@ -117,13 +115,15 @@ export default function Roles() {
         }
       />
 
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table aria-label="Staff table" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={5}
               loading={loading}
-              length={refreshLoader ? 0 : visible.length}
+              length={visible.length}
               message={
                 search || status !== "all"
                   ? "No staff match your search or filters."

@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Button, IconButton, MenuItem, TextField } from "@mui/material";
+import { Button, IconButton, MenuItem, Skeleton, TextField } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import PageShell from "@core/templates/PageShell";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import storeCategoryService from "services/storeCategory.service";
 import ToasterService from "utils/toaster.util";
 import "../Store.css";
@@ -102,8 +101,6 @@ export default function StoreCategories() {
         </Button>
       }
     >
-      {loading ? <CircleLoader /> : null}
-
       <section className="store-section">
         <h2>Add a section</h2>
         <p style={{ margin: 0, color: "#667066", fontSize: "0.875rem" }}>
@@ -151,6 +148,17 @@ export default function StoreCategories() {
       <section className="store-section" style={{ marginTop: 20 }}>
         <h2>Current sections</h2>
         <div className="store-section-list">
+          {loading && items.length === 0
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <article key={`sk-${i}`} className="store-section-list__row">
+                  <div style={{ flex: 1 }}>
+                    <Skeleton animation="wave" height={22} width="40%" />
+                    <Skeleton animation="wave" height={16} width="70%" />
+                    <Skeleton animation="wave" height={14} width="55%" />
+                  </div>
+                </article>
+              ))
+            : null}
           {items.map((row) => {
             const id = row._id || row.id || "";
             const locked = DEFAULT_KEYS.has(row.key);

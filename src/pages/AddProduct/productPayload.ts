@@ -53,7 +53,17 @@ export function productBody(values: any, extras: { status: string; draftId?: str
     productName: values.productName,
     ingredients: productIngredients(values.ingredients),
     foodType: (values.foodType || []).map((item: any) => choiceId(item)),
-    processingLevel: values.processingLevel,
+    processingLevel: values.processingLevel
+      ? {
+          label:
+            values.processingLevel.label ||
+            values.processingLevel.name ||
+            "",
+          value: Number(
+            values.processingLevel.value ?? values.processingLevel.levelValue
+          ),
+        }
+      : values.processingLevel,
     FOPLcertificates: values.FOPLcertificates,
     carbsCount: values.carbsCount,
     HNSSProductCategory: choiceId(values.HNSSProductCategory),

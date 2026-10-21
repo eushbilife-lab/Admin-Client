@@ -243,7 +243,8 @@ export const productPreferenceFields = (isDraft: boolean): ReduxFormField[] => {
       component: SelectProcessingLevel,
       cellProps: scoreCell,
       InputProps: {
-        helperText: "NOVA-style processing class for scoring.",
+        helperText:
+          "From Processing levels catalog. Add a new class if it is missing.",
       },
     },
     {

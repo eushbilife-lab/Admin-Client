@@ -1,4 +1,3 @@
-import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { useEffect, memo, useCallback } from "react";
 import moment from "moment";
@@ -40,20 +39,21 @@ export default function Users() {
       title="Households"
       subtitle="BMI, calorie targets, diets, and allergen profiles from the live app."
     >
-      {loading && <CircleLoader />}
       <UsersFilters
         count={count}
         userActions={userActions}
         refreshLoader={refreshLoader}
         filters={filters}
       />
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table aria-label="Members table" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={8}
               loading={loading}
-              length={refreshLoader ? 0 : users?.length}
+              length={users?.length}
               message="No members currently available."
             >
               <TableHead>

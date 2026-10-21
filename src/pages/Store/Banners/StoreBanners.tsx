@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button, Pagination } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
-import CircleLoader from "@core/basic-components/CircleLoader";
+import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeBannerService from "services/storeBanner.service";
 import { storeBannerActions } from "redux/slices/storeBanner";
@@ -37,8 +37,9 @@ export default function StoreBanners() {
         </Button>
       }
     >
-      {loading ? <CircleLoader /> : null}
-      {items.length === 0 && !loading ? (
+      {loading && items.length === 0 ? (
+        <GridSkeleton cards={6} columns="repeat(auto-fill, minmax(220px, 1fr))" />
+      ) : items.length === 0 ? (
         <div className="store-empty">
           <h2>No banners yet</h2>
           <Button variant="contained" onClick={() => navigate("/store/banners/new")}>
@@ -46,7 +47,7 @@ export default function StoreBanners() {
           </Button>
         </div>
       ) : (
-        <div className="store-grid">
+        <div className="store-grid" style={{ opacity: loading ? 0.72 : 1, transition: "opacity 160ms ease" }}>
           {items.map((banner: any) => (
             <article
               key={banner._id}

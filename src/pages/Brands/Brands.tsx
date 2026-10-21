@@ -5,7 +5,6 @@ import { dynamicActions } from "redux/slices/dynamic";
 import dynamicService from "services/dynamic.service";
 import PageShell from "@core/templates/PageShell";
 import LibraryPanel from "@core/templates/LibraryPanel/LibraryPanel";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import type { DynamicType } from "redux/slices/dynamic";
 import useListQueryParams from "hooks/useListQueryParams";
 
@@ -41,7 +40,6 @@ export default function Brands() {
       title="Brands & makers"
       subtitle="Brand and manufacturer names the app uses in search, filters, and the store shelf."
     >
-      {(brand.loading || manufacturer.loading) && <CircleLoader />}
       <LibraryPanel
         heading="Brands"
         blurb="What households search for: Eushbi Farms, Gulf Dairy, Oasis Snacks."
@@ -55,6 +53,8 @@ export default function Brands() {
         pageSize={brandQuery.limit}
         searchValue={brandQuery.searchInput}
         onSearchChange={brandQuery.setSearch}
+        statusValue={(brandQuery.status as any) || "all"}
+        onStatusChange={(id) => brandQuery.setStatus(id)}
         searchPlaceholder="Search brands…"
         onAdd={() => openEditor("brand")}
         onEdit={(row) => openEditor("brand", row)}
@@ -73,6 +73,8 @@ export default function Brands() {
         pageSize={makerQuery.limit}
         searchValue={makerQuery.searchInput}
         onSearchChange={makerQuery.setSearch}
+        statusValue={(makerQuery.status as any) || "all"}
+        onStatusChange={(id) => makerQuery.setStatus(id)}
         searchPlaceholder="Search manufacturers…"
         onAdd={() => openEditor("manufacturer")}
         onEdit={(row) => openEditor("manufacturer", row)}

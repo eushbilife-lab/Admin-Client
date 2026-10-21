@@ -127,6 +127,14 @@ export const sidebarGroups: NavGroup[] = [
         hint: "Brand directory",
       },
       {
+        label: "Processing levels",
+        path: "/processing-levels",
+        icon: MdTune,
+        roles: ["admin"],
+        keywords: "nova processing ultra processed culinary",
+        hint: "NOVA processing classes",
+      },
+      {
         label: "Recipes",
         path: "/recipes",
         icon: MdMenuBook,

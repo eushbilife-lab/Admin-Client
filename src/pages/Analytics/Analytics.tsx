@@ -11,8 +11,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Skeleton } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import ProductMetricsService, {
   type DateRangeKey,
   type ProductKpis,
@@ -97,9 +97,19 @@ export default function Analytics() {
         </div>
       }
     >
-      {loading && !kpis ? <CircleLoader /> : null}
-
       {insight ? <p className="analytics-insight">{insight}</p> : null}
+
+      {loading && !kpis ? (
+        <div className="analytics-kpi-grid" aria-busy="true">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <article key={i} className="analytics-kpi">
+              <Skeleton animation="wave" height={14} width="40%" />
+              <Skeleton animation="wave" height={36} width="55%" sx={{ mt: 1 }} />
+              <Skeleton animation="wave" height={12} width="30%" sx={{ mt: 1 }} />
+            </article>
+          ))}
+        </div>
+      ) : null}
 
       {kpis ? (
         <>

@@ -1,4 +1,4 @@
-import { useAppDispatch, useAppSelector } from "redux/hooks";
+import { useAppDispatch } from "redux/hooks";
 import PersistFilters from "@core/templates/PersistFilters";
 import MyForm from "@core/templates/MyForm";
 import { change, reset } from "redux-form";
@@ -6,6 +6,8 @@ import { Pagination } from "@mui/material";
 import { config } from "config";
 import { fields } from ".";
 import { useTranslation } from "react-i18next";
+import { useCallback } from "react";
+import useLiveReduxFormSearch from "hooks/useLiveReduxFormSearch";
 
 export default function Level3Filters({
   filters,
@@ -15,7 +17,7 @@ export default function Level3Filters({
 }: any) {
   const form = "level3FiltersForm";
   const dispatch = useAppDispatch();
-   const {t}=useTranslation()
+  const { t } = useTranslation();
 
   const onClickReset = () => {
     const default_page_size = config.PAGE_SIZE;
@@ -24,13 +26,24 @@ export default function Level3Filters({
     dispatch(change(form, "page_size", default_page_size));
   };
 
-  const handleSubmit = (values: any) => {
-    const page_size= values.page_size
-    let data: any = { page: 1, page_size: page_size };
-    const { level2, ...otherValues } = values;
-    data = { ...data, categoryID: level2?.value, ...otherValues };
-    dispatch(level3Actions.setFilters(data));
-  };
+  const handleSubmit = useCallback(
+    (values: any) => {
+      const page_size = values.page_size;
+      const { level2, ...otherValues } = values;
+      const data: any = {
+        page: 1,
+        page_size,
+        categoryID: level2?.value,
+        ...otherValues,
+      };
+      if (data.name === "" || data.name == null) delete data.name;
+      if (data.status === "" || data.status == null) delete data.status;
+      dispatch(level3Actions.setFilters(data));
+    },
+    [dispatch, level3Actions]
+  );
+
+  useLiveReduxFormSearch(form, handleSubmit);
 
   return (
     <div className="filters">
@@ -41,8 +54,10 @@ export default function Level3Filters({
         onClickReset={onClickReset}
       />
       <div className="pagination-list">
-      <p>  {count > 0 && `${count} ${count > 1 ? t("Counts") : t("Count")}`}</p>
-      {count > 0 && (
+        <p>
+          {count > 0 && `${count} ${count > 1 ? t("Counts") : t("Count")}`}
+        </p>
+        {count > 0 && (
           <Pagination
             variant="outlined"
             color="primary"

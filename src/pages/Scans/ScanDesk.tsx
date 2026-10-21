@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
-import CircleLoader from "@core/basic-components/CircleLoader";
+import { Skeleton } from "@mui/material";
 import http from "services/http.service";
 import Promisable from "services/promisable.service";
 import "./ScanDesk.css";
@@ -80,28 +80,39 @@ export default function ScanDesk() {
       title="Scan desk"
       subtitle="Barcode quality for the camera in the app: missing codes, pack photos, facts, and duplicate scans."
     >
-      {loading && <CircleLoader />}
       <div className="ops-grid">
-        <button type="button" className="ops-card" onClick={() => navigate("/add-product")}>
-          <strong>{buckets.noBarcode}</strong>
-          <span>Missing barcode</span>
-          <p>A scan that cannot resolve a GTIN never reaches the catalog.</p>
-        </button>
-        <button type="button" className="ops-card" onClick={() => navigate("/products")}>
-          <strong>{buckets.noPhoto}</strong>
-          <span>Missing pack photo</span>
-          <p>The scan result screen needs the front of pack.</p>
-        </button>
-        <button type="button" className="ops-card" onClick={() => navigate("/queue")}>
-          <strong>{buckets.noFacts}</strong>
-          <span>No nutrition facts</span>
-          <p>Calories and macros cannot score until the panel exists.</p>
-        </button>
-        <button type="button" className="ops-card" onClick={() => navigate("/ingredients")}>
-          <strong>{buckets.noIngredients}</strong>
-          <span>No ingredient list</span>
-          <p>Allergen and intolerance matching starts here.</p>
-        </button>
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="ops-card" aria-busy="true">
+                <Skeleton animation="wave" height={36} width="36%" />
+                <Skeleton animation="wave" height={18} width="70%" sx={{ mt: 1 }} />
+                <Skeleton animation="wave" height={14} width="90%" sx={{ mt: 1 }} />
+              </div>
+            ))
+          : (
+            <>
+              <button type="button" className="ops-card" onClick={() => navigate("/add-product")}>
+                <strong>{buckets.noBarcode}</strong>
+                <span>Missing barcode</span>
+                <p>A scan that cannot resolve a GTIN never reaches the catalog.</p>
+              </button>
+              <button type="button" className="ops-card" onClick={() => navigate("/products")}>
+                <strong>{buckets.noPhoto}</strong>
+                <span>Missing pack photo</span>
+                <p>The scan result screen needs the front of pack.</p>
+              </button>
+              <button type="button" className="ops-card" onClick={() => navigate("/queue")}>
+                <strong>{buckets.noFacts}</strong>
+                <span>No nutrition facts</span>
+                <p>Calories and macros cannot score until the panel exists.</p>
+              </button>
+              <button type="button" className="ops-card" onClick={() => navigate("/ingredients")}>
+                <strong>{buckets.noIngredients}</strong>
+                <span>No ingredient list</span>
+                <p>Allergen and intolerance matching starts here.</p>
+              </button>
+            </>
+          )}
       </div>
 
       <section className="scan-desk__list">

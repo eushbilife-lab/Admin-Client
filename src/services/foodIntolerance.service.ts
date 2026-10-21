@@ -58,6 +58,8 @@ const foodIntoleranceService = {
     const payload = {
       page: filters.page,
       page_size: filters.page_size,
+      ...(filters.name ? { name: filters.name } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
     };
     const [success, error]: any = await Promisable.asPromise(
       http.post(`${url}/major-FoodIntolerance`, payload)
@@ -82,6 +84,8 @@ const foodIntoleranceService = {
     const payload = {
       page: filters.page,
       page_size: filters.page_size,
+      ...(filters.name ? { name: filters.name } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
     };
     const [success, error]: any = await Promisable.asPromise(
       http.post(`${url}/minor-FoodIntolerance`, payload)

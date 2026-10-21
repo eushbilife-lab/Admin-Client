@@ -19,7 +19,6 @@ import {
   TableRow,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
-import CircleLoader from "@core/basic-components/CircleLoader";
 import NotificationService from "services/notification.service";
 import { notificationActions } from "redux/slices/notification";
 import moment from "moment";
@@ -64,7 +63,6 @@ export default function Notifications() {
       title="Notifications"
       subtitle="Push messages sent to members in the live app."
     >
-      {loading && <CircleLoader />}
 
       <CatalogToolbar
         hint="Find past pushes by title, body, or deep-link URL."
@@ -94,13 +92,15 @@ export default function Notifications() {
         }
       />
 
-      <TableWrapper>
+      <TableWrapper
+        refreshing={refreshLoader}
+      >
         <TableContainer>
           <Table aria-label="Notifications table" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={6}
               loading={loading}
-              length={refreshLoader ? 0 : visible.length}
+              length={visible.length}
               message={
                 search
                   ? "No notifications match your search."

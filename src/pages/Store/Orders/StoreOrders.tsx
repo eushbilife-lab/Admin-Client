@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, MenuItem, TextField } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
-import CircleLoader from "@core/basic-components/CircleLoader";
+import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeOrderService from "services/storeOrder.service";
 import ToasterService from "utils/toaster.util";
@@ -116,7 +116,6 @@ export default function StoreOrders() {
       title="Orders"
       subtitle="Customer store orders — place from mobile cart, manage fulfillment here."
     >
-      {loading ? <CircleLoader /> : null}
       <div className="store-toolbar">
         <input
           className="store-search"
@@ -145,7 +144,10 @@ export default function StoreOrders() {
       </div>
 
       <div className="store-orders-layout">
-        <div className="store-orders">
+        <div className="store-orders" style={{ opacity: loading && items.length ? 0.72 : 1, transition: "opacity 160ms ease" }}>
+          {loading && items.length === 0 ? (
+            <GridSkeleton cards={4} columns="1fr" />
+          ) : null}
           {items.map((row: any) => (
             <article
               key={row._id}
