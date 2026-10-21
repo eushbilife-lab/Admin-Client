@@ -16,6 +16,8 @@ import SelectProcessingLevel from "@core/api-components/SelectProcessingLevel";
 import SelectUOM from "@core/api-components/SelectUOM";
 import SelectHNSSProductCategory from "@core/api-components/SelectHNSSProductCategory";
 import ProductIngredientsField from "@core/api-components/ProductIngredientsField";
+import SelectBrand from "@core/api-components/SelectBrand";
+import SelectManufacturer from "@core/api-components/SelectManufacturer";
 export { default } from "./AddProductForm";
 
 
@@ -122,9 +124,12 @@ export const productCardFields = (
     {
       name: "brand",
       label: "Brand",
-      component: InputRedux,
+      component: SelectBrand,
       validate: [required],
       cellProps: detailCell,
+      InputProps: {
+        helperText: "From Brands & makers. Add a new brand if it is missing.",
+      },
     },
     {
       name: "productName",
@@ -187,9 +192,12 @@ export const productCardFields = (
     {
       name: "manufacturer",
       label: "Manufacturer",
-      component: InputRedux,
+      component: SelectManufacturer,
       validate: [required],
       cellProps: detailCell,
+      InputProps: {
+        helperText: "From Brands & makers. Add a new maker if it is missing.",
+      },
     },
     {
       name: "productionCountry",

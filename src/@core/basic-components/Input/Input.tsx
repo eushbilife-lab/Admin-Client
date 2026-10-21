@@ -17,19 +17,29 @@ const CssTextField = styled(TextField)({
     color: "var(--text-secondary)",
   },
   "& .MuiInputLabel-root.Mui-focused": {
-    color: "var(--color-leaf)",
+    color: "var(--color-leaf-deep)",
   },
   "& .MuiOutlinedInput-root": {
     backgroundColor: "var(--color-paper)",
-    borderRadius: "10px",
+    borderRadius: 12,
     minHeight: 48,
     fontSize: "0.875rem",
+    transition:
+      "box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), background-color 160ms cubic-bezier(0.16, 1, 0.3, 1)",
   },
   "& .MuiOutlinedInput-notchedOutline": {
     borderColor: "var(--border-color)",
+    transition: "border-color 160ms cubic-bezier(0.16, 1, 0.3, 1)",
+  },
+  "& .MuiOutlinedInput-root:hover": {
+    backgroundColor: "#fcfdf9",
   },
   "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: "var(--color-leaf)",
+    borderColor: "color-mix(in srgb, var(--color-leaf) 55%, #c7c7c7)",
+  },
+  "& .MuiOutlinedInput-root.Mui-focused": {
+    backgroundColor: "#fff",
+    boxShadow: "0 0 0 3px var(--focus-ring)",
   },
   "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
     borderColor: "var(--color-leaf)",
@@ -46,6 +56,7 @@ const CssTextField = styled(TextField)({
   "& .MuiFormHelperText-root": {
     marginLeft: 4,
     marginTop: 6,
+    fontSize: "0.75rem",
   },
 });
 

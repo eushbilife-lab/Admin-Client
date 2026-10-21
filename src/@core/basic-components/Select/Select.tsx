@@ -16,22 +16,30 @@ const CssTextField = styled(TextField)({
     color: "var(--text-secondary)",
   },
   "& .MuiInputLabel-root.Mui-focused": {
-    color: "var(--color-science)",
+    color: "var(--color-leaf-deep)",
   },
   "& .MuiOutlinedInput-root": {
     backgroundColor: "var(--color-paper)",
-    borderRadius: "8px",
-    minHeight: 44,
+    borderRadius: 12,
+    minHeight: 48,
     fontSize: "0.875rem",
+    transition:
+      "box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), background-color 160ms cubic-bezier(0.16, 1, 0.3, 1)",
   },
   "& .MuiOutlinedInput-notchedOutline": {
     borderColor: "var(--border-color)",
   },
+  "& .MuiOutlinedInput-root:hover": {
+    backgroundColor: "#fcfdf9",
+  },
   "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: "var(--color-leaf)",
+    borderColor: "color-mix(in srgb, var(--color-leaf) 55%, #c7c7c7)",
+  },
+  "& .MuiOutlinedInput-root.Mui-focused": {
+    boxShadow: "0 0 0 3px var(--focus-ring)",
   },
   "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-    borderColor: "var(--color-science)",
+    borderColor: "var(--color-leaf)",
     borderWidth: 1.5,
   },
   "& .MuiSelect-select": {
@@ -56,23 +64,36 @@ export default function Select({
   const { t } = useTranslation();
   const loading = useAppSelector((state) => state.loader.select);
 
+  const { SelectProps: userSelectProps, ...fieldRest } = rest as any;
+
   return (
     <CssTextField
       select
       fullWidth
-      InputLabelProps={rest.InputLabelProps}
+      InputLabelProps={fieldRest.InputLabelProps}
       label={label ? t(`${label}`) : undefined}
       variant="outlined"
+      {...fieldRest}
       SelectProps={{
         MenuProps: {
           sx: {
-            maxHeight: 320,
-            "& .MuiPaper-root": { borderRadius: "12px", marginTop: "6px" },
-            "& .MuiMenuItem-root": { fontSize: "0.875rem", padding: "10px 14px" },
+            maxHeight: 340,
+            "& .MuiPaper-root": {
+              borderRadius: "14px",
+              marginTop: "6px",
+              border: "1px solid var(--border-color)",
+              boxShadow: "0 12px 32px rgba(10, 10, 10, 0.12)",
+            },
+            "& .MuiMenuItem-root": {
+              fontSize: "0.875rem",
+              padding: "10px 14px",
+              borderRadius: "10px",
+              margin: "2px 8px",
+            },
           },
         },
+        ...(userSelectProps || {}),
       }}
-      {...rest}
       disabled={(disabledOnUpdate && Boolean(id)) || disabled || loading}
     >
       {options.map(({ value, label: optionLabel }, index) => (

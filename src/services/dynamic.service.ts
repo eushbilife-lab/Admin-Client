@@ -15,12 +15,15 @@ const dynamicService = {
     );
     if (success) {
       const { dynamic } = success?.data.data;
-      if(!dynamic){
+      const type = dynamic?.type || data?.type;
+      if (dynamic) {
         dispatch?.(
-          dynamicActions.setDynamic({ type: dynamic?.type, data: dynamic })
-        )
-      }else{
-        dynamicService.getAllDynamics(dynamic?.type, { page: 1, page_size: 3 },dispatch);
+          dynamicActions.setDynamic({ type: dynamic.type, data: dynamic })
+        );
+      }
+      if (type) {
+        dynamicService.getAllDynamics(type, { page: 1, page_size: 20 }, dispatch);
+        dynamicService.getOptions({ type, status: "active" }, dispatch);
       }
       dispatch?.(modalActions.closeModal());
     }
@@ -68,9 +71,15 @@ const dynamicService = {
     );
     if (success) {
       const { dynamics } = success?.data?.data;
-      dispatch?.(
-        dynamicActions.setDynamic({ type: dynamics.type, data: dynamics })
-      );
+      const type = dynamics?.type || data?.type;
+      if (dynamics) {
+        dispatch?.(
+          dynamicActions.setDynamic({ type: dynamics.type, data: dynamics })
+        );
+      }
+      if (type) {
+        dynamicService.getOptions({ type, status: "active" }, dispatch);
+      }
       dispatch?.(modalActions.closeModal());
     }
     dispatch?.(modalActions.setLoading(false));

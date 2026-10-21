@@ -15,16 +15,26 @@
 .nutrients-search {
   width: 100%;
   border: 1px solid var(--border-color, #d7ddd6);
-  border-radius: 10px;
-  padding: 10px 36px 10px 14px;
+  border-radius: 12px;
+  padding: 11px 40px 11px 14px;
   font: inherit;
+  font-size: 0.875rem;
   background: #fff;
   box-sizing: border-box;
+  min-height: 44px;
+  transition:
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nutrients-search:hover {
+  border-color: color-mix(in srgb, var(--color-primary, #9fc53a) 45%, #c7c7c7);
 }
 
 .nutrients-search:focus {
-  outline: 2px solid color-mix(in srgb, var(--color-primary, #2e7d32) 35%, transparent);
-  outline-offset: 1px;
+  outline: none;
+  border-color: var(--color-primary, #9fc53a);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #9fc53a) 28%, transparent);
 }
 
 .nutrients-search-clear {
@@ -43,12 +53,15 @@
 
 .nutrients-select {
   border: 1px solid var(--border-color, #d7ddd6);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border-radius: 12px;
+  padding: 11px 36px 11px 14px;
   font: inherit;
+  font-size: 0.875rem;
   background: #fff;
   color: #334033;
-  min-width: 140px;
+  min-width: 148px;
+  min-height: 44px;
+  appearance: none;
 }
 
 .nutrients-meta {
@@ -152,11 +165,20 @@
 .nutrients-row-input {
   width: 100%;
   border: 1px solid var(--border-color, #d7ddd6);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 10px 12px;
   font: inherit;
   background: #fff;
   box-sizing: border-box;
+  transition:
+    border-color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nutrients-row-input:focus {
+  outline: none;
+  border-color: var(--color-primary, #9fc53a);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary, #9fc53a) 22%, transparent);
 }
 
 .nutrients-row-input.is-invalid {

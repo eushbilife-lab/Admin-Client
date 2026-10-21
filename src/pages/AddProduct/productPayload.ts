@@ -1,5 +1,12 @@
 const choiceId = (value: any) => value?.value || value || "";
 
+/** Brand / manufacturer are stored as display names on the product. */
+const choiceLabel = (value: any) => {
+  if (value == null || value === "") return "";
+  if (typeof value === "string") return value;
+  return String(value.label || value.name || value.En_name || "").trim();
+};
+
 const levelKeys = ["level1_id", "level2_id", "level3_id", "level4_id"] as const;
 
 export function productLevels(values: any) {
@@ -31,8 +38,8 @@ export function productBody(values: any, extras: { status: string; draftId?: str
     draftId: extras.draftId || "",
     status: extras.status,
     key: extras.isDraft || "",
-    brand: values.brand,
-    manufacturer: values.manufacturer,
+    brand: choiceLabel(values.brand),
+    manufacturer: choiceLabel(values.manufacturer),
     attribute_01_Flavour: values.attribute_01_Flavour,
     attribute_02_Other: values.attribute_02_Other,
     productionCountry: values.productionCountry,

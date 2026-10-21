@@ -16,6 +16,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import MeasurementScaleService from "services/measurementScale.service";
+import dynamicService from "services/dynamic.service";
 import { FormSection } from "utils/FormSection";
 import { field as imageFields } from "../AddProductImage";
 import useUnsavedChanges from "hooks/useUnsavedChanges";
@@ -35,6 +36,11 @@ function AddProductForm({ handleSubmit, submitting, dirty, pristine }: any) {
 
   useEffect(() => {
     MeasurementScaleService.getOptions({ type: "uom" }, dispatch);
+    dynamicService.getOptions({ type: "brand", status: "active" }, dispatch);
+    dynamicService.getOptions(
+      { type: "manufacturer", status: "active" },
+      dispatch
+    );
   }, [dispatch]);
 
   const label = (text: string) => (

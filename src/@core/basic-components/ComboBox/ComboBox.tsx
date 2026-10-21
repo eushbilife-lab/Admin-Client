@@ -22,11 +22,14 @@ export default function ComboBox({
       sx={{
         "& .MuiAutocomplete-input": {
           backgroundColor: "transparent !important",
-          padding: "3px 4px !important",
+          padding: "4px 6px !important",
         },
         "& .MuiOutlinedInput-root": {
           paddingTop: "6px",
           paddingBottom: "6px",
+        },
+        "& .MuiAutocomplete-endAdornment": {
+          right: 10,
         },
       }}
       loading={loading}
@@ -53,10 +56,11 @@ export default function ComboBox({
                   variant="filled"
                   size="small"
                   sx={{
-                    backgroundColor: "var(--color-canvas)",
-                    color: "var(--color-ink)",
+                    backgroundColor: "var(--color-leaf-soft)",
+                    color: "var(--color-leaf-deep)",
                     fontWeight: 700,
-                    borderRadius: "6px",
+                    borderRadius: "8px",
+                    border: "1px solid color-mix(in srgb, var(--color-leaf) 25%, transparent)",
                   }}
                   {...getTagProps({ index })}
                   {...ChipProps}
@@ -72,12 +76,22 @@ export default function ComboBox({
             {option?.url ? (
               <Avatar
                 src={option.url}
-                sx={{ width: 28, height: 28, mr: 1, display: "inline-flex" }}
+                sx={{ width: 28, height: 28, mr: 1.25, display: "inline-flex" }}
               />
             ) : null}
             {optionLabel(option?.label ?? option?.name ?? option, "")}
           </li>
         );
+      }}
+      componentsProps={{
+        paper: {
+          sx: {
+            borderRadius: "14px",
+            border: "1px solid var(--border-color)",
+            boxShadow: "0 12px 32px rgba(10, 10, 10, 0.12)",
+            mt: 0.75,
+          },
+        },
       }}
       renderInput={(params) => (
         <Input
