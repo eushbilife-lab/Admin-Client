@@ -5,7 +5,6 @@ import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import ExpandMoreRoundedIcon from "@mui/icons-material/ExpandMoreRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import StarBorderRoundedIcon from "@mui/icons-material/StarBorderRounded";
-import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import ClearRoundedIcon from "@mui/icons-material/ClearRounded";
 import { useAppSelector } from "redux/hooks";
 import AuthService from "services/auth.service";
@@ -22,7 +21,6 @@ import "./AdminSidebar.css";
 
 const FAV_KEY = "eushbi.admin.sidebar.favorites";
 const OPEN_KEY = "eushbi.admin.sidebar.openGroups";
-const RECENT_KEY = "eushbi.admin.sidebar.recents";
 
 type AdminSidebarProps = {
   open?: boolean;
@@ -68,9 +66,6 @@ export default function AdminSidebar({
   const [favorites, setFavorites] = useState<string[]>(() =>
     readJson<string[]>(FAV_KEY, [])
   );
-  const [recents, setRecents] = useState<string[]>(() =>
-    readJson<string[]>(RECENT_KEY, [])
-  );
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
     readJson<Record<string, boolean>>(OPEN_KEY, {})
   );
@@ -96,17 +91,6 @@ export default function AdminSidebar({
         : "Ctrl K",
     []
   );
-
-  // Track visits for Recents
-  useEffect(() => {
-    const path = location.pathname;
-    if (!allFlat.some(({ item }) => item.path === path)) return;
-    setRecents((prev) => {
-      const next = [path, ...prev.filter((p) => p !== path)].slice(0, 6);
-      writeJson(RECENT_KEY, next);
-      return next;
-    });
-  }, [location.pathname, allFlat]);
 
   // Auto-expand the group that contains the active route
   useEffect(() => {
@@ -146,14 +130,6 @@ export default function AdminSidebar({
       .map((path) => allFlat.find(({ item }) => item.path === path)?.item)
       .filter(Boolean) as NavItem[];
   }, [favorites, allFlat]);
-
-  const recentItems = useMemo(() => {
-    return recents
-      .map((path) => allFlat.find(({ item }) => item.path === path)?.item)
-      .filter((item): item is NavItem => Boolean(item))
-      .filter((item) => !favorites.includes(item.path))
-      .slice(0, 5);
-  }, [recents, allFlat, favorites]);
 
   const isGroupOpen = (groupId: string) => {
     if (isSearching) return true;
@@ -301,20 +277,6 @@ export default function AdminSidebar({
                     </div>
                   </div>
                   {favoriteItems.map((item) => renderLink(item))}
-                </div>
-              ) : null}
-
-              {recentItems.length ? (
-                <div className="admin-sidebar__group">
-                  <div className="admin-sidebar__group-head is-static">
-                    <div>
-                      <p className="admin-sidebar__group-label">
-                        <HistoryRoundedIcon fontSize="inherit" /> Recent
-                      </p>
-                      <p className="admin-sidebar__group-blurb">Last visited</p>
-                    </div>
-                  </div>
-                  {recentItems.map((item) => renderLink(item))}
                 </div>
               ) : null}
 

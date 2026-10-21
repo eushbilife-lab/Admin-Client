@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-Dx9TgJjK.js";import{O as t}from"./index-C6gjf-cn.js";var n=e();function r(){return(0,n.jsx)(`aside`,{className:`login-brand`,"aria-label":t.name,children:(0,n.jsx)(`img`,{alt:t.name,src:t.logo,className:`login-brand__logo`})})}export{r as t};
