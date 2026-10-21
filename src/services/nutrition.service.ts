@@ -14,8 +14,9 @@ const nutritionService = {
       http.put(`${url}`, data)
     );
     if (success) {
-      const { nutritions } = success.data.data;
-        dispatch?.(nutritionActions?.setNutritions(nutritions));
+      const payload = success.data?.data || {};
+      const list = payload.nutritions || payload.Nutritions || [];
+      dispatch?.(nutritionActions.setNutritions({ nutritions: list }));
     }
     dispatch?.(nutritionActions.setLoading(false));
     return [success, error];
