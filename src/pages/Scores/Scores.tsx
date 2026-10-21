@@ -22,7 +22,17 @@ import {
 import scoreCalculationService from "services/score.service";
 import { scoreCalculationActions } from "redux/slices/scoreCalculation";
 import { englishName } from "utils/localizedData.util";
+import CatalogToolbar, {
+  CatalogMetaPill,
+} from "@core/templates/CatalogToolbar";
+import {
+  matchesSearch,
+  sortByName,
+  type NameSort,
+} from "@core/templates/CatalogToolbar/catalogList.util";
 import "./Scores.css";
+
+type ScoreFilter = "all" | "positive" | "negative" | "both";
 
 export default function Scores() {
   const dispatch = useAppDispatch();
@@ -30,6 +40,8 @@ export default function Scores() {
   const { count, scoreCalculations, loading, refreshLoader, refresh, filters } =
     useAppSelector((state) => state.scoreCalculations);
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<NameSort>("az");
+  const [side, setSide] = useState<ScoreFilter>("all");
 
   useEffect(() => {
     scoreCalculationService.getAll(filters, dispatch);
@@ -41,41 +53,101 @@ export default function Scores() {
     };
   }, [dispatch]);
 
+  const scoreMeta = (item: any) => {
+    const types = (item?.isPositive || []).map(
+      (el: any) => el?.value || el?.label
+    );
+    const hasPos = types.some((t: string) =>
+      String(t).toLowerCase().includes("positive")
+    );
+    const hasNeg = types.some((t: string) =>
+      String(t).toLowerCase().includes("negative")
+    );
+    return { hasPos, hasNeg };
+  };
+
   const items = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const rows = scoreCalculations || [];
-    if (!q) return rows;
-    return rows.filter((item: any) => {
-      const name = String(
-        englishName(item?.HNSSProductCategoryID) || ""
-      ).toLowerCase();
-      const code = String(
-        item?.HNSSProductCategoryID?.code || item?.code || ""
-      ).toLowerCase();
-      return name.includes(q) || code.includes(q);
+    let rows = scoreCalculations || [];
+    rows = rows.filter((item: any) => {
+      const { hasPos, hasNeg } = scoreMeta(item);
+      if (side === "positive" && !hasPos) return false;
+      if (side === "negative" && !hasNeg) return false;
+      if (side === "both" && !(hasPos && hasNeg)) return false;
+      return matchesSearch(
+        [
+          englishName(item?.HNSSProductCategoryID),
+          item?.HNSSProductCategoryID?.code,
+          item?.code,
+        ],
+        search
+      );
     });
-  }, [scoreCalculations, search]);
+    return sortByName(
+      rows,
+      (item: any) => String(englishName(item?.HNSSProductCategoryID) || ""),
+      sort
+    );
+  }, [scoreCalculations, search, sort, side]);
+
+  const sideCounts = useMemo(() => {
+    let positive = 0;
+    let negative = 0;
+    let both = 0;
+    (scoreCalculations || []).forEach((item: any) => {
+      const { hasPos, hasNeg } = scoreMeta(item);
+      if (hasPos) positive += 1;
+      if (hasNeg) negative += 1;
+      if (hasPos && hasNeg) both += 1;
+    });
+    return { positive, negative, both };
+  }, [scoreCalculations]);
 
   return (
     <PageShell
       kicker="Science"
       title="Health scores"
       subtitle="HNSS / ENLI rules — positive and negative nutrient bands that grade foods."
-      actions={
-        <Button variant="contained" onClick={() => navigate("/add-score")}>
-          Add score
-        </Button>
-      }
     >
-      <div className="scores-toolbar">
-        <input
-          className="scores-search"
-          placeholder="Search category name or code…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Search health scores"
-        />
-      </div>
+      <CatalogToolbar
+        hint="Each row is a product category with positive and/or negative scoring tables."
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search category name or code… (⌘K)"
+        searchAriaLabel="Search health scores"
+        sort={sort}
+        onSortChange={(v) => setSort(v as NameSort)}
+        sortOptions={[
+          { value: "az", label: "Sort A–Z" },
+          { value: "za", label: "Sort Z–A" },
+        ]}
+        meta={
+          <>
+            <CatalogMetaPill>{count} total</CatalogMetaPill>
+            <CatalogMetaPill>{items.length} showing</CatalogMetaPill>
+          </>
+        }
+        chips={[
+          { id: "all", label: "All" },
+          {
+            id: "positive",
+            label: "Has positive",
+            count: sideCounts.positive,
+          },
+          {
+            id: "negative",
+            label: "Has negative",
+            count: sideCounts.negative,
+          },
+          { id: "both", label: "Both sides", count: sideCounts.both },
+        ]}
+        activeChip={side}
+        onChipChange={(id) => setSide(id as ScoreFilter)}
+        actions={
+          <Button variant="contained" onClick={() => navigate("/add-score")}>
+            Add score
+          </Button>
+        }
+      />
 
       <TableWrapper>
         <TableContainer>
@@ -84,7 +156,11 @@ export default function Scores() {
               coloumns={4}
               loading={loading}
               length={refreshLoader ? 0 : items?.length}
-              message="No health scores yet. Seed or add a category score."
+              message={
+                search || side !== "all"
+                  ? "No scores match your search or filters."
+                  : "No health scores yet. Seed or add a category score."
+              }
             >
               <TableHead>
                 <TableRow>

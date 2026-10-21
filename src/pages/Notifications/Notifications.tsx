@@ -1,4 +1,9 @@
-import { StyledTableCell, StyledTableCellAction, StyledTableRow, adminTableSx } from "@core/templates/Tables";
+import {
+  StyledTableCell,
+  StyledTableCellAction,
+  StyledTableRow,
+  adminTableSx,
+} from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import TableWrapper from "@core/templates/TableWrapper";
@@ -13,17 +18,28 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import NotificationService from "services/notification.service";
 import { notificationActions } from "redux/slices/notification";
 import moment from "moment";
+import CatalogToolbar, {
+  CatalogMetaPill,
+} from "@core/templates/CatalogToolbar";
+import {
+  matchesSearch,
+  sortByName,
+  type NameSort,
+} from "@core/templates/CatalogToolbar/catalogList.util";
 
 export default function Notifications() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { count, notifications, loading, refreshLoader, filters, refresh } =
     useAppSelector((state) => state.notification);
+
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<NameSort>("az");
 
   useEffect(() => {
     NotificationService.getAllNotifications(filters, dispatch);
@@ -35,26 +51,61 @@ export default function Notifications() {
     };
   }, [dispatch]);
 
+  const visible = useMemo(() => {
+    const list = (notifications || []).filter((item: any) =>
+      matchesSearch([item?.title, item?.content, item?.url], search)
+    );
+    return sortByName(list, (item: any) => String(item?.title || ""), sort);
+  }, [notifications, search, sort]);
+
   return (
     <PageShell
       kicker="Operations"
       title="Notifications"
       subtitle="Push messages sent to members in the live app."
-      actions={
-        <Button variant="contained" onClick={() => navigate("/add-notifications")}>
-          Send notification
-        </Button>
-      }
     >
       {loading && <CircleLoader />}
+
+      <CatalogToolbar
+        hint="Find past pushes by title, body, or deep-link URL."
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search notifications… (⌘K)"
+        searchAriaLabel="Search notifications"
+        sort={sort}
+        onSortChange={(v) => setSort(v as NameSort)}
+        sortOptions={[
+          { value: "az", label: "Sort A–Z" },
+          { value: "za", label: "Sort Z–A" },
+        ]}
+        meta={
+          <>
+            <CatalogMetaPill>{count} total</CatalogMetaPill>
+            <CatalogMetaPill>{visible.length} showing</CatalogMetaPill>
+          </>
+        }
+        actions={
+          <Button
+            variant="contained"
+            onClick={() => navigate("/add-notifications")}
+          >
+            Send notification
+          </Button>
+        }
+      />
+
       <TableWrapper>
         <TableContainer>
           <Table aria-label="Notifications table" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={6}
               loading={loading}
-              length={refreshLoader ? 0 : notifications.length}
-              message="There are no notifications currently available."
+              length={refreshLoader ? 0 : visible.length}
+              message={
+                search
+                  ? "No notifications match your search."
+                  : "There are no notifications currently available."
+              }
             >
               <TableHead>
                 <TableRow>
@@ -67,7 +118,7 @@ export default function Notifications() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {notifications?.map((item) => (
+                {visible.map((item: any) => (
                   <StyledTableRow key={item?._id}>
                     <StyledTableCell sx={{ whiteSpace: "nowrap" }}>
                       {moment(item?.createdAt).format("YYYY-MM-DD hh:mm a")}
@@ -95,7 +146,9 @@ export default function Notifications() {
                       <Button
                         variant="text"
                         size="small"
-                        onClick={() => navigate(`/update-notifications/${item?._id}`)}
+                        onClick={() =>
+                          navigate(`/update-notifications/${item?._id}`)
+                        }
                       >
                         Edit
                       </Button>
@@ -107,7 +160,11 @@ export default function Notifications() {
           </Table>
         </TableContainer>
         <div className="pagination-list-bottom">
-          <p>{count > 0 ? `${count} ${count === 1 ? "message" : "messages"}` : ""}</p>
+          <p>
+            {count > 0
+              ? `${count} ${count === 1 ? "message" : "messages"}`
+              : ""}
+          </p>
           {count > 0 && (
             <Pagination
               variant="outlined"
@@ -115,7 +172,9 @@ export default function Notifications() {
               page={filters.page}
               disabled={refreshLoader}
               count={Math.ceil(count / filters.page_size)}
-              onChange={(_e, page) => dispatch(notificationActions.setPage(page))}
+              onChange={(_e, page) =>
+                dispatch(notificationActions.setPage(page))
+              }
             />
           )}
         </div>

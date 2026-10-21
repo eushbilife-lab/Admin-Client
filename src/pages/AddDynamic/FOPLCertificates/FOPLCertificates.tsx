@@ -1,16 +1,17 @@
 import {
   StyledTableCell,
   StyledTableCellAction,
-  StyledTableRow, adminTableSx } from "@core/templates/Tables";
+  StyledTableRow,
+  adminTableSx,
+} from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { MODAL, modalActions } from "redux/slices/modal";
 import TableWrapper from "@core/templates/TableWrapper";
 import Button from "@core/basic-components/Button";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Box,
   IconButton,
   Pagination,
   Table,
@@ -27,6 +28,14 @@ import BlockComponent from "@core/api-components/BlockComponent";
 import Tooltip from "@core/basic-components/Tooltip";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
+import CatalogToolbar, {
+  CatalogMetaPill,
+} from "@core/templates/CatalogToolbar";
+import {
+  matchesSearch,
+  sortByName,
+  type NameSort,
+} from "@core/templates/CatalogToolbar/catalogList.util";
 
 export default function FOPLCertificates({ type }: any) {
   const dispatch = useAppDispatch();
@@ -37,49 +46,80 @@ export default function FOPLCertificates({ type }: any) {
     (state) => state.image.product_certificate
   );
 
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<NameSort>("az");
+
   useEffect(() => {
     imagesService.getAll(type, filters, dispatch);
-  }, [dispatch, refresh, filters]);
+  }, [dispatch, refresh, filters, type]);
 
   useEffect(() => {
     return () => {
       dispatch(imageActions.resetPage(type));
     };
-  }, [dispatch]);
+  }, [dispatch, type]);
+
+  const rowName = (item: any) => String(item?.name || "");
+
+  const visible = useMemo(() => {
+    const list = (images || []).filter((item: any) =>
+      matchesSearch([rowName(item)], search)
+    );
+    return sortByName(list, rowName, sort);
+  }, [images, search, sort]);
 
   return (
     <>
-      <Box className="table-toolbar">
-        <Button
-          variant="contained"
-          onClick={() =>
-            dispatch(
-              modalActions.openModal({
-                type: MODAL.ADD_FOPLCERTIFICATE,
-                data: {
-                  type,
-                },
-                width: "500px",
-              })
-            )
-          }
-        >
-          {t("Add Certificate")}
-        </Button>
-      </Box>
+      <CatalogToolbar
+        hint="Front-of-pack certificate badges shown on product labels."
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search certificate… (⌘K)"
+        searchAriaLabel="Search certificates"
+        sort={sort}
+        onSortChange={(v) => setSort(v as NameSort)}
+        sortOptions={[
+          { value: "az", label: "Sort A–Z" },
+          { value: "za", label: "Sort Z–A" },
+        ]}
+        meta={
+          <>
+            <CatalogMetaPill>{count} total</CatalogMetaPill>
+            <CatalogMetaPill>{visible.length} showing</CatalogMetaPill>
+          </>
+        }
+        actions={
+          <Button
+            variant="contained"
+            onClick={() =>
+              dispatch(
+                modalActions.openModal({
+                  type: MODAL.ADD_FOPLCERTIFICATE,
+                  data: { type },
+                  width: "500px",
+                })
+              )
+            }
+          >
+            {t("Add Certificate")}
+          </Button>
+        }
+      />
+
       {loading && <CircleLoader />}
 
       <TableWrapper>
         <TableContainer>
-          <Table
-            aria-label="customized table"
-            sx={adminTableSx}
-          >
+          <Table aria-label="FOPL certificates" sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={3}
               loading={loading}
-              length={refreshLoader ? 0 : images?.length}
-              message={t("No certificate currently available.")}
+              length={refreshLoader ? 0 : visible.length}
+              message={
+                search
+                  ? "No certificates match your search."
+                  : t("No certificate currently available.")
+              }
             >
               <TableHead>
                 <TableRow>
@@ -91,10 +131,12 @@ export default function FOPLCertificates({ type }: any) {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {images?.map((item: any) => (
+                {visible.map((item: any) => (
                   <StyledTableRow key={item._id}>
                     <StyledTableCell>
-                      <Typography variant="body2">{item?.name}</Typography>
+                      <Typography variant="body2" fontWeight={600}>
+                        {item?.name}
+                      </Typography>
                     </StyledTableCell>
                     <StyledTableCell>
                       {!item.url ? (
@@ -104,10 +146,10 @@ export default function FOPLCertificates({ type }: any) {
                           src={item.url}
                           alt={item.name}
                           style={{
-                            width: "50px",
-                            height: "50px",
+                            width: 50,
+                            height: 50,
                             objectFit: "cover",
-                            borderRadius: "5px",
+                            borderRadius: 8,
                           }}
                         />
                       )}
@@ -146,7 +188,12 @@ export default function FOPLCertificates({ type }: any) {
                                       "Are you sure you want to delete this FOPL Certificate?"
                                     ),
                                     confirmAction: () => {
-                                      imagesService.remove(item._id, dispatch,type,filters);
+                                      imagesService.remove(
+                                        item._id,
+                                        dispatch,
+                                        type,
+                                        filters
+                                      );
                                     },
                                   },
                                   width: "500px",
@@ -168,8 +215,8 @@ export default function FOPLCertificates({ type }: any) {
 
         <div className="pagination-list-bottom">
           <p>
-            {" "}
-            {count > 0 && `${count} ${count > 1 ? t("Counts") : t("Count")}`}
+            {count > 0 &&
+              `${count} ${count > 1 ? t("Counts") : t("Count")}`}
           </p>
 
           {count > 0 && (

@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   Button,
   Pagination,
@@ -6,13 +7,28 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
 } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import TableWrapper from "@core/templates/TableWrapper";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
-import { StyledTableCell, StyledTableCellAction, StyledTableRow, adminTableSx } from "@core/templates/Tables";
+import {
+  StyledTableCell,
+  StyledTableCellAction,
+  StyledTableRow,
+  adminTableSx,
+} from "@core/templates/Tables";
+import CatalogToolbar, {
+  CatalogMetaPill,
+} from "@core/templates/CatalogToolbar";
+import {
+  countByStatus,
+  filterByStatus,
+  matchesSearch,
+  sortByName,
+  type NameSort,
+  type StatusFilter,
+} from "@core/templates/CatalogToolbar/catalogList.util";
 import { englishName } from "utils/localizedData.util";
 
 export type LibraryRow = {
@@ -69,66 +85,130 @@ export default function LibraryPanel({
   onPage,
   searchValue,
   onSearchChange,
-  searchPlaceholder = "Search…",
+  searchPlaceholder = "Search… (⌘K)",
   wrapPage = false,
 }: LibraryPanelProps) {
+  const [localSearch, setLocalSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [sort, setSort] = useState<NameSort>("az");
+
+  const search = onSearchChange ? searchValue ?? "" : localSearch;
+  const setSearch = onSearchChange || setLocalSearch;
+
+  const rowName = (row: LibraryRow) =>
+    englishName(row) || row.name || row.code || "";
+
+  const statusCounts = useMemo(() => countByStatus(rows), [rows]);
+
+  const visible = useMemo(() => {
+    let list = rows;
+    if (!onSearchChange) {
+      list = list.filter((row) =>
+        matchesSearch([rowName(row), row.code, row.content, row.sign], search)
+      );
+    }
+    list = filterByStatus(list, status);
+    return sortByName(list, rowName, sort);
+  }, [rows, search, status, sort, onSearchChange]);
+
   const body = (
     <section>
-      <div className="table-toolbar">
-        <div>
-          {heading ? <h2 className="section-heading">{heading}</h2> : null}
-          {blurb ? <p className="section-blurb">{blurb}</p> : null}
-        </div>
-        <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          {onSearchChange ? (
-            <TextField
-              size="small"
-              value={searchValue ?? ""}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder={searchPlaceholder}
-              aria-label={searchPlaceholder}
-              sx={{ minWidth: 200 }}
-            />
-          ) : null}
+      <CatalogToolbar
+        hint={blurb}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder={searchPlaceholder}
+        searchAriaLabel={searchPlaceholder}
+        sort={sort}
+        onSortChange={(v) => setSort(v as NameSort)}
+        sortOptions={[
+          { value: "az", label: "Sort A–Z" },
+          { value: "za", label: "Sort Z–A" },
+        ]}
+        meta={
+          <>
+            <CatalogMetaPill>{count || rows.length} total</CatalogMetaPill>
+            <CatalogMetaPill>{visible.length} showing</CatalogMetaPill>
+          </>
+        }
+        chips={[
+          { id: "all", label: "All" },
+          { id: "active", label: "Active", count: statusCounts.active },
+          { id: "inactive", label: "Inactive", count: statusCounts.inactive },
+        ]}
+        activeChip={status}
+        onChipChange={(id) => setStatus(id as StatusFilter)}
+        actions={
           <Button variant="contained" onClick={onAdd}>
             {addLabel}
           </Button>
-        </div>
-      </div>
+        }
+      />
+
+      {heading ? (
+        <h2 className="section-heading" style={{ marginBottom: 10 }}>
+          {heading}
+        </h2>
+      ) : null}
+
       <TableWrapper>
         <TableContainer sx={{ maxHeight: "70vh", overflowX: "auto" }}>
           <Table stickyHeader aria-label={heading || title || "library"} sx={adminTableSx}>
             <TableLoadingWrapper
               coloumns={extraColumn === "ingredient" ? 5 : extraColumn ? 4 : 3}
               loading={!!loading}
-              length={refreshLoader ? 0 : rows.length}
-              message={empty}
+              length={refreshLoader ? 0 : visible.length}
+              message={
+                search || status !== "all"
+                  ? "No rows match your search or filters."
+                  : empty
+              }
             >
               <TableHead>
                 <TableRow>
                   <StyledTableCell>Name</StyledTableCell>
-                  {extraColumn === "ingredient" ? <StyledTableCell>Code</StyledTableCell> : null}
-                  {extraColumn === "ingredient" ? <StyledTableCell>Content</StyledTableCell> : null}
+                  {extraColumn === "ingredient" ? (
+                    <StyledTableCell>Code</StyledTableCell>
+                  ) : null}
+                  {extraColumn === "ingredient" ? (
+                    <StyledTableCell>Content</StyledTableCell>
+                  ) : null}
                   <StyledTableCell>Status</StyledTableCell>
-                  {extraColumn === "sign" ? <StyledTableCell>Unit</StyledTableCell> : null}
+                  {extraColumn === "sign" ? (
+                    <StyledTableCell>Unit</StyledTableCell>
+                  ) : null}
                   <StyledTableCellAction>Action</StyledTableCellAction>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {rows.map((row) => (
+                {visible.map((row) => (
                   <StyledTableRow key={row._id}>
-                    <StyledTableCell>{englishName(row) || "Untitled"}</StyledTableCell>
-                    {extraColumn === "ingredient" ? <StyledTableCell>{row.code || "—"}</StyledTableCell> : null}
-                    {extraColumn === "ingredient" ? <StyledTableCell>{row.content || "—"}</StyledTableCell> : null}
+                    <StyledTableCell>
+                      {englishName(row) || "Untitled"}
+                    </StyledTableCell>
+                    {extraColumn === "ingredient" ? (
+                      <StyledTableCell>
+                        <span className="catalog-key">{row.code || "—"}</span>
+                      </StyledTableCell>
+                    ) : null}
+                    {extraColumn === "ingredient" ? (
+                      <StyledTableCell>{row.content || "—"}</StyledTableCell>
+                    ) : null}
                     <StyledTableCell>
                       <StatusChip
                         label={row.status || "inactive"}
                         tone={row.status === "active" ? "ok" : "warn"}
                       />
                     </StyledTableCell>
-                    {extraColumn === "sign" ? <StyledTableCell>{row.sign || "—"}</StyledTableCell> : null}
+                    {extraColumn === "sign" ? (
+                      <StyledTableCell>{row.sign || "—"}</StyledTableCell>
+                    ) : null}
                     <StyledTableCellAction>
-                      <Button size="small" variant="text" onClick={() => onEdit(row)}>
+                      <Button
+                        size="small"
+                        variant="text"
+                        onClick={() => onEdit(row)}
+                      >
                         Edit
                       </Button>
                     </StyledTableCellAction>

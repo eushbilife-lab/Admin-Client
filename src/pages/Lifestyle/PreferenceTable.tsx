@@ -1,13 +1,17 @@
-import { StyledTableCell, StyledTableCellAction, StyledTableRow, adminTableSx } from "@core/templates/Tables";
+import {
+  StyledTableCell,
+  StyledTableCellAction,
+  StyledTableRow,
+  adminTableSx,
+} from "@core/templates/Tables";
 import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { MODAL, modalActions } from "redux/slices/modal";
 import TableWrapper from "@core/templates/TableWrapper";
 import Button from "@core/basic-components/Button";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Box,
   IconButton,
   Pagination,
   Table,
@@ -26,6 +30,17 @@ import BlockComponent from "@core/api-components/BlockComponent";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import type { healthPrefernceType } from "redux/slices/healthPrefernce";
 import { optionLabel } from "utils/selectOption.util";
+import CatalogToolbar, {
+  CatalogMetaPill,
+} from "@core/templates/CatalogToolbar";
+import {
+  countByStatus,
+  filterByStatus,
+  matchesSearch,
+  sortByName,
+  type NameSort,
+  type StatusFilter,
+} from "@core/templates/CatalogToolbar/catalogList.util";
 
 type Props = {
   type: healthPrefernceType;
@@ -41,16 +56,29 @@ export default function PreferenceTable({
   blurb,
 }: Props) {
   const dispatch = useAppDispatch();
-  const { refresh, refreshLoader } = useAppSelector((state) => state.healthPreference);
+  const { refresh, refreshLoader } = useAppSelector(
+    (state) => state.healthPreference
+  );
   const bucket = useAppSelector((state) => state.healthPreference[type]);
   const count = bucket?.count || 0;
   const hps = bucket?.hps || [];
   const loading = bucket?.loading;
   const filters = bucket?.filters || { page: 1, page_size: 10 };
 
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+  const [sort, setSort] = useState<NameSort>("az");
+
   useEffect(() => {
-    healthPreferenceService.getAllHp(type, filters, dispatch);
-  }, [dispatch, refresh, filters, type]);
+    const next = {
+      ...filters,
+      page_size: search.trim()
+        ? Math.max(Number(filters.page_size) || 10, 100)
+        : filters.page_size,
+      page: search.trim() ? 1 : filters.page,
+    };
+    healthPreferenceService.getAllHp(type, next, dispatch);
+  }, [dispatch, refresh, filters, type, search]);
 
   useEffect(() => {
     return () => {
@@ -72,38 +100,54 @@ export default function PreferenceTable({
     );
   };
 
+  const rowName = (item: any) => optionLabel(item, "") || "";
+  const statusCounts = useMemo(() => countByStatus(hps), [hps]);
+
+  const visible = useMemo(() => {
+    let list = (hps || []).filter((item: any) =>
+      matchesSearch(
+        [rowName(item), item.description, item.en?.description],
+        search
+      )
+    );
+    list = filterByStatus(list, status);
+    return sortByName(list, rowName, sort);
+  }, [hps, search, status, sort]);
+
   return (
     <>
-      <Box
-        className="table-toolbar"
-        sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 1.5,
-          mb: 1.5,
-        }}
-      >
-        {blurb ? (
-          <Typography
-            variant="body2"
-            sx={{
-              color: "var(--text-secondary)",
-              flex: "1 1 16rem",
-              maxWidth: "36rem",
-              lineHeight: 1.5,
-            }}
-          >
-            {blurb}
-          </Typography>
-        ) : (
-          <span />
-        )}
-        <Button variant="contained" onClick={() => openEditor()}>
-          {addLabel}
-        </Button>
-      </Box>
+      <CatalogToolbar
+        hint={blurb}
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search by name or description… (⌘K)"
+        searchAriaLabel="Search preferences"
+        sort={sort}
+        onSortChange={(v) => setSort(v as NameSort)}
+        sortOptions={[
+          { value: "az", label: "Sort A–Z" },
+          { value: "za", label: "Sort Z–A" },
+        ]}
+        meta={
+          <>
+            <CatalogMetaPill>{count} total</CatalogMetaPill>
+            <CatalogMetaPill>{visible.length} showing</CatalogMetaPill>
+          </>
+        }
+        chips={[
+          { id: "all", label: "All" },
+          { id: "active", label: "Active", count: statusCounts.active },
+          { id: "inactive", label: "Inactive", count: statusCounts.inactive },
+        ]}
+        activeChip={status}
+        onChipChange={(id) => setStatus(id as StatusFilter)}
+        actions={
+          <Button variant="contained" onClick={() => openEditor()}>
+            {addLabel}
+          </Button>
+        }
+      />
+
       {loading && <CircleLoader />}
 
       <TableWrapper>
@@ -112,8 +156,12 @@ export default function PreferenceTable({
             <TableLoadingWrapper
               coloumns={4}
               loading={!!loading}
-              length={refreshLoader ? 0 : hps?.length}
-              message={emptyMessage}
+              length={refreshLoader ? 0 : visible.length}
+              message={
+                search || status !== "all"
+                  ? "No items match your search or filters."
+                  : emptyMessage
+              }
             >
               <TableHead>
                 <TableRow>
@@ -124,8 +172,8 @@ export default function PreferenceTable({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {hps?.map((item: any) => {
-                  const name = optionLabel(item, "");
+                {visible.map((item: any) => {
+                  const name = rowName(item);
                   const description =
                     item.description || item.en?.description || "";
                   return (

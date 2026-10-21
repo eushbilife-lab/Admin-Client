@@ -1,1 +1,0 @@
-import{t as e}from"./jsx-runtime-Dx9TgJjK.js";import{n as t}from"./hooks-BFCEN_aO.js";import{rt as n}from"./index-CvW6OY4j.js";var r=e();function i(e){let{nutritionsOptions:i}=t(e=>e.nutrition);return(0,r.jsx)(n,{...e,options:i})}export{i as t};

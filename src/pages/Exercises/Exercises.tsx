@@ -8,7 +8,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
@@ -29,10 +28,18 @@ import { MODAL, modalActions } from "redux/slices/modal";
 import { exerciseActions } from "redux/slices/exercise";
 import exerciseService from "services/exercise.service";
 import useListQueryParams from "hooks/useListQueryParams";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import BlockComponent from "@core/api-components/BlockComponent";
+import CatalogToolbar, {
+  CatalogMetaPill,
+} from "@core/templates/CatalogToolbar";
+import {
+  countByStatus,
+  filterByStatus,
+  type StatusFilter,
+} from "@core/templates/CatalogToolbar/catalogList.util";
 
 export default function Exercises() {
   const dispatch = useAppDispatch();
@@ -40,13 +47,14 @@ export default function Exercises() {
     (state) => state.exercise
   );
   const { filters, searchInput, setSearch, setPage } = useListQueryParams();
+  const [status, setStatus] = useState<StatusFilter>("all");
 
   useEffect(() => {
     exerciseService.getAll(
-      { ...filters, name: searchInput || undefined },
+      { ...filters, name: filters.name || undefined },
       dispatch
     );
-  }, [dispatch, refresh, filters, searchInput]);
+  }, [dispatch, refresh, filters]);
 
   useEffect(() => {
     return () => {
@@ -82,6 +90,16 @@ export default function Exercises() {
     );
   };
 
+  const statusCounts = useMemo(
+    () => countByStatus(exercises || []),
+    [exercises]
+  );
+
+  const visible = useMemo(
+    () => filterByStatus(exercises || [], status),
+    [exercises, status]
+  );
+
   return (
     <>
       {loading && <CircleLoader />}
@@ -91,27 +109,35 @@ export default function Exercises() {
         subtitle="Workout videos and routines matched to each member’s activity level."
       >
         <section>
-          <div className="table-toolbar">
-            <div>
-              <h2 className="section-heading">Exercise library</h2>
-              <p className="section-blurb">
-                Add video workouts and tag the activity levels that should see them in the app.
-              </p>
-            </div>
-            <div style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-              <TextField
-                size="small"
-                value={searchInput}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search exercises…"
-                aria-label="Search exercises"
-                sx={{ minWidth: 200 }}
-              />
+          <CatalogToolbar
+            hint="Add video workouts and tag the activity levels that should see them in the app."
+            search={searchInput}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search exercises… (⌘K)"
+            searchAriaLabel="Search exercises"
+            meta={
+              <>
+                <CatalogMetaPill>{count} total</CatalogMetaPill>
+                <CatalogMetaPill>{visible.length} showing</CatalogMetaPill>
+              </>
+            }
+            chips={[
+              { id: "all", label: "All" },
+              { id: "active", label: "Active", count: statusCounts.active },
+              {
+                id: "inactive",
+                label: "Inactive",
+                count: statusCounts.inactive,
+              },
+            ]}
+            activeChip={status}
+            onChipChange={(id) => setStatus(id as StatusFilter)}
+            actions={
               <Button variant="contained" onClick={() => openEditor()}>
                 Add exercise
               </Button>
-            </div>
-          </div>
+            }
+          />
 
           <TableWrapper>
             <TableContainer sx={{ maxHeight: "70vh", overflowX: "auto" }}>
@@ -119,8 +145,12 @@ export default function Exercises() {
                 <TableLoadingWrapper
                   coloumns={7}
                   loading={!!loading}
-                  length={refreshLoader ? 0 : exercises.length}
-                  message="No exercises yet. Add walking, strength, or mobility videos for each activity level."
+                  length={refreshLoader ? 0 : visible.length}
+                  message={
+                    searchInput || status !== "all"
+                      ? "No exercises match your search or filters."
+                      : "No exercises yet. Add walking, strength, or mobility videos for each activity level."
+                  }
                 >
                   <TableHead>
                     <TableRow>
@@ -134,10 +164,12 @@ export default function Exercises() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {exercises.map((row: any) => (
+                    {visible.map((row: any) => (
                       <StyledTableRow key={row._id}>
                         <StyledTableCell>
-                          <Typography fontWeight={600}>{row.name || "Untitled"}</Typography>
+                          <Typography fontWeight={600}>
+                            {row.name || "Untitled"}
+                          </Typography>
                           {row.description ? (
                             <Typography
                               variant="body2"
@@ -157,11 +189,17 @@ export default function Exercises() {
                           {String(row.difficulty || "beginner")}
                         </StyledTableCell>
                         <StyledTableCell>
-                          {row.durationMinutes ? `${row.durationMinutes} min` : "—"}
+                          {row.durationMinutes
+                            ? `${row.durationMinutes} min`
+                            : "—"}
                         </StyledTableCell>
                         <StyledTableCell>
                           {row.videoUrl ? (
-                            <Link href={row.videoUrl} target="_blank" rel="noreferrer">
+                            <Link
+                              href={row.videoUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
                               Open
                             </Link>
                           ) : (
@@ -177,13 +215,19 @@ export default function Exercises() {
                         <StyledTableCellAction>
                           <Box sx={{ display: "flex", gap: 0.5 }}>
                             <Tooltip title="Edit">
-                              <IconButton size="small" onClick={() => openEditor(row)}>
+                              <IconButton
+                                size="small"
+                                onClick={() => openEditor(row)}
+                              >
                                 <EditNoteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                             <BlockComponent allowedRoles={["admin"]}>
                               <Tooltip title="Remove">
-                                <IconButton size="small" onClick={() => remove(row)}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => remove(row)}
+                                >
                                   <DeleteOutlineIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
