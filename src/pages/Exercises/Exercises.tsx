@@ -77,7 +77,7 @@ export default function Exercises() {
           heading: "Delete",
           message: `Remove “${row.name || "this exercise"}”? Members will no longer see it.`,
           confirmAction: () =>
-            exerciseService.remove(row._id, filters, dispatch),
+            exerciseService.remove(row._id, listQuery.filters, dispatch),
         },
         width: "500px",
       })
@@ -89,10 +89,7 @@ export default function Exercises() {
     [exercises]
   );
 
-  const visible = useMemo(
-    () => filterByStatus(exercises || [], status),
-    [exercises, status]
-  );
+  const visible = exercises || [];
 
   return (
     <>
@@ -104,8 +101,8 @@ export default function Exercises() {
         <section>
           <CatalogToolbar
             hint="Add video workouts and tag the activity levels that should see them in the app."
-            search={searchInput}
-            onSearchChange={setSearch}
+            search={listQuery.searchInput}
+            onSearchChange={listQuery.setSearch}
             searchPlaceholder="Search exercises… (⌘K)"
             searchAriaLabel="Search exercises"
             meta={
@@ -123,8 +120,8 @@ export default function Exercises() {
                 count: statusCounts.inactive,
               },
             ]}
-            activeChip={status}
-            onChipChange={(id) => setStatus(id as StatusFilter)}
+            activeChip={(listQuery.status as StatusFilter) || "all"}
+            onChipChange={(id) => listQuery.setStatus(id)}
             actions={
               <Button variant="contained" onClick={() => openEditor()}>
                 Add exercise
@@ -132,7 +129,9 @@ export default function Exercises() {
             }
           />
 
-          <TableWrapper refreshing={refreshLoader}>
+          <TableWrapper
+            refreshing={refreshLoader || (!!loading && visible.length > 0)}
+          >
             <TableContainer sx={{ maxHeight: "70vh", overflowX: "auto" }}>
               <Table stickyHeader aria-label="exercises" sx={adminTableSx}>
                 <TableLoadingWrapper
@@ -140,7 +139,7 @@ export default function Exercises() {
                   loading={!!loading}
                   length={visible.length}
                   message={
-                    searchInput || status !== "all"
+                    listQuery.debouncedSearch || listQuery.status !== "all"
                       ? "No exercises match your search or filters."
                       : "No exercises yet. Add walking, strength, or mobility videos for each activity level."
                   }
@@ -235,12 +234,12 @@ export default function Exercises() {
             </TableContainer>
           </TableWrapper>
 
-          {count > (filters.page_size || 10) ? (
+          {count > (listQuery.limit || 10) ? (
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
               <Pagination
-                page={filters.page || 1}
-                count={Math.ceil(count / (filters.page_size || 10))}
-                onChange={(_e, page) => setPage(page)}
+                page={listQuery.page || 1}
+                count={Math.ceil(count / (listQuery.limit || 10))}
+                onChange={(_e, page) => listQuery.setPage(page)}
                 color="primary"
               />
             </Box>

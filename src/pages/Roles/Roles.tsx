@@ -27,26 +27,44 @@ import CatalogToolbar, {
   CatalogMetaPill,
 } from "@core/templates/CatalogToolbar";
 import {
-  matchesSearch,
   sortByName,
   type NameSort,
 } from "@core/templates/CatalogToolbar/catalogList.util";
+import useListQueryParams from "hooks/useListQueryParams";
 
 type StaffStatus = "all" | "active" | "inactive";
 
 export default function Roles() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { count, Roles, loading, refreshLoader, filters, refresh } =
-    useAppSelector((state) => state.role);
+  const { count, Roles, loading, refreshLoader, refresh } = useAppSelector(
+    (state) => state.role
+  );
 
-  const [search, setSearch] = useState("");
+  const listQuery = useListQueryParams();
   const [sort, setSort] = useState<NameSort>("az");
-  const [status, setStatus] = useState<StaffStatus>("all");
 
   useEffect(() => {
-    roleService.getAllRoles(filters, dispatch);
-  }, [dispatch, refresh, filters]);
+    const q = listQuery.debouncedSearch;
+    roleService.getAllRoles(
+      {
+        page: listQuery.page,
+        page_size: listQuery.limit,
+        ...(q ? { name: q } : {}),
+        ...(listQuery.status !== "all"
+          ? { currentStatus: listQuery.status }
+          : {}),
+      },
+      dispatch
+    );
+  }, [
+    dispatch,
+    refresh,
+    listQuery.page,
+    listQuery.limit,
+    listQuery.debouncedSearch,
+    listQuery.status,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -64,17 +82,11 @@ export default function Roles() {
     return { active, inactive };
   }, [Roles]);
 
-  const visible = useMemo(() => {
-    let list = (Roles || []).filter((item: any) => {
-      if (status === "active" && item?.currentStatus !== "active") return false;
-      if (status === "inactive" && item?.currentStatus === "active") return false;
-      return matchesSearch(
-        [item.fullName, item.email, item.role],
-        search
-      );
-    });
-    return sortByName(list, (item: any) => String(item.fullName || ""), sort);
-  }, [Roles, search, sort, status]);
+  const visible = useMemo(
+    () =>
+      sortByName(Roles || [], (item: any) => String(item.fullName || ""), sort),
+    [Roles, sort]
+  );
 
   return (
     <PageShell
@@ -85,8 +97,8 @@ export default function Roles() {
 
       <CatalogToolbar
         hint="Search staff by name, email, or role."
-        search={search}
-        onSearchChange={setSearch}
+        search={listQuery.searchInput}
+        onSearchChange={listQuery.setSearch}
         searchPlaceholder="Search staff… (⌘K)"
         searchAriaLabel="Search staff"
         sort={sort}
@@ -106,8 +118,8 @@ export default function Roles() {
           { id: "active", label: "Active", count: statusCounts.active },
           { id: "inactive", label: "Inactive", count: statusCounts.inactive },
         ]}
-        activeChip={status}
-        onChipChange={(id) => setStatus(id as StaffStatus)}
+        activeChip={(listQuery.status as StaffStatus) || "all"}
+        onChipChange={(id) => listQuery.setStatus(id)}
         actions={
           <Button variant="contained" onClick={() => navigate("/add-role")}>
             Add staff
@@ -116,7 +128,7 @@ export default function Roles() {
       />
 
       <TableWrapper
-        refreshing={refreshLoader}
+        refreshing={refreshLoader || (!!loading && (Roles?.length ?? 0) > 0)}
       >
         <TableContainer>
           <Table aria-label="Staff table" sx={adminTableSx}>
@@ -125,7 +137,7 @@ export default function Roles() {
               loading={loading}
               length={visible.length}
               message={
-                search || status !== "all"
+                listQuery.debouncedSearch || listQuery.status !== "all"
                   ? "No staff match your search or filters."
                   : "There are no staff accounts currently available."
               }
@@ -175,10 +187,10 @@ export default function Roles() {
             <Pagination
               variant="outlined"
               color="primary"
-              page={filters.page}
+              page={listQuery.page}
               disabled={refreshLoader}
-              count={Math.ceil(count / filters.page_size) || 1}
-              onChange={(_e, page) => dispatch(roleActions.setPage(page))}
+              count={Math.ceil(count / listQuery.limit) || 1}
+              onChange={(_e, page) => listQuery.setPage(page)}
             />
           </div>
         )}
