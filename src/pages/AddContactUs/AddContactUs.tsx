@@ -12,8 +12,8 @@ export default function AddContactUs() {
   return (
     <PageShell
       kicker="Support"
-      title="Contacts"
-      subtitle="Inbound messages from the live app, plus the public contact details you publish."
+      title="Help & Support"
+      subtitle="Tickets from the live app (reason + comments). Reply to email the member with an Eushbi Live message, or close without a reply."
     >
       <AddContact />
       <Tabs

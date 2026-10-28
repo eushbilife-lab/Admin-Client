@@ -19,6 +19,7 @@ const AddMajorAllergy= lazy(() => import("./AddMajorAllergy"));
 const AddMinorAllergy= lazy(() => import("./AddMinorAllergy"));
 const ConfirmationForm = lazy(() => import("./ConfirmationForm"));
 const ExportTableOptions = lazy(() => import("./ExportTableOptions"));
+const ReplySupport = lazy(() => import("./ReplySupport"));
 
 
 export { default } from "./AppModal";
@@ -45,4 +46,5 @@ export const modalMapper: ModalMapper = {
   ADD_MINOR_FOOD_INTOLERANCE:< AddMinorFoodIntolerance/>,
   CONFIRMATION_FORM: <ConfirmationForm />,
   EXPORT_TABLE_OPTIONS: <ExportTableOptions />,
+  REPLY_SUPPORT: <ReplySupport />,
 };

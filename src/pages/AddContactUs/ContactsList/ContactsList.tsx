@@ -55,17 +55,21 @@ export default function ContactsList({ type }: ContactListProps) {
             sx={adminTableSx}
           >
             <TableLoadingWrapper
-              coloumns={4}
+              coloumns={6}
               loading={loading}
               length={contacts?.length}
               message={t("No Users currently available.")}
             >
               <TableHead>
                 <TableRow>
+                  <StyledTableCell>Ticket</StyledTableCell>
                   <StyledTableCell>Created</StyledTableCell>
                   <StyledTableCell>Name</StyledTableCell>
-                  <StyledTableCell>Email</StyledTableCell>
-                  <StyledTableCell>Message</StyledTableCell>
+                  <StyledTableCell>Reason</StyledTableCell>
+                  <StyledTableCell>Comments</StyledTableCell>
+                  {type === "close" ? (
+                    <StyledTableCell>Admin reply</StyledTableCell>
+                  ) : null}
                   {type === "open" ? (
                     <StyledTableCellAction>Action</StyledTableCellAction>
                   ) : null}
@@ -73,15 +77,44 @@ export default function ContactsList({ type }: ContactListProps) {
               </TableHead>
               <TableBody>
                 {contacts?.map((contact, index) => (
-                  <StyledTableRow key={index}>
-                    <StyledTableCell >
+                  <StyledTableRow key={contact?._id || index}>
+                    <StyledTableCell>
+                      {contact.ticket_number ? `#${contact.ticket_number}` : "—"}
+                    </StyledTableCell>
+                    <StyledTableCell>
                       {moment(contact?.createdAt).format("YYYY-MM-DD hh:mm a")}
                     </StyledTableCell>
-                    <StyledTableCell>{contact.fullName}</StyledTableCell>
-                    <StyledTableCell>{contact.email}</StyledTableCell>
-                    <StyledTableCell>{contact.message}</StyledTableCell>
+                    <StyledTableCell>
+                      {contact.fullName || contact.name}
+                      <div style={{ fontSize: 12, color: "#666" }}>{contact.email}</div>
+                    </StyledTableCell>
+                    <StyledTableCell>{contact.reason || "—"}</StyledTableCell>
+                    <StyledTableCell>
+                      {contact.comments || contact.message}
+                    </StyledTableCell>
+                    {type === "close" ? (
+                      <StyledTableCell>
+                        {contact.adminResponse || "—"}
+                      </StyledTableCell>
+                    ) : null}
                     {type === "open" && (
                       <StyledTableCellAction>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          sx={{ mr: 1 }}
+                          onClick={() => {
+                            dispatch(
+                              modalActions.openModal({
+                                width: "560px",
+                                type: MODAL.REPLY_SUPPORT,
+                                data: { ticket: contact, type },
+                              })
+                            );
+                          }}
+                        >
+                          Reply
+                        </Button>
                         <Button
                           size="small"
                           variant="text"

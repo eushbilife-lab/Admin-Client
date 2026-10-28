@@ -102,5 +102,26 @@ const contactService = {
     return [success, error];
   },
 
+  /** Reply to Help & Support — emails the user and closes the ticket. */
+  replyToTicket: async (type: ContactType, id: string, response: string) => {
+    const dispatch = getAppDispatch();
+    dispatch?.(modalActions.setLoading(true));
+    http.setJWT();
+    http.setLanguage();
+    const [success, error]: any = await Promisable.asPromise(
+      http.post(`${contactUsUrl1}/reply/${id}`, { response, close: true })
+    );
+    if (success) {
+      const ticket = success.data?.data?.ticket || { _id: id };
+      dispatch?.(modalActions.closeModal());
+      dispatch?.(
+        contactActions.deleteContactRequestById({ type, contact: ticket })
+      );
+      dispatch?.(contactActions.resetFilters("close" as ContactType));
+    }
+    dispatch?.(modalActions.setLoading(false));
+    return [success, error];
+  },
+
 };
 export default contactService;
