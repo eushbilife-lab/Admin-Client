@@ -51,26 +51,31 @@ export const contactSlice = createSlice({
       state[type].loading = loading;
     },
     setPage: (state, action: PayloadAction<SetPagePayload>) => {
-      const {page,type}=action.payload
+      const { page, type } = action.payload;
       state.refresh += 1;
+      state[type].refresh += 1;
       state[type].refreshLoader = true;
-      state[type].filters.page =page;
+      state[type].filters = { ...state[type].filters, page };
     },
     resetPage: (state, action: PayloadAction<ContactType>) => {
 			const type = action.payload;
-			state[type].filters.page = 1;
+			state[type].filters = { ...state[type].filters, page: 1 };
 		},
 		setFilters: (state, action: PayloadAction<SetFiltersPayload>) => {
 			const { type, data } = action.payload;
-			state[type].filters = data;
+			state[type].filters = { ...data };
+			state[type].refresh += 1;
+			state[type].refreshLoader = true;
 			state.refreshLoader = true;
 		},
 		resetFilters: (state, action: PayloadAction<ContactType>) => {
 			const type = action.payload;
 			state.refresh += 1;
+			state[type].refresh += 1;
 			state.refreshLoader = true;
-			state[type].filters = initialState.filters;
-			state[type].current_filters = initialState.current_filters;
+			state[type].refreshLoader = true;
+			state[type].filters = { page: 1, page_size: default_page_size };
+			state[type].current_filters = {};
 		},
     setCurrentFilters: (	state,action: PayloadAction<SetFiltersPayload>) => {
 			const { type, data } = action.payload;

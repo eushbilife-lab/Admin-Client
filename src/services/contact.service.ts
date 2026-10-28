@@ -30,18 +30,28 @@ const contactService = {
     http.setJWT();
     http.setLanguage();
     const [success, error]: any = await Promisable.asPromise(
-      http.get(`${contactNumbersUrl}`)
+      http.get(`${contactNumbersUrl}`, {
+        headers: { "X-Skip-Toast": "1" },
+      })
     );
     if (success) {
       const contacts: any[] = [];
-      const { number } = success.data.data;
+      const { number } = success.data.data || {};
       const contact_numbers: any[] = [...(number?.contacts || [])];
       contact_numbers.forEach(({ number, country_code }) => {
+        const dial = String(country_code || "").replace(/^\+/, "");
+        const raw = String(number || "").replace(/^\+/, "");
+        const national = dial && raw.startsWith(dial) ? raw.slice(dial.length) : raw;
         contacts.push({
-          phone: { value: number, data: { dialCode: country_code } },
+          phone: {
+            value: national || raw,
+            data: { dialCode: dial || "966" },
+          },
         });
       });
-      dispatch?.(change("AddContactForm", "contacts", contacts));
+      dispatch?.(change("AddContactForm", "contacts", contacts.length ? contacts : [{}]));
+    } else {
+      dispatch?.(change("AddContactForm", "contacts", [{}]));
     }
 
     dispatch?.(formLoaderActions.setLoading(false));
@@ -61,7 +71,9 @@ const contactService = {
     http.setLanguage();
 
     const [success, error]: any = await Promisable.asPromise(
-      http.post(`${contactsUrl}/${type}`, filters)
+      http.post(`${contactsUrl}/${type}`, filters, {
+        headers: { "X-Skip-Toast": "1" },
+      })
     );
 
     if (success) {
