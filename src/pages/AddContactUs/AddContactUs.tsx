@@ -57,8 +57,6 @@ export default function AddContactUs() {
     open: 0,
     in_progress: 0,
     close: 0,
-    urgent: 0,
-    high: 0,
     active: 0,
   });
 
@@ -75,14 +73,12 @@ export default function AddContactUs() {
     <PageShell
       kicker="Support desk"
       title="Help & Support"
-      subtitle="Member tickets from the Eushbi Live app. Prioritize, reply by email, and close with a full thread history."
+      subtitle="Member tickets from the Eushbi Live app. Reply by email and close with full thread history."
     >
       <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ mb: 2.5 }}>
         <StatCard label="Active" value={stats.active} accent="#9FC53A" />
         <StatCard label="Open" value={stats.open} />
         <StatCard label="In progress" value={stats.in_progress} accent="#EAB308" />
-        <StatCard label="Urgent" value={stats.urgent} accent="#D32F2F" />
-        <StatCard label="High" value={stats.high} accent="#F57C00" />
         <StatCard label="Closed" value={stats.close} />
       </Stack>
 

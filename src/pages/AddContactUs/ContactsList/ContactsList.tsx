@@ -9,7 +9,6 @@ import {
   TableContainer,
   Pagination,
   Button,
-  Chip,
   Stack,
 } from "@mui/material";
 import { MODAL, modalActions } from "redux/slices/modal";
@@ -25,13 +24,6 @@ import {
 } from "@core/templates/Tables";
 import ContactFilters from "../ContactFilters";
 import TableWrapper from "@core/templates/TableWrapper";
-
-const priorityColor: Record<string, "default" | "success" | "warning" | "error" | "info"> = {
-  low: "default",
-  normal: "info",
-  high: "warning",
-  urgent: "error",
-};
 
 export default function ContactsList({ type }: ContactListProps) {
   const dispatch = useAppDispatch();
@@ -62,7 +54,7 @@ export default function ContactsList({ type }: ContactListProps) {
         <TableContainer>
           <Table aria-label="support tickets" sx={adminTableSx}>
             <TableLoadingWrapper
-              coloumns={7}
+              coloumns={5}
               loading={loading}
               length={contacts.length}
               message="No support tickets in this list."
@@ -71,8 +63,6 @@ export default function ContactsList({ type }: ContactListProps) {
                 <TableRow>
                   <StyledTableCell>Ticket</StyledTableCell>
                   <StyledTableCell>Member</StyledTableCell>
-                  <StyledTableCell>Category</StyledTableCell>
-                  <StyledTableCell>Priority</StyledTableCell>
                   <StyledTableCell>Subject</StyledTableCell>
                   <StyledTableCell>Updated</StyledTableCell>
                   {type === "close" ? (
@@ -105,25 +95,9 @@ export default function ContactsList({ type }: ContactListProps) {
                         {contact?.email || ""}
                       </div>
                     </StyledTableCell>
-                    <StyledTableCell>
-                      <Chip
-                        size="small"
-                        label={contact?.category || "other"}
-                        variant="outlined"
-                        sx={{ textTransform: "capitalize" }}
-                      />
-                    </StyledTableCell>
-                    <StyledTableCell>
-                      <Chip
-                        size="small"
-                        color={priorityColor[contact?.priority] || "default"}
-                        label={contact?.priority || "normal"}
-                        sx={{ textTransform: "capitalize", fontWeight: 700 }}
-                      />
-                    </StyledTableCell>
                     <StyledTableCell
                       sx={{
-                        maxWidth: 260,
+                        maxWidth: 320,
                         whiteSpace: "pre-wrap",
                         wordBreak: "break-word",
                       }}

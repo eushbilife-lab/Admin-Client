@@ -4,11 +4,8 @@ import {
   Box,
   TextField,
   Divider,
-  Chip,
   FormControlLabel,
   Checkbox,
-  MenuItem,
-  Stack,
   Typography,
 } from "@mui/material";
 import { modalActions } from "redux/slices/modal";
@@ -23,9 +20,6 @@ export default function ReplySupport() {
   const [response, setResponse] = useState("");
   const [error, setError] = useState("");
   const [closeTicket, setCloseTicket] = useState(true);
-  const [priority, setPriority] = useState(
-    data?.ticket?.priority || "normal"
-  );
 
   const ticket = data?.ticket || {};
   const reason = ticket.reason || "—";
@@ -50,42 +44,15 @@ export default function ReplySupport() {
       data?.type || "open",
       ticket._id,
       text,
-      { close: closeTicket, priority }
+      { close: closeTicket }
     );
   };
 
   return (
     <Box>
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        gap={1}
-        sx={{ mb: 1 }}
-      >
-        <Typography variant="h6" sx={{ m: 0, fontWeight: 800 }}>
-          Support reply {ticketNo}
-        </Typography>
-        <Stack direction="row" spacing={0.75}>
-          <Chip
-            size="small"
-            label={ticket.category || "other"}
-            sx={{ textTransform: "capitalize" }}
-          />
-          <Chip
-            size="small"
-            color={
-              priority === "urgent"
-                ? "error"
-                : priority === "high"
-                  ? "warning"
-                  : "default"
-            }
-            label={priority}
-            sx={{ textTransform: "capitalize" }}
-          />
-        </Stack>
-      </Stack>
+      <Typography variant="h6" sx={{ m: 0, mb: 1, fontWeight: 800 }}>
+        Support reply {ticketNo}
+      </Typography>
 
       <Typography sx={{ m: 0, fontWeight: 600 }}>{name}</Typography>
       <Typography sx={{ mb: 1.5, color: "#515151", fontSize: 13 }}>
@@ -152,22 +119,6 @@ export default function ReplySupport() {
           {comments}
         </Box>
       )}
-
-      <TextField
-        select
-        label="Priority"
-        size="small"
-        value={priority}
-        onChange={(e) => setPriority(e.target.value)}
-        sx={{ mb: 1.5, minWidth: 160 }}
-        disabled={loading}
-      >
-        {["low", "normal", "high", "urgent"].map((p) => (
-          <MenuItem key={p} value={p}>
-            {p}
-          </MenuItem>
-        ))}
-      </TextField>
 
       <TextField
         label="Your reply"

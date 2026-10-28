@@ -105,8 +105,6 @@ const contactService = {
                   ? moment(contact?.resolvedDate).format("YYYY-MM-DD hh:mm")
                   : "",
               Status: contact.status,
-              Priority: contact.priority,
-              Category: contact.category,
               "Ticket Number": contact.ticket_number,
               Name: contact.fullName || contact.name,
               Email: contact.email,
@@ -164,7 +162,7 @@ const contactService = {
     type: ContactType,
     id: string,
     response: string,
-    options: { close?: boolean; priority?: string } = {}
+    options: { close?: boolean } = {}
   ) => {
     const dispatch = getAppDispatch();
     dispatch?.(modalActions.setLoading(true));
@@ -174,7 +172,6 @@ const contactService = {
       http.post(`${contactsUrl}/reply/${id}`, {
         response,
         close: options.close !== false,
-        priority: options.priority,
       })
     );
     if (success) {
