@@ -1,0 +1,1 @@
+import{n as e}from"./createSvgIcon-ChxWx-R0.js";var t=e;export{t};

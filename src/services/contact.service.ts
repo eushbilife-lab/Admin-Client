@@ -13,6 +13,17 @@ const contactNumbersUrl = "/contact-numbers";
 const contactsUrl = "/contacts";
 
 const contactService = {
+  getOverview: async () => {
+    http.setJWT();
+    http.setLanguage();
+    const [success]: any = await Promisable.asPromise(
+      http.get(`${contactsUrl}/overview`, {
+        headers: { "X-Skip-Toast": "1" },
+      })
+    );
+    return success?.data?.data || null;
+  },
+
   setContactNumbers: async (data: any, dispatch: Dispatch) => {
     dispatch?.(formLoaderActions.setLoading(true));
     http.setJWT();
@@ -41,7 +52,8 @@ const contactService = {
       contact_numbers.forEach(({ number, country_code }) => {
         const dial = String(country_code || "").replace(/^\+/, "");
         const raw = String(number || "").replace(/^\+/, "");
-        const national = dial && raw.startsWith(dial) ? raw.slice(dial.length) : raw;
+        const national =
+          dial && raw.startsWith(dial) ? raw.slice(dial.length) : raw;
         contacts.push({
           phone: {
             value: national || raw,
@@ -49,7 +61,9 @@ const contactService = {
           },
         });
       });
-      dispatch?.(change("AddContactForm", "contacts", contacts.length ? contacts : [{}]));
+      dispatch?.(
+        change("AddContactForm", "contacts", contacts.length ? contacts : [{}])
+      );
     } else {
       dispatch?.(change("AddContactForm", "contacts", [{}]));
     }
@@ -90,11 +104,12 @@ const contactService = {
                 contact.status == "close" && contact?.resolvedDate
                   ? moment(contact?.resolvedDate).format("YYYY-MM-DD hh:mm")
                   : "",
-              Status: type,
+              Status: contact.status,
+              Priority: contact.priority,
+              Category: contact.category,
               "Ticket Number": contact.ticket_number,
               Name: contact.fullName || contact.name,
               Email: contact.email,
-              Phone: contact.phone,
               Reason: contact.reason,
               Comments: contact.comments || contact.message,
               "Admin Reply": contact.adminResponse || "",
@@ -108,11 +123,11 @@ const contactService = {
       dispatch?.(
         contactActions.setContacts({ type, contacts: [], count: 0 })
       );
-      const message =
+      ToasterService.showError(
         error?.response?.data?.message ||
-        error?.message ||
-        "Could not load support tickets";
-      ToasterService.showError(message);
+          error?.message ||
+          "Could not load support tickets"
+      );
     }
 
     if (exportFile) dispatch?.(modalActions.setLoading(false));
@@ -145,30 +160,48 @@ const contactService = {
     return [success, error];
   },
 
-  /** Reply to Help & Support — emails the user first, then closes the ticket. */
-  replyToTicket: async (type: ContactType, id: string, response: string) => {
+  replyToTicket: async (
+    type: ContactType,
+    id: string,
+    response: string,
+    options: { close?: boolean; priority?: string } = {}
+  ) => {
     const dispatch = getAppDispatch();
     dispatch?.(modalActions.setLoading(true));
     http.setJWT();
     http.setLanguage();
     const [success, error]: any = await Promisable.asPromise(
-      http.post(`${contactsUrl}/reply/${id}`, { response, close: true })
+      http.post(`${contactsUrl}/reply/${id}`, {
+        response,
+        close: options.close !== false,
+        priority: options.priority,
+      })
     );
     if (success) {
       const ticket = success.data?.data?.ticket || { _id: id };
-      const emailedTo = success.data?.data?.email || "member";
+      const emailSent = Boolean(success.data?.data?.emailSent);
       dispatch?.(modalActions.closeModal());
-      dispatch?.(
-        contactActions.deleteContactRequestById({ type, contact: ticket })
-      );
-      dispatch?.(contactActions.resetFilters("close" as ContactType));
-      ToasterService.showSuccess(
-        success.data?.message || `Reply emailed to ${emailedTo}`
-      );
+      if (options.close !== false) {
+        dispatch?.(
+          contactActions.deleteContactRequestById({ type, contact: ticket })
+        );
+        dispatch?.(contactActions.resetFilters("close" as ContactType));
+      } else {
+        dispatch?.(contactActions.resetFilters(type));
+      }
+      if (emailSent) {
+        ToasterService.showSuccess(
+          success.data?.message || "Reply emailed to the member"
+        );
+      } else {
+        ToasterService.showError(
+          success.data?.message ||
+            "Reply saved, but email failed — check RESEND_API_KEY"
+        );
+      }
     } else {
       ToasterService.showError(
-        error?.response?.data?.message ||
-          "Email failed — check RESEND_API_KEY on Admin Server, then try Reply again"
+        error?.response?.data?.message || "Could not send reply"
       );
     }
     dispatch?.(modalActions.setLoading(false));

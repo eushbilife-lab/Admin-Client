@@ -9,6 +9,8 @@ import {
   TableContainer,
   Pagination,
   Button,
+  Chip,
+  Stack,
 } from "@mui/material";
 import { MODAL, modalActions } from "redux/slices/modal";
 import type { ContactListProps } from ".";
@@ -23,6 +25,13 @@ import {
 } from "@core/templates/Tables";
 import ContactFilters from "../ContactFilters";
 import TableWrapper from "@core/templates/TableWrapper";
+
+const priorityColor: Record<string, "default" | "success" | "warning" | "error" | "info"> = {
+  low: "default",
+  normal: "info",
+  high: "warning",
+  urgent: "error",
+};
 
 export default function ContactsList({ type }: ContactListProps) {
   const dispatch = useAppDispatch();
@@ -53,7 +62,7 @@ export default function ContactsList({ type }: ContactListProps) {
         <TableContainer>
           <Table aria-label="support tickets" sx={adminTableSx}>
             <TableLoadingWrapper
-              coloumns={type === "open" ? 6 : 6}
+              coloumns={7}
               loading={loading}
               length={contacts.length}
               message="No support tickets in this list."
@@ -61,12 +70,13 @@ export default function ContactsList({ type }: ContactListProps) {
               <TableHead>
                 <TableRow>
                   <StyledTableCell>Ticket</StyledTableCell>
-                  <StyledTableCell>Created</StyledTableCell>
-                  <StyledTableCell>Name</StyledTableCell>
-                  <StyledTableCell>Reason</StyledTableCell>
-                  <StyledTableCell>Comments</StyledTableCell>
+                  <StyledTableCell>Member</StyledTableCell>
+                  <StyledTableCell>Category</StyledTableCell>
+                  <StyledTableCell>Priority</StyledTableCell>
+                  <StyledTableCell>Subject</StyledTableCell>
+                  <StyledTableCell>Updated</StyledTableCell>
                   {type === "close" ? (
-                    <StyledTableCell>Admin reply</StyledTableCell>
+                    <StyledTableCell>Reply</StyledTableCell>
                   ) : (
                     <StyledTableCellAction>Action</StyledTableCellAction>
                   )}
@@ -76,16 +86,18 @@ export default function ContactsList({ type }: ContactListProps) {
                 {contacts.map((contact: any, index: number) => (
                   <StyledTableRow key={contact?._id || index}>
                     <StyledTableCell>
-                      {contact?.ticket_number
-                        ? `#${contact.ticket_number}`
-                        : "—"}
-                    </StyledTableCell>
-                    <StyledTableCell>
-                      {contact?.createdAt
-                        ? moment(contact.createdAt).format(
-                            "YYYY-MM-DD hh:mm a"
-                          )
-                        : "—"}
+                      <strong>
+                        {contact?.ticket_number
+                          ? `#${contact.ticket_number}`
+                          : "—"}
+                      </strong>
+                      <div style={{ fontSize: 11, color: "#8A9199" }}>
+                        {contact?.status === "in_progress"
+                          ? "In progress"
+                          : contact?.status === "close"
+                            ? "Closed"
+                            : "Open"}
+                      </div>
                     </StyledTableCell>
                     <StyledTableCell>
                       {contact?.fullName || contact?.name || "—"}
@@ -93,20 +105,52 @@ export default function ContactsList({ type }: ContactListProps) {
                         {contact?.email || ""}
                       </div>
                     </StyledTableCell>
-                    <StyledTableCell>{contact?.reason || "—"}</StyledTableCell>
+                    <StyledTableCell>
+                      <Chip
+                        size="small"
+                        label={contact?.category || "other"}
+                        variant="outlined"
+                        sx={{ textTransform: "capitalize" }}
+                      />
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      <Chip
+                        size="small"
+                        color={priorityColor[contact?.priority] || "default"}
+                        label={contact?.priority || "normal"}
+                        sx={{ textTransform: "capitalize", fontWeight: 700 }}
+                      />
+                    </StyledTableCell>
                     <StyledTableCell
                       sx={{
-                        maxWidth: 280,
+                        maxWidth: 260,
                         whiteSpace: "pre-wrap",
                         wordBreak: "break-word",
                       }}
                     >
-                      {contact?.comments || contact?.message || "—"}
+                      <div style={{ fontWeight: 600 }}>
+                        {contact?.reason || "—"}
+                      </div>
+                      <div style={{ fontSize: 12, color: "#515151" }}>
+                        {(contact?.comments || contact?.message || "").slice(
+                          0,
+                          120
+                        )}
+                        {(contact?.comments || contact?.message || "").length >
+                        120
+                          ? "…"
+                          : ""}
+                      </div>
+                    </StyledTableCell>
+                    <StyledTableCell>
+                      {moment(
+                        contact?.lastActivityAt || contact?.createdAt
+                      ).format("YYYY-MM-DD hh:mm a")}
                     </StyledTableCell>
                     {type === "close" ? (
                       <StyledTableCell
                         sx={{
-                          maxWidth: 280,
+                          maxWidth: 240,
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-word",
                         }}
@@ -115,48 +159,49 @@ export default function ContactsList({ type }: ContactListProps) {
                       </StyledTableCell>
                     ) : (
                       <StyledTableCellAction>
-                        <Button
-                          size="small"
-                          variant="contained"
-                          sx={{ mr: 1 }}
-                          onClick={() => {
-                            dispatch(
-                              modalActions.openModal({
-                                width: "560px",
-                                type: MODAL.REPLY_SUPPORT,
-                                data: { ticket: contact, type },
-                              })
-                            );
-                          }}
-                        >
-                          Reply
-                        </Button>
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="error"
-                          onClick={() => {
-                            dispatch(
-                              modalActions.openModal({
-                                width: "500px",
-                                type: MODAL.CONFIRMATION_FORM,
-                                data: {
-                                  heading: "Close ticket",
-                                  message:
-                                    "Close this support ticket without sending a reply?",
-                                  confirmAction: () => {
-                                    ContactService.deleteContactRequest(
-                                      type,
-                                      contact?._id
-                                    );
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            onClick={() => {
+                              dispatch(
+                                modalActions.openModal({
+                                  width: "640px",
+                                  type: MODAL.REPLY_SUPPORT,
+                                  data: { ticket: contact, type },
+                                })
+                              );
+                            }}
+                          >
+                            Reply
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="text"
+                            color="error"
+                            onClick={() => {
+                              dispatch(
+                                modalActions.openModal({
+                                  width: "500px",
+                                  type: MODAL.CONFIRMATION_FORM,
+                                  data: {
+                                    heading: "Close ticket",
+                                    message:
+                                      "Close this ticket without emailing a reply?",
+                                    confirmAction: () => {
+                                      ContactService.deleteContactRequest(
+                                        type,
+                                        contact?._id
+                                      );
+                                    },
                                   },
-                                },
-                              })
-                            );
-                          }}
-                        >
-                          Close
-                        </Button>
+                                })
+                              );
+                            }}
+                          >
+                            Close
+                          </Button>
+                        </Stack>
                       </StyledTableCellAction>
                     )}
                   </StyledTableRow>

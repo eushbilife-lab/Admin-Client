@@ -1,1 +1,0 @@
-import{n as e}from"./createSvgIcon-KpgVAXXF.js";var t=e;export{t};

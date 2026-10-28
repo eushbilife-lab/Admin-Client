@@ -1,8 +1,20 @@
 import { useState } from "react";
-import { Button, Box, TextField, Divider, Chip } from "@mui/material";
+import {
+  Button,
+  Box,
+  TextField,
+  Divider,
+  Chip,
+  FormControlLabel,
+  Checkbox,
+  MenuItem,
+  Stack,
+  Typography,
+} from "@mui/material";
 import { modalActions } from "redux/slices/modal";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import ContactService from "services/contact.service";
+import moment from "moment";
 
 export default function ReplySupport() {
   const dispatch = useAppDispatch();
@@ -10,6 +22,10 @@ export default function ReplySupport() {
   const loading = useAppSelector((state) => state.modal.loading);
   const [response, setResponse] = useState("");
   const [error, setError] = useState("");
+  const [closeTicket, setCloseTicket] = useState(true);
+  const [priority, setPriority] = useState(
+    data?.ticket?.priority || "normal"
+  );
 
   const ticket = data?.ticket || {};
   const reason = ticket.reason || "—";
@@ -17,6 +33,7 @@ export default function ReplySupport() {
   const name = ticket.fullName || ticket.name || "Member";
   const email = ticket.email || "—";
   const ticketNo = ticket.ticket_number ? `#${ticket.ticket_number}` : "";
+  const thread = Array.isArray(ticket.messages) ? ticket.messages : [];
 
   const onSend = async () => {
     const text = response.trim();
@@ -29,73 +46,128 @@ export default function ReplySupport() {
       return;
     }
     setError("");
-    await ContactService.replyToTicket(data?.type || "open", ticket._id, text);
+    await ContactService.replyToTicket(
+      data?.type || "open",
+      ticket._id,
+      text,
+      { close: closeTicket, priority }
+    );
   };
 
   return (
     <Box>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 1,
-          mb: 1,
-        }}
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={1}
+        sx={{ mb: 1 }}
       >
-        <h3 style={{ margin: 0 }}>Reply to ticket</h3>
-        {ticketNo ? (
-          <Chip label={ticketNo} size="small" color="success" variant="outlined" />
-        ) : null}
-      </Box>
-      <p style={{ margin: "0 0 4px", color: "#0A0A0A", fontSize: 14, fontWeight: 600 }}>
-        {name}
-      </p>
-      <p style={{ margin: "0 0 12px", color: "#515151", fontSize: 13 }}>{email}</p>
+        <Typography variant="h6" sx={{ m: 0, fontWeight: 800 }}>
+          Support reply {ticketNo}
+        </Typography>
+        <Stack direction="row" spacing={0.75}>
+          <Chip
+            size="small"
+            label={ticket.category || "other"}
+            sx={{ textTransform: "capitalize" }}
+          />
+          <Chip
+            size="small"
+            color={
+              priority === "urgent"
+                ? "error"
+                : priority === "high"
+                  ? "warning"
+                  : "default"
+            }
+            label={priority}
+            sx={{ textTransform: "capitalize" }}
+          />
+        </Stack>
+      </Stack>
+
+      <Typography sx={{ m: 0, fontWeight: 600 }}>{name}</Typography>
+      <Typography sx={{ mb: 1.5, color: "#515151", fontSize: 13 }}>
+        {email}
+      </Typography>
 
       <Divider sx={{ mb: 1.5 }} />
 
-      <p
-        style={{
-          margin: "0 0 4px",
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: 0.6,
-          textTransform: "uppercase",
-          color: "#8A9199",
-        }}
-      >
-        Reason
-      </p>
-      <p style={{ margin: "0 0 12px", fontSize: 14, color: "#0A0A0A" }}>{reason}</p>
-
-      <p
-        style={{
-          margin: "0 0 4px",
-          fontSize: 11,
-          fontWeight: 700,
-          letterSpacing: 0.6,
-          textTransform: "uppercase",
-          color: "#8A9199",
-        }}
-      >
-        Comments
-      </p>
-      <Box
+      <Typography
         sx={{
-          mb: 2,
-          p: 1.5,
-          bgcolor: "#F4F7EC",
-          borderLeft: "4px solid #9FC53A",
-          borderRadius: "0 8px 8px 0",
-          fontSize: 13,
-          whiteSpace: "pre-wrap",
-          color: "#0A0A0A",
-          lineHeight: 1.55,
+          fontSize: 11,
+          fontWeight: 700,
+          letterSpacing: 0.6,
+          textTransform: "uppercase",
+          color: "#8A9199",
+          mb: 0.5,
         }}
       >
-        {comments}
-      </Box>
+        Subject
+      </Typography>
+      <Typography sx={{ mb: 1.5 }}>{reason}</Typography>
+
+      {thread.length > 0 ? (
+        <Box
+          sx={{
+            mb: 2,
+            maxHeight: 180,
+            overflowY: "auto",
+            border: "1px solid #E4EBD3",
+            borderRadius: 2,
+            p: 1.5,
+            bgcolor: "#FAFBF7",
+          }}
+        >
+          {thread.map((m: any, i: number) => (
+            <Box key={i} sx={{ mb: 1.25 }}>
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#74941F" }}>
+                {m.from === "admin" ? "Support" : "Member"}
+                {m.authorName ? ` · ${m.authorName}` : ""}
+                {m.createdAt
+                  ? ` · ${moment(m.createdAt).format("MMM D, h:mm a")}`
+                  : ""}
+              </Typography>
+              <Typography
+                sx={{ fontSize: 13, whiteSpace: "pre-wrap", color: "#0A0A0A" }}
+              >
+                {m.body}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            mb: 2,
+            p: 1.5,
+            bgcolor: "#F4F7EC",
+            borderLeft: "4px solid #9FC53A",
+            borderRadius: "0 8px 8px 0",
+            fontSize: 13,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+          {comments}
+        </Box>
+      )}
+
+      <TextField
+        select
+        label="Priority"
+        size="small"
+        value={priority}
+        onChange={(e) => setPriority(e.target.value)}
+        sx={{ mb: 1.5, minWidth: 160 }}
+        disabled={loading}
+      >
+        {["low", "normal", "high", "urgent"].map((p) => (
+          <MenuItem key={p} value={p}>
+            {p}
+          </MenuItem>
+        ))}
+      </TextField>
 
       <TextField
         label="Your reply"
@@ -109,18 +181,30 @@ export default function ReplySupport() {
         error={Boolean(error)}
         helperText={
           error ||
-          "Sends a branded Eushbi Live email to the member and closes this ticket."
+          "Sends a branded Eushbi Live email to the member with this reply."
         }
       />
 
-      <Box sx={{ display: "flex", gap: 1.5, mt: 2.5 }}>
+      <FormControlLabel
+        sx={{ mt: 1 }}
+        control={
+          <Checkbox
+            checked={closeTicket}
+            onChange={(e) => setCloseTicket(e.target.checked)}
+            disabled={loading}
+          />
+        }
+        label="Close ticket after sending"
+      />
+
+      <Box sx={{ display: "flex", gap: 1.5, mt: 2 }}>
         <Button
           variant="contained"
           disabled={loading}
           onClick={onSend}
           sx={{ bgcolor: "#9FC53A", "&:hover": { bgcolor: "#8BB52F" } }}
         >
-          {loading ? "Sending…" : "Send reply & close"}
+          {loading ? "Sending…" : "Send reply"}
         </Button>
         <Button
           variant="outlined"
