@@ -9,7 +9,7 @@ import { Box, Button, Collapse } from "@mui/material";
 
 export default function AddContactUs() {
   const dispatch = useAppDispatch();
-  const tab = useAppSelector((state) => state.contact.tab);
+  const tab = useAppSelector((state) => state.contact?.tab ?? 0);
   const [showPhones, setShowPhones] = useState(false);
 
   return (
@@ -25,9 +25,11 @@ export default function AddContactUs() {
           onClick={() => setShowPhones((v) => !v)}
           sx={{ color: "#74941F", fontWeight: 600, textTransform: "none" }}
         >
-          {showPhones ? "Hide support phone numbers" : "Edit support phone numbers"}
+          {showPhones
+            ? "Hide support phone numbers"
+            : "Edit support phone numbers"}
         </Button>
-        <Collapse in={showPhones}>
+        <Collapse in={showPhones} unmountOnExit>
           <Box sx={{ mt: 1, mb: 2 }}>
             <AddContact />
           </Box>
@@ -38,8 +40,7 @@ export default function AddContactUs() {
         value={tab}
         showRefresh
         onRefresh={() => {
-          if (tab === 0) dispatch(contactActions.resetFilters("open"));
-          else dispatch(contactActions.resetFilters("close"));
+          dispatch(contactActions.resetFilters(tab === 0 ? "open" : "close"));
         }}
         onChange={(next) => dispatch(contactActions.setTab(next))}
         tabs={[

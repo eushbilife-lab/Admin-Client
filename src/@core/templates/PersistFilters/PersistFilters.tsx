@@ -17,7 +17,9 @@ export default function PersistFilters({ form,type = "open"}: PersistFiltersProp
   const level2_current_filters = useAppSelector((state) => state.level2.current_filters);
   const level3_current_filters = useAppSelector((state) => state.level3.current_filters);
   const level4_current_filters = useAppSelector((state) => state.level4.current_filters);
-  const contact_current_filters = useAppSelector((state) => state.contact[type].current_filters);
+  const contact_current_filters = useAppSelector(
+    (state) => state.contact?.[type as "open" | "close"]?.current_filters || {}
+  );
 
 
 

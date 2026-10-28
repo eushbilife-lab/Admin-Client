@@ -5,30 +5,31 @@ import {
   SetContactsPayload,
   ContactType,
   SetFiltersPayload,
-  SetPagePayload
+  SetPagePayload,
 } from ".";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { config } from "config";
 
+const default_page_size = config.PAGE_SIZE || 30;
 
-const default_page_size = config.PAGE_SIZE;
-
-const initialContact = {
-  contacts: [],
-  loading: true,
-	filters: { page: 1, page_size: default_page_size },
-	count: 0,
-	refresh: 0,
-	current_filters: {},
-	refreshLoader: false,
-};
+function emptyList() {
+  return {
+    contacts: [] as any[],
+    loading: true,
+    filters: { page: 1, page_size: default_page_size },
+    count: 0,
+    refresh: 0,
+    current_filters: {} as any,
+    refreshLoader: false,
+  };
+}
 
 const initialState: ContactState = {
   tab: 0,
   contact: null,
   loading: true,
-  open: initialContact,
-  close: initialContact,
+  open: emptyList(),
+  close: emptyList(),
   refresh: 0,
   current_filters: {},
   refreshLoader: false,
@@ -48,56 +49,63 @@ export const contactSlice = createSlice({
     },
     setLoading: (state, action: PayloadAction<ContactLoadingPayload>) => {
       const { type, loading } = action.payload;
+      if (!state[type]) return;
       state[type].loading = loading;
     },
     setPage: (state, action: PayloadAction<SetPagePayload>) => {
       const { page, type } = action.payload;
+      if (!state[type]) return;
       state.refresh += 1;
       state[type].refresh += 1;
       state[type].refreshLoader = true;
       state[type].filters = { ...state[type].filters, page };
     },
     resetPage: (state, action: PayloadAction<ContactType>) => {
-			const type = action.payload;
-			state[type].filters = { ...state[type].filters, page: 1 };
-		},
-		setFilters: (state, action: PayloadAction<SetFiltersPayload>) => {
-			const { type, data } = action.payload;
-			state[type].filters = { ...data };
-			state[type].refresh += 1;
-			state[type].refreshLoader = true;
-			state.refreshLoader = true;
-		},
-		resetFilters: (state, action: PayloadAction<ContactType>) => {
-			const type = action.payload;
-			state.refresh += 1;
-			state[type].refresh += 1;
-			state.refreshLoader = true;
-			state[type].refreshLoader = true;
-			state[type].filters = { page: 1, page_size: default_page_size };
-			state[type].current_filters = {};
-		},
-    setCurrentFilters: (	state,action: PayloadAction<SetFiltersPayload>) => {
-			const { type, data } = action.payload;
-			state[type].current_filters = data;
-		},
+      const type = action.payload;
+      if (!state[type]) return;
+      state[type].filters = { ...state[type].filters, page: 1 };
+    },
+    setFilters: (state, action: PayloadAction<SetFiltersPayload>) => {
+      const { type, data } = action.payload;
+      if (!state[type]) return;
+      state[type].filters = { ...data };
+      state[type].refresh += 1;
+      state[type].refreshLoader = true;
+      state.refreshLoader = true;
+    },
+    resetFilters: (state, action: PayloadAction<ContactType>) => {
+      const type = action.payload;
+      if (!state[type]) return;
+      state.refresh += 1;
+      state[type].refresh += 1;
+      state.refreshLoader = true;
+      state[type].refreshLoader = true;
+      state[type].filters = { page: 1, page_size: default_page_size };
+      state[type].current_filters = {};
+    },
+    setCurrentFilters: (state, action: PayloadAction<SetFiltersPayload>) => {
+      const { type, data } = action.payload;
+      if (!state[type]) return;
+      state[type].current_filters = data;
+    },
     setContacts: (state, action: PayloadAction<SetContactsPayload>) => {
-      const { type, contacts,count } = action.payload;
-      state[type].count=count
+      const { type, contacts, count } = action.payload;
+      if (!state[type]) return;
+      state[type].count = count || 0;
       state[type].refreshLoader = false;
-      state[type].contacts = contacts;
+      state[type].loading = false;
+      state[type].contacts = Array.isArray(contacts) ? contacts : [];
     },
     deleteContactRequestById: (
       state,
       action: PayloadAction<SetContactPayload>
     ) => {
       const { type, contact } = action.payload;
-
-      if (!contact?._id) return;
-
+      if (!state[type] || !contact?._id) return;
       state[type].contacts = state[type].contacts.filter(
         ({ _id }) => _id !== contact._id
       );
+      if (state[type].count > 0) state[type].count -= 1;
     },
   },
 });

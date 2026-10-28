@@ -13,10 +13,10 @@ export default class ErrorBoundary extends Component<
 		this.state = { error: null, errorInfo: null };
 	}
 
-	// componentDidCatch(error: any, errorInfo: any) {
-	// 	Sentry.captureException(error);
-	// 	this.setState({ error: error, errorInfo: errorInfo });
-	// }
+	componentDidCatch(error: any, errorInfo: any) {
+		console.error("ErrorBoundary caught:", error, errorInfo);
+		this.setState({ error: error, errorInfo: errorInfo });
+	}
 
 	render() {
 		const { children } = this.props;
