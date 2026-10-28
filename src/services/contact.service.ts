@@ -145,7 +145,7 @@ const contactService = {
     return [success, error];
   },
 
-  /** Reply to Help & Support — emails the user and closes the ticket. */
+  /** Reply to Help & Support — emails the user first, then closes the ticket. */
   replyToTicket: async (type: ContactType, id: string, response: string) => {
     const dispatch = getAppDispatch();
     dispatch?.(modalActions.setLoading(true));
@@ -156,23 +156,19 @@ const contactService = {
     );
     if (success) {
       const ticket = success.data?.data?.ticket || { _id: id };
-      const emailSent = Boolean(success.data?.data?.emailSent);
+      const emailedTo = success.data?.data?.email || "member";
       dispatch?.(modalActions.closeModal());
       dispatch?.(
         contactActions.deleteContactRequestById({ type, contact: ticket })
       );
       dispatch?.(contactActions.resetFilters("close" as ContactType));
-      if (emailSent) {
-        ToasterService.showSuccess("Reply emailed to the member");
-      } else {
-        ToasterService.showError(
-          success.data?.message ||
-            "Reply saved, but email failed — check Resend API key on Admin Server"
-        );
-      }
+      ToasterService.showSuccess(
+        success.data?.message || `Reply emailed to ${emailedTo}`
+      );
     } else {
       ToasterService.showError(
-        error?.response?.data?.message || "Could not send reply"
+        error?.response?.data?.message ||
+          "Email failed — check RESEND_API_KEY on Admin Server, then try Reply again"
       );
     }
     dispatch?.(modalActions.setLoading(false));
