@@ -13,7 +13,7 @@ export default function AddContactUs() {
     <PageShell
       kicker="Support"
       title="Help & Support"
-      subtitle="Tickets from the live app (reason + comments). Reply to email the member with an Eushbi Live message, or close without a reply."
+      subtitle="Open tickets from the live app. Reply emails the member with a branded Eushbi Live message and closes the ticket."
     >
       <AddContact />
       <Tabs

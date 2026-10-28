@@ -58,7 +58,7 @@ export default function ContactsList({ type }: ContactListProps) {
               coloumns={6}
               loading={loading}
               length={contacts?.length}
-              message={t("No Users currently available.")}
+              message="No support tickets in this list."
             >
               <TableHead>
                 <TableRow>
