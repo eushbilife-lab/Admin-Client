@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, IconButton, MenuItem, Skeleton, TextField } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PageShell from "@core/templates/PageShell";
+import StoreImageField from "pages/Store/StoreImageField";
 import storeCategoryService from "services/storeCategory.service";
 import ToasterService from "utils/toaster.util";
 import "../Store.css";
@@ -12,20 +14,27 @@ type CategoryRow = {
   key: string;
   label: string;
   description?: string;
+  iconUrl?: string;
   sortOrder?: number;
   status?: string;
 };
 
 const DEFAULT_KEYS = new Set(["supper_foods", "supplements"]);
 
+const emptyForm = {
+  label: "",
+  description: "",
+  iconUrl: "",
+  sortOrder: 10,
+  status: "published",
+};
+
 export default function StoreCategories() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<CategoryRow[]>([]);
-  const [label, setLabel] = useState("");
-  const [description, setDescription] = useState("");
-  const [sortOrder, setSortOrder] = useState(10);
-  const [status, setStatus] = useState("published");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -44,30 +53,51 @@ export default function StoreCategories() {
     void load();
   }, [load]);
 
-  const create = async () => {
-    if (!label.trim()) {
+  const resetForm = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+  };
+
+  const startEdit = (row: CategoryRow) => {
+    const id = row._id || row.id || "";
+    if (!id) return;
+    setEditingId(id);
+    setForm({
+      label: row.label || "",
+      description: row.description || "",
+      iconUrl: row.iconUrl || "",
+      sortOrder: Number(row.sortOrder) || 0,
+      status: row.status || "published",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const save = async () => {
+    if (!form.label.trim()) {
       ToasterService.showError("Section name is required");
       return;
     }
     setSaving(true);
-    const [success, error]: any = await storeCategoryService.create({
-      label: label.trim(),
-      description: description.trim(),
-      sortOrder: Number(sortOrder) || 0,
-      status,
-    });
+    const payload = {
+      label: form.label.trim(),
+      description: form.description.trim(),
+      iconUrl: form.iconUrl.trim(),
+      sortOrder: Number(form.sortOrder) || 0,
+      status: form.status,
+    };
+    const [success, error]: any = editingId
+      ? await storeCategoryService.update(editingId, payload)
+      : await storeCategoryService.create(payload);
     setSaving(false);
     if (error) {
       ToasterService.showError(
-        error?.response?.data?.message || "Could not create section"
+        error?.response?.data?.message ||
+          (editingId ? "Could not update section" : "Could not create section")
       );
       return;
     }
-    ToasterService.showSuccess("Section created");
-    setLabel("");
-    setDescription("");
-    setSortOrder(10);
-    setStatus("published");
+    ToasterService.showSuccess(editingId ? "Section updated" : "Section created");
+    resetForm();
     await load();
     void success;
   };
@@ -86,6 +116,7 @@ export default function StoreCategories() {
       );
       return;
     }
+    if (editingId === id) resetForm();
     ToasterService.showSuccess("Section deleted");
     await load();
   };
@@ -94,23 +125,35 @@ export default function StoreCategories() {
     <PageShell
       kicker="Store"
       title="Shop sections"
-      subtitle="These are the All / Supper Foods / Supplements chips on Store → Products and on the mobile Store home. Add more sections here, then assign products to them."
+      subtitle="These are the All / Supper Foods / Supplements chips on Store → Products and on the mobile Store home. Add an icon so it shows in the user categories API."
       actions={
-        <Button variant="contained" disabled={saving} onClick={create}>
-          {saving ? "Saving…" : "Add section"}
-        </Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          {editingId ? (
+            <Button variant="outlined" disabled={saving} onClick={resetForm}>
+              Cancel edit
+            </Button>
+          ) : null}
+          <Button variant="contained" disabled={saving} onClick={() => void save()}>
+            {saving
+              ? "Saving…"
+              : editingId
+                ? "Update section"
+                : "Add section"}
+          </Button>
+        </div>
       }
     >
       <section className="store-section">
-        <h2>Add a section</h2>
+        <h2>{editingId ? "Edit section" : "Add a section"}</h2>
         <p style={{ margin: 0, color: "#667066", fontSize: "0.875rem" }}>
-          Example: Bundles, Diet Plans, New Arrivals — then pick it on a product as the shop section.
+          Example: Bundles, Diet Plans, New Arrivals — then pick it on a product as
+          the shop section. Upload an icon for the mobile categories tabs.
         </p>
         <div className="store-editor__row">
           <TextField
             label="Section name"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            value={form.label}
+            onChange={(e) => setForm((f) => ({ ...f, label: e.target.value }))}
             fullWidth
             placeholder="Bundles"
             helperText="Shown on admin filters and mobile home"
@@ -118,15 +161,17 @@ export default function StoreCategories() {
           <TextField
             label="Sort order"
             type="number"
-            value={sortOrder}
-            onChange={(e) => setSortOrder(Number(e.target.value))}
+            value={form.sortOrder}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, sortOrder: Number(e.target.value) }))
+            }
             fullWidth
           />
           <TextField
             select
             label="Status"
-            value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            value={form.status}
+            onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
             fullWidth
           >
             <MenuItem value="published">Published</MenuItem>
@@ -136,12 +181,21 @@ export default function StoreCategories() {
         </div>
         <TextField
           label="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          value={form.description}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, description: e.target.value }))
+          }
           fullWidth
           multiline
           minRows={2}
           helperText="Optional — helps staff know what belongs here"
+        />
+        <StoreImageField
+          label="Section icon"
+          value={form.iconUrl}
+          onChange={(url) => setForm((f) => ({ ...f, iconUrl: url }))}
+          folder="store-sections"
+          helperText="Shown on mobile GET /store/categories (and /store/types, home tabs)"
         />
       </section>
 
@@ -164,17 +218,35 @@ export default function StoreCategories() {
             const locked = DEFAULT_KEYS.has(row.key);
             return (
               <article key={id || row.key} className="store-section-list__row">
-                <div>
-                  <strong>{row.label}</strong>
-                  <p>{row.description || "—"}</p>
-                  <code>
-                    key: {row.key}
-                    {id ? ` · id: ${id}` : ""}
-                  </code>
+                <div className="store-section-list__main">
+                  {row.iconUrl ? (
+                    <img
+                      className="store-section-list__icon"
+                      src={row.iconUrl}
+                      alt=""
+                    />
+                  ) : (
+                    <div className="store-section-list__icon store-section-list__icon--empty" />
+                  )}
+                  <div>
+                    <strong>{row.label}</strong>
+                    <p>{row.description || "—"}</p>
+                    <code>
+                      key: {row.key}
+                      {id ? ` · id: ${id}` : ""}
+                    </code>
+                  </div>
                 </div>
                 <div className="store-section-list__actions">
                   <span>{row.status}</span>
                   <span>order {row.sortOrder ?? 0}</span>
+                  <IconButton
+                    size="small"
+                    aria-label="Edit section"
+                    onClick={() => startEdit(row)}
+                  >
+                    <EditOutlinedIcon fontSize="small" />
+                  </IconButton>
                   {!locked ? (
                     <IconButton
                       size="small"

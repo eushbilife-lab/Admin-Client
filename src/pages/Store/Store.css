@@ -689,6 +689,27 @@
   background: #fafcfa;
 }
 
+.store-section-list__main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+}
+
+.store-section-list__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #eef5ee;
+}
+
+.store-section-list__icon--empty {
+  border: 1px dashed #c5d0c5;
+}
+
 .store-section-list__row p {
   margin: 4px 0;
   color: #667066;
