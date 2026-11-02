@@ -49,6 +49,7 @@ const StoreCategories = lazy(() => import("pages/Store/Categories"));
 const StoreBanners = lazy(() => import("pages/Store/Banners"));
 const StoreBannerEditor = lazy(() => import("pages/Store/Banners/StoreBannerEditor"));
 const StoreOrders = lazy(() => import("pages/Store/Orders"));
+const StoreOrderDetail = lazy(() => import("pages/Store/Orders/StoreOrderDetail"));
 const MealPlans = lazy(() => import("pages/MealPlans"));
 const MealPlanEditor = lazy(() => import("pages/MealPlans/MealPlanEditor"));
 const Subscriptions = lazy(() => import("pages/Subscriptions"));
@@ -118,6 +119,7 @@ export const private_routes: IRoute[] = [
   { path: "/store/banners/new", element: <StoreBannerEditor /> },
   { path: "/store/banners/:id", element: <StoreBannerEditor /> },
   { path: "/store/orders", element: <StoreOrders /> },
+  { path: "/store/orders/:id", element: <StoreOrderDetail /> },
   { path: "/meal-plans", element: <MealPlans /> },
   { path: "/meal-plans/new", element: <MealPlanEditor /> },
   { path: "/meal-plans/:id", element: <MealPlanEditor /> },

@@ -1,356 +1,423 @@
-import { useEffect, useMemo, useState } from "react";
-import { Button, MenuItem, TextField } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Button,
+  IconButton,
+  Menu,
+  MenuItem,
+  Pagination,
+  Stack,
+  Table,
+  TableBody,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+} from "@mui/material";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import MoreVertRoundedIcon from "@mui/icons-material/MoreVertRounded";
+import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
-import GridSkeleton from "@core/templates/GridSkeleton";
+import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
+import TableWrapper from "@core/templates/TableWrapper";
+import {
+  StyledTableCell,
+  StyledTableCellAction,
+  StyledTableRow,
+  adminTableSx,
+} from "@core/templates/Tables";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
+import { storeOrderActions } from "redux/slices/storeOrder";
 import storeOrderService from "services/storeOrder.service";
 import ToasterService from "utils/toaster.util";
+import {
+  NEXT_STATUS,
+  ORDER_TABS,
+  PAYMENT_FILTERS,
+  copyText,
+  formatRelative,
+  formatWhen,
+  itemsSummary,
+  money,
+  paymentTone,
+  statusTone,
+} from "./orderUi";
 import "../Store.css";
 
-const STATUSES = [
-  "all",
-  "placed",
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-] as const;
-
-const FULFILLMENT = [
-  "placed",
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-] as const;
-
-function money(amount: number, currency = "PKR") {
-  return `${currency} ${Number(amount || 0).toLocaleString()}`;
-}
-
-function toneFor(status: string, paymentStatus: string) {
-  if (status === "cancelled") return "warn" as const;
-  if (status === "delivered" || paymentStatus === "paid") return "ok" as const;
-  return "warn" as const;
-}
-
 export default function StoreOrders() {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { orders, loading, refresh, filters, order } = useAppSelector(
+  const { orders, loading, refresh, filters, count } = useAppSelector(
     (state) => state.storeOrder
   );
   const [status, setStatus] = useState("all");
+  const [payment, setPayment] = useState("all");
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
-  const [notesDraft, setNotesDraft] = useState("");
+  const [tabCounts, setTabCounts] = useState<Record<string, number>>({});
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [menuOrder, setMenuOrder] = useState<any>(null);
+
+  const pageSize = Number(filters.page_size) || 50;
+  const pageCount = Math.max(1, Math.ceil((count || 0) / pageSize));
+
+  const loadCounts = useCallback(async () => {
+    try {
+      const counts = await storeOrderService.getStatusCounts(query, payment);
+      setTabCounts(counts);
+    } catch {
+      /* ignore count errors — table still works */
+    }
+  }, [query, payment]);
 
   useEffect(() => {
-    const payload: any = {
+    const payload: Record<string, unknown> = {
       page: filters.page || 1,
-      page_size: filters.page_size || 50,
+      page_size: pageSize,
       isDelete: false,
     };
     if (status !== "all") payload.status = status;
+    if (payment !== "all") payload.paymentStatus = payment;
     if (query.trim()) payload.search = query.trim();
     storeOrderService.getAll(payload, dispatch);
-  }, [dispatch, refresh, filters.page, filters.page_size, status, query]);
-
-  const items = useMemo(() => orders || [], [orders]);
-  const selected = order;
+  }, [dispatch, refresh, filters.page, pageSize, status, payment, query]);
 
   useEffect(() => {
-    setNotesDraft(selected?.notes || "");
-  }, [selected?._id, selected?.notes]);
+    loadCounts();
+  }, [loadCounts, refresh]);
 
-  const openDetail = async (id: string) => {
-    const [, error] = await storeOrderService.get(id, dispatch);
-    if (error) ToasterService.showError("Could not load order");
+  const items = useMemo(() => orders || [], [orders]);
+
+  const kpi = useMemo(() => {
+    const total = tabCounts.all ?? count ?? 0;
+    const needsAction =
+      (tabCounts.placed || 0) + (tabCounts.processing || 0);
+    const inTransit = tabCounts.shipped || 0;
+    const done = tabCounts.delivered || 0;
+    return { total, needsAction, inTransit, done };
+  }, [tabCounts, count]);
+
+  const openDetail = (id: string) => navigate(`/store/orders/${id}`);
+
+  const runSearch = () => {
+    dispatch(storeOrderActions.resetPage());
+    setQuery(search);
   };
 
-  const updateStatus = async (id: string, next: string) => {
-    const [, error] = await storeOrderService.update(id, { status: next }, dispatch);
+  const changeStatusTab = (key: string) => {
+    dispatch(storeOrderActions.resetPage());
+    setStatus(key);
+  };
+
+  const changePayment = (key: string) => {
+    dispatch(storeOrderActions.resetPage());
+    setPayment(key);
+  };
+
+  const closeMenu = () => {
+    setMenuAnchor(null);
+    setMenuOrder(null);
+  };
+
+  const quickUpdate = async (patch: Record<string, string>) => {
+    if (!menuOrder?._id) return;
+    const [, error] = await storeOrderService.update(
+      menuOrder._id,
+      patch,
+      dispatch
+    );
+    closeMenu();
     if (error) ToasterService.showError("Update failed");
-    else ToasterService.showSuccess("Order updated");
+    else {
+      ToasterService.showSuccess("Order updated");
+      loadCounts();
+    }
   };
-
-  const updatePayment = async (id: string, paymentStatus: string) => {
-    const [, error] = await storeOrderService.update(
-      id,
-      { paymentStatus },
-      dispatch
-    );
-    if (error) ToasterService.showError("Payment update failed");
-    else ToasterService.showSuccess("Payment updated");
-  };
-
-  const saveNotes = async (id: string) => {
-    const [, error] = await storeOrderService.update(
-      id,
-      { notes: notesDraft },
-      dispatch
-    );
-    if (error) ToasterService.showError("Could not save notes");
-    else ToasterService.showSuccess("Notes saved");
-  };
-
-  const cancelOrder = async (id: string) => {
-    const reason = window.prompt("Cancel reason (optional)") || "";
-    const [, error] = await storeOrderService.cancel(id, reason, dispatch);
-    if (error) ToasterService.showError("Cancel failed");
-    else ToasterService.showSuccess("Order cancelled");
-  };
-
-  const resyncWebhook = async (id: string) => {
-    const [, error] = await storeOrderService.resyncWebhook(id, dispatch);
-    if (error) ToasterService.showError("Webhook sync failed");
-    else ToasterService.showSuccess("Webhook queued for partner");
-  };
-
-  const address = selected?.shippingAddress || {};
-  const customer = selected?.customer;
 
   return (
     <PageShell
       kicker="Store"
       title="Orders"
-      subtitle="Customer store orders — place from mobile cart, manage fulfillment here."
+      subtitle="Track fulfillment, payments, and partner sync for every store order."
+      actions={
+        <Tooltip title="Refresh">
+          <IconButton
+            onClick={() => {
+              dispatch(storeOrderActions.refresh());
+              loadCounts();
+            }}
+            aria-label="Refresh orders"
+          >
+            <RefreshRoundedIcon />
+          </IconButton>
+        </Tooltip>
+      }
     >
-      <div className="store-toolbar">
+      <div className="store-order-kpis">
+        <article className="store-order-kpi">
+          <span>Total</span>
+          <strong>{kpi.total}</strong>
+        </article>
+        <article className="store-order-kpi is-warn">
+          <span>Needs action</span>
+          <strong>{kpi.needsAction}</strong>
+        </article>
+        <article className="store-order-kpi is-info">
+          <span>In transit</span>
+          <strong>{kpi.inTransit}</strong>
+        </article>
+        <article className="store-order-kpi is-ok">
+          <span>Delivered</span>
+          <strong>{kpi.done}</strong>
+        </article>
+      </div>
+
+      <div className="store-order-tabs" role="tablist" aria-label="Order status">
+        {ORDER_TABS.map((tab) => {
+          const active = status === tab.key;
+          const n = tabCounts[tab.key];
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={`store-order-tab${active ? " is-active" : ""}`}
+              onClick={() => changeStatusTab(tab.key)}
+            >
+              <span>{tab.label}</span>
+              {typeof n === "number" ? (
+                <em className="store-order-tab__count">{n}</em>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="store-toolbar store-toolbar--orders">
         <input
           className="store-search"
           placeholder="Search order #, name, phone, city"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === "Enter") setQuery(search);
+            if (e.key === "Enter") runSearch();
           }}
         />
-        <Button variant="outlined" onClick={() => setQuery(search)}>
+        <Button variant="outlined" onClick={runSearch}>
           Search
         </Button>
-        <div className="store-filters">
-          {STATUSES.map((key) => (
+        <div className="store-payment-filters" role="group" aria-label="Payment">
+          {PAYMENT_FILTERS.map((f) => (
             <button
-              key={key}
+              key={f.key}
               type="button"
-              className={`store-filters__btn${status === key ? " is-active" : ""}`}
-              onClick={() => setStatus(key)}
+              className={`store-payment-filter${payment === f.key ? " is-active" : ""}`}
+              onClick={() => changePayment(f.key)}
             >
-              {key === "all" ? "All" : key}
+              {f.label}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="store-orders-layout">
-        <div className="store-orders" style={{ opacity: loading && items.length ? 0.72 : 1, transition: "opacity 160ms ease" }}>
-          {loading && items.length === 0 ? (
-            <GridSkeleton cards={4} columns="1fr" />
-          ) : null}
-          {items.map((row: any) => (
-            <article
-              key={row._id}
-              className={`store-order${selected?._id === row._id ? " is-selected" : ""}`}
-              onClick={() => openDetail(row._id)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") openDetail(row._id);
-              }}
+      <TableWrapper refreshing={loading && items.length > 0}>
+        <TableContainer sx={{ maxHeight: "68vh", overflowX: "auto" }}>
+          <Table aria-label="store orders" sx={adminTableSx} stickyHeader>
+            <TableLoadingWrapper
+              coloumns={9}
+              loading={loading && items.length === 0}
+              length={items.length}
+              message="No orders match these filters."
             >
-              <header>
-                <div>
-                  <strong>{row.orderNumber}</strong>
-                  <p>
-                    {money(row.total, row.currency)} · {row.paymentMethod || "cod"} ·{" "}
-                    {row.paymentStatus}
-                  </p>
-                  <p>
-                    {row.customer?.name ||
-                      row.shippingAddress?.fullName ||
-                      "Customer"}{" "}
-                    · {row.shippingAddress?.city || "—"}
-                  </p>
-                </div>
-                <StatusChip
-                  tone={toneFor(row.status, row.paymentStatus)}
-                  label={row.status}
-                />
-              </header>
-              <ul>
-                {(row.items || []).slice(0, 3).map((item: any, idx: number) => (
-                  <li key={`${row._id}-${idx}`}>
-                    {item.quantity}× {item.name}
-                  </li>
-                ))}
-                {(row.items || []).length > 3 ? (
-                  <li>+{(row.items || []).length - 3} more</li>
-                ) : null}
-              </ul>
-            </article>
-          ))}
-          {!loading && items.length === 0 ? (
-            <div className="store-empty">
-              <h2>No orders yet</h2>
-              <p>Orders appear when a user places from their cart.</p>
-            </div>
-          ) : null}
-        </div>
-
-        <aside className="store-order-detail">
-          {!selected ? (
-            <div className="store-empty">
-              <h2>Order details</h2>
-              <p>Select an order to view customer, shipping, and actions.</p>
-            </div>
-          ) : (
-            <>
-              <header className="store-order-detail__head">
-                <div>
-                  <strong>{selected.orderNumber}</strong>
-                  <p>
-                    {selected.createdAt
-                      ? new Date(selected.createdAt).toLocaleString()
-                      : ""}
-                  </p>
-                </div>
-                <StatusChip
-                  tone={toneFor(selected.status, selected.paymentStatus)}
-                  label={selected.status}
-                />
-              </header>
-
-              <section>
-                <h3>Customer</h3>
-                <p>
-                  {customer?.name || address.fullName || "—"}
-                  <br />
-                  {customer?.email || "—"}
-                  <br />
-                  {customer?.phone || address.phone || "—"}
-                </p>
-              </section>
-
-              <section>
-                <h3>Shipping</h3>
-                <p>
-                  {address.fullName}
-                  <br />
-                  {address.line1}
-                  {address.line2 ? (
-                    <>
-                      <br />
-                      {address.line2}
-                    </>
-                  ) : null}
-                  <br />
-                  {[address.city, address.state, address.postalCode]
-                    .filter(Boolean)
-                    .join(", ")}
-                  <br />
-                  {address.country || "PK"}
-                  <br />
-                  {address.phone}
-                </p>
-              </section>
-
-              <section>
-                <h3>Items</h3>
-                <ul>
-                  {(selected.items || []).map((item: any, idx: number) => (
-                    <li key={`${selected._id}-d-${idx}`}>
-                      {item.quantity}× {item.name} —{" "}
-                      {money(item.lineTotal, selected.currency)}
-                    </li>
-                  ))}
-                </ul>
-                <p className="store-order-detail__totals">
-                  Subtotal {money(selected.subtotal, selected.currency)}
-                  <br />
-                  Shipping {money(selected.shipping, selected.currency)}
-                  <br />
-                  <strong>Total {money(selected.total, selected.currency)}</strong>
-                </p>
-              </section>
-
-              <section className="store-order-detail__actions">
-                <TextField
-                  select
-                  size="small"
-                  label="Fulfillment"
-                  value={
-                    (FULFILLMENT as readonly string[]).includes(selected.status)
-                      ? selected.status
-                      : "placed"
-                  }
-                  onChange={(e) => updateStatus(selected._id, e.target.value)}
-                  fullWidth
-                >
-                  {FULFILLMENT.map((s) => (
-                    <MenuItem key={s} value={s}>
-                      {s}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  select
-                  size="small"
-                  label="Payment"
-                  value={
-                    ["unpaid", "paid", "refunded"].includes(selected.paymentStatus)
-                      ? selected.paymentStatus
-                      : "unpaid"
-                  }
-                  onChange={(e) => updatePayment(selected._id, e.target.value)}
-                  fullWidth
-                >
-                  {["unpaid", "paid", "refunded"].map((s) => (
-                    <MenuItem key={s} value={s}>
-                      {s}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  size="small"
-                  label="Admin notes"
-                  value={notesDraft}
-                  onChange={(e) => setNotesDraft(e.target.value)}
-                  multiline
-                  minRows={2}
-                  fullWidth
-                />
-                <div className="store-order-detail__btns">
-                  <Button variant="outlined" onClick={() => saveNotes(selected._id)}>
-                    Save notes
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={() => resyncWebhook(selected._id)}
-                  >
-                    Sync to partner
-                  </Button>
-                  {selected.status !== "cancelled" &&
-                  selected.status !== "delivered" ? (
-                    <Button
-                      color="error"
-                      variant="contained"
-                      onClick={() => cancelOrder(selected._id)}
+              <TableHead>
+                <TableRow>
+                  <StyledTableCell>Order</StyledTableCell>
+                  <StyledTableCell>Placed</StyledTableCell>
+                  <StyledTableCell>Customer</StyledTableCell>
+                  <StyledTableCell>Items</StyledTableCell>
+                  <StyledTableCell>Total</StyledTableCell>
+                  <StyledTableCell>Payment</StyledTableCell>
+                  <StyledTableCell>Status</StyledTableCell>
+                  <StyledTableCell>City</StyledTableCell>
+                  <StyledTableCellAction>Action</StyledTableCellAction>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {items.map((row: any) => {
+                  const name =
+                    row.customer?.name ||
+                    row.shippingAddress?.fullName ||
+                    "Customer";
+                  const phone =
+                    row.customer?.phone || row.shippingAddress?.phone || "";
+                  return (
+                    <StyledTableRow
+                      key={row._id}
+                      hover
+                      sx={{ cursor: "pointer" }}
+                      onClick={() => openDetail(row._id)}
                     >
-                      Cancel order
-                    </Button>
-                  ) : null}
-                </div>
-                {selected.cancelReason ? (
-                  <p className="store-order-detail__cancel">
-                    Cancelled: {selected.cancelReason}
-                  </p>
-                ) : null}
-              </section>
-            </>
-          )}
-        </aside>
-      </div>
+                      <StyledTableCell>
+                        <div className="store-order-id-cell">
+                          <strong>{row.orderNumber}</strong>
+                          <Tooltip title="Copy order number">
+                            <IconButton
+                              size="small"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                const ok = await copyText(row.orderNumber || "");
+                                if (ok)
+                                  ToasterService.showSuccess("Order # copied");
+                              }}
+                            >
+                              <ContentCopyRoundedIcon fontSize="inherit" />
+                            </IconButton>
+                          </Tooltip>
+                        </div>
+                        <div className="store-table-muted">
+                          {(row.paymentMethod || "cod").toUpperCase()}
+                        </div>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <div title={formatWhen(row.createdAt)}>
+                          {formatRelative(row.createdAt) ||
+                            formatWhen(row.createdAt)}
+                        </div>
+                        <div className="store-table-muted">
+                          {formatWhen(row.createdAt)}
+                        </div>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <div className="store-table-primary">{name}</div>
+                        {phone ? (
+                          <div className="store-table-muted">{phone}</div>
+                        ) : null}
+                      </StyledTableCell>
+                      <StyledTableCell sx={{ maxWidth: 220 }}>
+                        <div className="store-table-clamp">
+                          {itemsSummary(row.items)}
+                        </div>
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        <strong>{money(row.total, row.currency)}</strong>
+                      </StyledTableCell>
+                      <StyledTableCell onClick={(e) => e.stopPropagation()}>
+                        <StatusChip
+                          tone={paymentTone(row.paymentStatus)}
+                          label={row.paymentStatus || "unpaid"}
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell onClick={(e) => e.stopPropagation()}>
+                        <StatusChip
+                          tone={statusTone(row.status)}
+                          label={row.status}
+                        />
+                      </StyledTableCell>
+                      <StyledTableCell>
+                        {row.shippingAddress?.city || "—"}
+                      </StyledTableCell>
+                      <StyledTableCellAction
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Stack direction="row" spacing={0.5} alignItems="center">
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => openDetail(row._id)}
+                          >
+                            Manage
+                          </Button>
+                          <IconButton
+                            size="small"
+                            aria-label="Quick actions"
+                            onClick={(e) => {
+                              setMenuAnchor(e.currentTarget);
+                              setMenuOrder(row);
+                            }}
+                          >
+                            <MoreVertRoundedIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      </StyledTableCellAction>
+                    </StyledTableRow>
+                  );
+                })}
+              </TableBody>
+            </TableLoadingWrapper>
+          </Table>
+        </TableContainer>
+      </TableWrapper>
+
+      {count > pageSize ? (
+        <Stack alignItems="flex-end" sx={{ mt: 2 }}>
+          <Pagination
+            color="primary"
+            count={pageCount}
+            page={filters.page || 1}
+            onChange={(_, page) => dispatch(storeOrderActions.setPage(page))}
+          />
+        </Stack>
+      ) : null}
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={closeMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <MenuItem
+          onClick={() => {
+            if (menuOrder?._id) openDetail(menuOrder._id);
+            closeMenu();
+          }}
+        >
+          Open details
+        </MenuItem>
+        {menuOrder && NEXT_STATUS[menuOrder.status] ? (
+          <MenuItem
+            onClick={() =>
+              quickUpdate({ status: NEXT_STATUS[menuOrder.status]! })
+            }
+          >
+            Advance to {NEXT_STATUS[menuOrder.status]}
+          </MenuItem>
+        ) : null}
+        {menuOrder?.paymentStatus !== "paid" ? (
+          <MenuItem onClick={() => quickUpdate({ paymentStatus: "paid" })}>
+            Mark paid
+          </MenuItem>
+        ) : (
+          <MenuItem onClick={() => quickUpdate({ paymentStatus: "unpaid" })}>
+            Mark unpaid
+          </MenuItem>
+        )}
+        {menuOrder &&
+        menuOrder.status !== "cancelled" &&
+        menuOrder.status !== "delivered" ? (
+          <MenuItem
+            onClick={async () => {
+              if (!menuOrder?._id) return;
+              const reason = window.prompt("Cancel reason (optional)") || "";
+              const [, error] = await storeOrderService.cancel(
+                menuOrder._id,
+                reason,
+                dispatch
+              );
+              closeMenu();
+              if (error) ToasterService.showError("Cancel failed");
+              else {
+                ToasterService.showSuccess("Order cancelled");
+                loadCounts();
+              }
+            }}
+          >
+            Cancel order
+          </MenuItem>
+        ) : null}
+      </Menu>
     </PageShell>
   );
 }
