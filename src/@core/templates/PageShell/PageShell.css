@@ -18,29 +18,31 @@
 }
 
 .page-shell__kicker {
-  margin: 0 0 0.25rem;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  margin: 0 0 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--color-brand-primary-hover);
 }
 
 .page-shell__title {
   margin: 0;
-  font-size: clamp(1.1rem, 1.2vw + 1vh, var(--text-xl, 1.25rem));
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 1.35vw + 1.05vh, 1.7rem);
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
   color: var(--text-primary);
 }
 
 .page-shell__subtitle {
-  margin: 0.25rem 0 0;
-  max-width: 42rem;
-  font-size: 0.875rem;
+  margin: 0.35rem 0 0;
+  max-width: 44rem;
+  font-size: 0.925rem;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
   color: var(--text-secondary);
 }
 

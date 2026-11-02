@@ -21,7 +21,8 @@ declare module "@mui/material/styles" {
   }
 }
 
-const sans = '"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+const sans = '"Plus Jakarta Sans", "Segoe UI", sans-serif';
+const display = '"Sora", "Plus Jakarta Sans", sans-serif';
 const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
 const leaf = "#9FC53A";
 const leafDark = "#74941F";
@@ -29,8 +30,9 @@ const leafSoft = "rgba(159, 197, 58, 0.16)";
 const focusRing = "0 0 0 3px rgba(159, 197, 58, 0.28)";
 const ink = "#0A0A0A";
 const muted = "#515151";
-const border = "#E8E8E8";
+const border = "#DDE3D6";
 const canvas = "#F5F9EB";
+const inputBorder = "#CFD8C4";
 
 const Theme = createTheme({
   status: {
@@ -93,25 +95,49 @@ const Theme = createTheme({
   },
   typography: {
     fontFamily: sans,
-    fontSize: 14,
+    fontSize: 15,
     htmlFontSize: 16,
-    h1: { fontFamily: sans, fontSize: "2.1875rem", fontWeight: 700, lineHeight: 1.2 },
-    h2: { fontFamily: sans, fontSize: "1.5625rem", fontWeight: 700, lineHeight: 1.2 },
-    h3: { fontFamily: sans, fontSize: "1.125rem", fontWeight: 700, lineHeight: 1.2 },
-    h4: { fontFamily: sans, fontSize: "1rem", fontWeight: 700, lineHeight: 1.3 },
-    h5: { fontFamily: sans, fontSize: "0.875rem", fontWeight: 700, lineHeight: 1.4 },
+    h1: {
+      fontFamily: display,
+      fontSize: "2.25rem",
+      fontWeight: 700,
+      lineHeight: 1.15,
+      letterSpacing: "-0.022em",
+    },
+    h2: {
+      fontFamily: display,
+      fontSize: "1.625rem",
+      fontWeight: 700,
+      lineHeight: 1.18,
+      letterSpacing: "-0.02em",
+    },
+    h3: {
+      fontFamily: display,
+      fontSize: "1.25rem",
+      fontWeight: 700,
+      lineHeight: 1.2,
+      letterSpacing: "-0.018em",
+    },
+    h4: {
+      fontFamily: display,
+      fontSize: "1.0625rem",
+      fontWeight: 700,
+      lineHeight: 1.25,
+      letterSpacing: "-0.015em",
+    },
+    h5: { fontFamily: sans, fontSize: "0.9375rem", fontWeight: 700, lineHeight: 1.35 },
     h6: { fontFamily: sans, fontSize: "0.8125rem", fontWeight: 700, lineHeight: 1.4 },
-    subtitle1: { fontSize: "1rem", fontWeight: 400, lineHeight: 1.5 },
-    subtitle2: { fontSize: "0.875rem", fontWeight: 600, lineHeight: 1.4 },
-    body1: { fontSize: "0.875rem", fontWeight: 400, lineHeight: 1.5 },
+    subtitle1: { fontSize: "1.0625rem", fontWeight: 500, lineHeight: 1.5 },
+    subtitle2: { fontSize: "0.9375rem", fontWeight: 600, lineHeight: 1.4 },
+    body1: { fontSize: "0.9375rem", fontWeight: 400, lineHeight: 1.55, letterSpacing: "-0.011em" },
     body2: { fontSize: "0.8125rem", fontWeight: 400, lineHeight: 1.5 },
-    caption: { fontSize: "0.75rem", fontWeight: 400, lineHeight: 1.4 },
+    caption: { fontSize: "0.75rem", fontWeight: 500, lineHeight: 1.4, color: muted },
     button: {
       fontSize: "0.875rem",
       fontWeight: 600,
       lineHeight: 1.4,
       textTransform: "none",
-      letterSpacing: 0,
+      letterSpacing: "-0.01em",
     },
   },
   shape: { borderRadius: 12 },
@@ -353,9 +379,10 @@ const Theme = createTheme({
     MuiFormLabel: {
       styleOverrides: {
         root: {
-          fontSize: "0.875rem",
+          fontSize: "0.8125rem",
           fontWeight: 600,
-          color: muted,
+          letterSpacing: "-0.01em",
+          color: "#3F4A3A",
           "&.Mui-focused": { color: leafDark },
         },
       },
@@ -365,7 +392,24 @@ const Theme = createTheme({
         root: {
           fontSize: "0.875rem",
           fontWeight: 600,
+          letterSpacing: "-0.01em",
+          color: "#3F4A3A",
           "&.Mui-focused": { color: leafDark },
+          "&.MuiInputLabel-shrink": {
+            fontSize: "0.8125rem",
+            fontWeight: 700,
+          },
+        },
+      },
+    },
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          fontSize: "0.75rem",
+          fontWeight: 500,
+          marginLeft: 4,
+          marginTop: 6,
+          color: "#66705F",
         },
       },
     },
@@ -373,18 +417,21 @@ const Theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: "var(--input-bg, #FFFFFF)",
           minHeight: "var(--fluid-control-h)",
-          fontSize: "0.875rem",
-          transition: `box-shadow 160ms ${ease}, background-color 160ms ${ease}`,
+          fontSize: "var(--input-font-size, 0.9375rem)",
+          fontWeight: 500,
+          letterSpacing: "-0.01em",
+          boxShadow: "var(--input-shadow)",
+          transition: `box-shadow 160ms ${ease}, background-color 160ms ${ease}, border-color 160ms ${ease}`,
           "&:hover": {
-            backgroundColor: "#FCFDF9",
+            backgroundColor: "var(--input-bg-hover, #FBFDF6)",
           },
           "&:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: "rgba(159, 197, 58, 0.55)",
+            borderColor: "var(--input-border-hover, rgba(159, 197, 58, 0.55))",
           },
           "&.Mui-focused": {
-            backgroundColor: "#FFFFFF",
+            backgroundColor: "var(--input-bg, #FFFFFF)",
             boxShadow: focusRing,
           },
           "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
@@ -396,14 +443,23 @@ const Theme = createTheme({
           },
           "&.Mui-disabled": {
             backgroundColor: canvas,
+            boxShadow: "none",
           },
         },
         notchedOutline: {
-          borderColor: "#D6D6D6",
+          borderColor: inputBorder,
+          borderWidth: 1.5,
           transition: `border-color 160ms ${ease}`,
         },
         input: {
-          padding: "11px 14px",
+          padding: "12px 14px",
+          color: "var(--input-text, #0A0A0A)",
+          fontWeight: 500,
+          "&::placeholder": {
+            color: "var(--input-placeholder, #8A9480)",
+            opacity: 1,
+            fontWeight: 400,
+          },
         },
         adornedStart: {
           paddingLeft: 10,

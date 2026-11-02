@@ -1,0 +1,76 @@
+.diet-plan-form {
+  margin-bottom: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color, #e2e8e0);
+  background: #fff;
+}
+
+.diet-plan-form__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.diet-plan-form__actions {
+  margin-top: 14px;
+}
+
+.diet-plan-list {
+  display: grid;
+  gap: 12px;
+}
+
+.diet-plan-row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color, #e2e8e0);
+  background: #fff;
+}
+
+.diet-plan-row__media {
+  width: 120px;
+  height: 88px;
+  border-radius: 10px;
+  background: #eef2ee center / cover no-repeat;
+}
+
+.diet-plan-row__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.diet-plan-row__body p {
+  margin: 6px 0 4px;
+  color: #5c675e;
+}
+
+.diet-plan-row__body small {
+  color: #7a857b;
+}
+
+.diet-plan-row__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+@media (max-width: 720px) {
+  .diet-plan-row {
+    grid-template-columns: 1fr;
+  }
+
+  .diet-plan-row__media {
+    width: 100%;
+    height: 140px;
+  }
+}

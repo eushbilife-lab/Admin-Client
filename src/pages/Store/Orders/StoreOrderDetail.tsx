@@ -21,6 +21,9 @@ import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { storeOrderActions } from "redux/slices/storeOrder";
 import storeOrderService from "services/storeOrder.service";
+import storePaymentService, {
+  type StorePayment,
+} from "services/storePayment.service";
 import ToasterService from "utils/toaster.util";
 import {
   FULFILLMENT_STATUSES,
@@ -49,6 +52,8 @@ export default function StoreOrderDetail() {
   const [notesDraft, setNotesDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [tab, setTab] = useState(0);
+  const [payment, setPayment] = useState<StorePayment | null>(null);
+  const [refunding, setRefunding] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -61,13 +66,40 @@ export default function StoreOrderDetail() {
       if (error || !success) {
         ToasterService.showError("Could not load order");
         navigate("/store/orders");
+        return;
       }
+      const [payOk]: any = await storePaymentService.getByOrder(id);
+      if (!alive) return;
+      setPayment(payOk?.data?.data?.payment || null);
     })();
     return () => {
       alive = false;
       dispatch(storeOrderActions.setOrder(null));
+      setPayment(null);
     };
   }, [dispatch, id, navigate]);
+
+  const refundXpay = async () => {
+    if (!payment?._id && !payment?.id) return;
+    if (!payment.canRefund) return;
+    const ok = window.confirm(
+      "Refund this JazzCash / card payment on PostEx XPay? Full amount returns to the customer and this order is marked refunded."
+    );
+    if (!ok) return;
+    setRefunding(true);
+    const payId = payment._id || payment.id || "";
+    const [success, error]: any = await storePaymentService.refund(payId);
+    setRefunding(false);
+    if (error) {
+      ToasterService.showError(
+        error?.response?.data?.message || "XPay refund failed"
+      );
+      return;
+    }
+    ToasterService.showSuccess("Refunded on XPay");
+    setPayment(success?.data?.data?.payment || null);
+    await storeOrderService.get(id, dispatch);
+  };
 
   useEffect(() => {
     setNotesDraft(order?.notes || "");
@@ -331,6 +363,20 @@ export default function StoreOrderDetail() {
                   <dt>Payment method</dt>
                   <dd>{(order.paymentMethod || "cod").toUpperCase()}</dd>
                 </div>
+                <div>
+                  <dt>Payment status</dt>
+                  <dd>{order.paymentStatus || "unpaid"}</dd>
+                </div>
+                {order.promoCode ? (
+                  <div>
+                    <dt>Promo</dt>
+                    <dd>{order.promoCode}</dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt>Est. delivery</dt>
+                  <dd>{order.estimatedDelivery || "3-5 Working Days"}</dd>
+                </div>
               </dl>
             </section>
 
@@ -412,6 +458,11 @@ export default function StoreOrderDetail() {
                               <div className="store-table-primary">
                                 {item.name}
                               </div>
+                              {item.variantLabel ? (
+                                <div className="store-table-muted">
+                                  {item.variantLabel}
+                                </div>
+                              ) : null}
                               {item.category ? (
                                 <div className="store-table-muted">
                                   {item.category}
@@ -446,9 +497,12 @@ export default function StoreOrderDetail() {
                   <span>Shipping</span>
                   <span>{money(order.shipping, order.currency)}</span>
                 </div>
-                {order.discount ? (
+                {Number(order.discount) > 0 ? (
                   <div>
-                    <span>Discount</span>
+                    <span>
+                      Discount
+                      {order.promoCode ? ` (${order.promoCode})` : ""}
+                    </span>
                     <span>−{money(order.discount, order.currency)}</span>
                   </div>
                 ) : null}
@@ -507,13 +561,36 @@ export default function StoreOrderDetail() {
                   ))}
                 </TextField>
                 <div className="store-order-detail__btns">
-                  {order.paymentStatus !== "paid" ? (
+                  {order.paymentStatus !== "paid" &&
+                  order.paymentStatus !== "refunded" ? (
                     <Button
                       variant="contained"
                       disabled={saving}
                       onClick={() => updatePayment("paid")}
                     >
                       Mark paid
+                    </Button>
+                  ) : null}
+                  {payment?.canRefund ? (
+                    <Button
+                      color="error"
+                      variant="contained"
+                      disabled={saving || refunding}
+                      onClick={() => void refundXpay()}
+                    >
+                      {refunding ? "Refunding…" : "Refund via XPay"}
+                    </Button>
+                  ) : null}
+                  {payment?.id || payment?._id ? (
+                    <Button
+                      variant="outlined"
+                      onClick={() =>
+                        navigate(
+                          `/store/payments/${payment._id || payment.id}`
+                        )
+                      }
+                    >
+                      Manage payment
                     </Button>
                   ) : null}
                   {next ? (
@@ -536,6 +613,15 @@ export default function StoreOrderDetail() {
                     </Button>
                   ) : null}
                 </div>
+                {payment ? (
+                  <p className="store-order-detail__cancel">
+                    XPay {payment.paymentNo} · {payment.status}
+                    {payment.providerRef ? ` · ${payment.providerRef}` : ""}
+                    {payment.refundProviderRef
+                      ? ` · refund ${payment.refundProviderRef}`
+                      : ""}
+                  </p>
+                ) : null}
                 {order.cancelReason ? (
                   <p className="store-order-detail__cancel">
                     Cancelled: {order.cancelReason}

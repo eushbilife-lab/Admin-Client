@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MdSearch, MdViewList } from "react-icons/md";
+import { MdHistory, MdSearch, MdViewList } from "react-icons/md";
 import { useAppSelector } from "redux/hooks";
 import useDebouncedValue from "hooks/useDebouncedValue";
 import { filterCommands, type AdminCommand } from "constants/adminCommands";
 import { searchCatalog, type CatalogHit } from "services/dashboard.service";
+import { readRecentPages, type RecentPage } from "utils/adminPrefs.util";
 import "./CommandPalette.css";
 
 type PaletteRow =
   | { kind: "command"; item: AdminCommand }
-  | { kind: "food"; item: CatalogHit };
+  | { kind: "food"; item: CatalogHit }
+  | { kind: "recent"; item: RecentPage };
 
 type CommandPaletteProps = {
   open: boolean;
@@ -23,6 +25,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const [foods, setFoods] = useState<CatalogHit[]>([]);
+  const [recent, setRecent] = useState<RecentPage[]>([]);
   const debounced = useDebouncedValue(query, 240);
 
   const commands = useMemo(() => {
@@ -52,19 +55,25 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
     }, {});
   }, [commands]);
 
+  const showRecent = !query.trim() && recent.length > 0;
+
   const rows: PaletteRow[] = useMemo(() => {
+    const recentRows: PaletteRow[] = showRecent
+      ? recent.map((item) => ({ kind: "recent" as const, item }))
+      : [];
     const foodRows: PaletteRow[] = foods.map((item) => ({ kind: "food", item }));
     const commandRows: PaletteRow[] = ([] as AdminCommand[])
       .concat(...Object.values(groupedCommands))
       .map((item) => ({ kind: "command" as const, item }));
-    return [...foodRows, ...commandRows];
-  }, [foods, groupedCommands]);
+    return [...recentRows, ...foodRows, ...commandRows];
+  }, [foods, groupedCommands, recent, showRecent]);
 
   useEffect(() => {
     if (!open) return;
     setQuery("");
     setActive(0);
     setFoods([]);
+    setRecent(readRecentPages(6));
     const timer = window.setTimeout(() => inputRef.current?.focus(), 20);
     return () => window.clearTimeout(timer);
   }, [open]);
@@ -91,6 +100,10 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
       onClose();
       if (target.kind === "food") {
         navigate(`/update-product/${target.item._id}`);
+        return;
+      }
+      if (target.kind === "recent") {
+        navigate(target.item.path);
         return;
       }
       navigate(target.item.href);
@@ -124,7 +137,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
 
   if (!open) return null;
 
-  let cursor = foods.length;
+  let cursor = (showRecent ? recent.length : 0) + foods.length;
 
   return (
     <div className="command-palette" role="dialog" aria-modal="true" aria-label="Search Eushbi Life">
@@ -141,24 +154,50 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
           <kbd>esc</kbd>
         </label>
         <div className="command-palette__results">
-          {foods.length > 0 ? (
+          {showRecent ? (
             <section>
-              <p className="command-palette__group">Foods</p>
-              {foods.map((item, index) => (
+              <p className="command-palette__group">Recent</p>
+              {recent.map((item, index) => (
                 <button
-                  key={item._id}
+                  key={item.path}
                   type="button"
                   className={`command-palette__row${active === index ? " is-active" : ""}`}
                   onMouseEnter={() => setActive(index)}
-                  onClick={() => go({ kind: "food", item })}
+                  onClick={() => go({ kind: "recent", item })}
                 >
-                  <img src={item.productImages?.[0] || item.image || item.image_url || "/EushbiLife.png"} alt="" />
+                  <span className="command-palette__icon">
+                    <MdHistory size={18} />
+                  </span>
                   <span>
-                    <strong>{item.productName || "Untitled food"}</strong>
-                    <em>{item.brand || item.barcode || "Open product"}</em>
+                    <strong>{item.label}</strong>
+                    <em>{item.path}</em>
                   </span>
                 </button>
               ))}
+            </section>
+          ) : null}
+
+          {foods.length > 0 ? (
+            <section>
+              <p className="command-palette__group">Foods</p>
+              {foods.map((item, index) => {
+                const rowIndex = (showRecent ? recent.length : 0) + index;
+                return (
+                  <button
+                    key={item._id}
+                    type="button"
+                    className={`command-palette__row${active === rowIndex ? " is-active" : ""}`}
+                    onMouseEnter={() => setActive(rowIndex)}
+                    onClick={() => go({ kind: "food", item })}
+                  >
+                    <img src={item.productImages?.[0] || item.image || item.image_url || "/EushbiLife.png"} alt="" />
+                    <span>
+                      <strong>{item.productName || "Untitled food"}</strong>
+                      <em>{item.brand || item.barcode || "Open product"}</em>
+                    </span>
+                  </button>
+                );
+              })}
             </section>
           ) : null}
 

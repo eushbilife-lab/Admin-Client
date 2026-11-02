@@ -125,26 +125,42 @@
   --text-on-brand: #ffffff;
 
   /* ── Borders ── */
-  --border-color: var(--color-gray-200);
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-base: 10px;
-  --border-radius-lg: 15px;
+  --border-color: #dde3d6;
+  --border-radius-sm: 6px;
+  --border-radius-md: 10px;
+  --border-radius-base: 12px;
+  --border-radius-lg: 16px;
   --border-radius-xl: 24px;
   --border-radius-full: 9999px;
 
-  /* ── Typography (Felo scale) ── */
-  --font-primary: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-display: "Poppins", var(--font-primary);
-  --line-height: 1.5;
+  /* ── Typography ── */
+  --font-primary: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+  --font-display: "Sora", "Plus Jakarta Sans", sans-serif;
+  --font-mono: "SF Mono", "ui-monospace", Menlo, Consolas, monospace;
+  --line-height: 1.55;
+  --letter-tight: -0.022em;
 
   --text-xs: 0.75rem; /* 12px */
   --text-sm: 0.8125rem; /* 13px */
-  --text-base: 0.875rem; /* 14px */
-  --text-md: 1rem; /* 16px */
-  --text-lg: 1.125rem; /* 18px */
-  --text-xl: 1.5625rem; /* 25px */
-  --text-2xl: 2.1875rem; /* 35px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-md: 1.0625rem; /* 17px */
+  --text-lg: 1.25rem; /* 20px */
+  --text-xl: 1.625rem; /* 26px */
+  --text-2xl: 2.25rem; /* 36px */
+
+  /* ── Form controls ── */
+  --input-bg: #ffffff;
+  --input-bg-hover: #fbfdf6;
+  --input-border: #cfd8c4;
+  --input-border-hover: color-mix(in srgb, var(--color-brand-primary) 48%, #b8c0b0);
+  --input-text: var(--color-ink);
+  --input-placeholder: #8a9480;
+  --input-label: #3f4a3a;
+  --input-helper: #66705f;
+  --input-radius: 12px;
+  --input-shadow: 0 1px 2px rgba(20, 40, 10, 0.04);
+  --input-font-size: 0.9375rem;
+  --input-label-size: 0.8125rem;
 
   /* Legacy aliases used by existing pages */
   --text-h1: 2.1875rem;
@@ -169,11 +185,13 @@
   --space-12: 3rem;
   --space-16: 4rem;
 
-  /* ── Shadows (Felo) ── */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-header: 0 2px 8px rgba(0, 0, 0, 0.06);
+  /* ── Shadows ── */
+  --shadow-sm: 0 1px 2px rgba(20, 40, 10, 0.04), 0 1px 3px rgba(20, 40, 10, 0.03);
+  --shadow-md: 0 4px 14px rgba(20, 40, 10, 0.08);
+  --shadow-lg: 0 12px 32px rgba(20, 40, 10, 0.12);
+  --shadow-header: 0 4px 18px rgba(116, 148, 31, 0.22);
+  --surface-glow: radial-gradient(1200px 420px at 12% -10%, rgba(159, 197, 58, 0.14), transparent 55%),
+    radial-gradient(900px 380px at 92% 0%, rgba(0, 104, 247, 0.05), transparent 50%);
 
   /* ── Transitions (Felo) ── */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
@@ -220,13 +238,25 @@
   --scroll-thumb-strong: rgba(159, 197, 58, 0.55);
   --focus-ring: rgba(159, 197, 58, 0.28);
   --header-gradient: linear-gradient(
-    90deg,
-    var(--color-brand-primary-hover) 0%,
-    var(--color-brand-primary) 42%,
-    #d4e6a3 78%,
-    #f5f9eb 100%
+    105deg,
+    #5f7d18 0%,
+    var(--color-brand-primary-hover) 28%,
+    var(--color-brand-primary) 58%,
+    #c5dd7a 86%,
+    #e8f2c4 100%
   );
   --sidebar-active-gradient: linear-gradient(90deg, #9fc53a 0%, #bcd675 100%);
+}
+
+/* Compact density — denser controls & tables */
+html[data-density="compact"] {
+  --fluid-control-h: clamp(34px, 4.2vh + 0.3vw, 40px);
+  --fluid-control-h-sm: clamp(26px, 3.2vh + 0.2vw, 32px);
+  --fluid-pad: clamp(0.35rem, 0.45vh + 0.35vw, 0.95rem);
+  --fluid-gap: clamp(0.35rem, 0.55vh + 0.25vw, 0.75rem);
+  --fluid-row-pad-y: clamp(0.28rem, 0.4vh + 0.1vw, 0.55rem);
+  --text-base: 0.875rem;
+  --input-font-size: 0.875rem;
 }
 
 /* Ultra-wide */
@@ -375,14 +405,25 @@ html[data-theme="dark"] {
   --color-ink: #f2f4f5;
   --color-ink-soft: #c2c8ce;
   --color-leaf-soft: rgba(159, 197, 58, 0.18);
+  --border-color: #2a2e35;
+  --input-bg: #1a1d22;
+  --input-bg-hover: #22262c;
+  --input-border: #3a4048;
+  --input-border-hover: color-mix(in srgb, var(--color-brand-primary) 40%, #3a4048);
+  --input-text: #f2f4f5;
+  --input-placeholder: #8b949a;
+  --input-label: #c2c8ce;
+  --input-helper: #9aa3ab;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --surface-glow: radial-gradient(1000px 380px at 10% -8%, rgba(159, 197, 58, 0.1), transparent 55%);
   --header-gradient: linear-gradient(
-    90deg,
-    #4a6414 0%,
-    #6b8f22 40%,
-    #2a3218 78%,
+    105deg,
+    #3d5212 0%,
+    #4a6414 28%,
+    #6b8f22 58%,
+    #2a3218 86%,
     #14161a 100%
   );
   --sidebar-active-gradient: linear-gradient(90deg, #74941f 0%, #9fc53a 100%);
@@ -419,7 +460,8 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   min-height: 100%;
-  letter-spacing: 0;
+  letter-spacing: -0.011em;
+  font-feature-settings: "ss01" on, "cv11" on;
 }
 
 #root {
@@ -490,8 +532,8 @@ h5,
 .admin-page-header__title {
   font-family: var(--font-display);
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: 0;
+  line-height: 1.18;
+  letter-spacing: var(--letter-tight);
 }
 
 h1 {
@@ -523,13 +565,29 @@ select:focus-visible,
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  background: var(--color-white);
-  border: 1px solid var(--color-black-50);
-  border-radius: var(--border-radius-md);
+  background: var(--input-bg);
+  border: 1.5px solid var(--input-border);
+  border-radius: var(--input-radius);
   padding: 0 var(--fluid-control-pad-x);
   height: var(--fluid-control-h);
   min-height: var(--fluid-control-h);
   width: 100%;
+  box-shadow: var(--input-shadow);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+}
+
+.input-field:hover {
+  background: var(--input-bg-hover);
+  border-color: var(--input-border-hover);
+}
+
+.input-field:focus-within {
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  background: var(--input-bg);
 }
 
 .input-field__icon {
@@ -538,6 +596,7 @@ select:focus-visible,
   height: 18px;
   flex-shrink: 0;
   object-fit: contain;
+  opacity: 0.72;
 }
 
 .input-field__input {
@@ -545,13 +604,32 @@ select:focus-visible,
   height: 100%;
   border: none;
   background: transparent;
-  font-size: var(--text-sm);
-  color: var(--text-primary);
+  font-size: var(--input-font-size);
+  font-weight: 500;
+  color: var(--input-text);
   outline: none;
+  letter-spacing: -0.01em;
 }
 
 .input-field__input::placeholder {
-  color: var(--color-gray-400);
+  color: var(--input-placeholder);
+  font-weight: 400;
+}
+
+/* Native form controls used outside MUI */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]),
+select,
+textarea {
+  color: var(--input-text);
+  font-size: var(--input-font-size);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--input-placeholder);
+  opacity: 1;
 }
 
 .container {

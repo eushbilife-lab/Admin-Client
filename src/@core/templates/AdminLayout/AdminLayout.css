@@ -25,7 +25,9 @@
   display: flex;
   flex-direction: column;
   padding: var(--fluid-pad);
-  background: var(--bg-primary);
+  background:
+    var(--surface-glow),
+    linear-gradient(180deg, color-mix(in srgb, var(--color-canvas) 78%, #fff) 0%, var(--bg-primary) 42%);
   overflow: auto;
   scroll-behavior: auto;
   overflow-anchor: none;

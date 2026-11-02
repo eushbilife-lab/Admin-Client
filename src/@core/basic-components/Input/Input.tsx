@@ -14,31 +14,40 @@ const CssTextField = styled(TextField)({
   "& .MuiInputLabel-root": {
     fontSize: "0.875rem",
     fontWeight: 600,
-    color: "var(--text-secondary)",
+    letterSpacing: "-0.01em",
+    color: "var(--input-label)",
   },
   "& .MuiInputLabel-root.Mui-focused": {
     color: "var(--color-leaf-deep)",
   },
+  "& .MuiInputLabel-root.MuiInputLabel-shrink": {
+    fontSize: "0.8125rem",
+    fontWeight: 700,
+  },
   "& .MuiOutlinedInput-root": {
-    backgroundColor: "var(--color-paper)",
-    borderRadius: 12,
-    minHeight: 48,
-    fontSize: "0.875rem",
+    backgroundColor: "var(--input-bg)",
+    borderRadius: "var(--input-radius)",
+    minHeight: "var(--fluid-control-h)",
+    fontSize: "var(--input-font-size)",
+    fontWeight: 500,
+    letterSpacing: "-0.01em",
+    boxShadow: "var(--input-shadow)",
     transition:
       "box-shadow 160ms cubic-bezier(0.16, 1, 0.3, 1), background-color 160ms cubic-bezier(0.16, 1, 0.3, 1)",
   },
   "& .MuiOutlinedInput-notchedOutline": {
-    borderColor: "var(--border-color)",
+    borderColor: "var(--input-border)",
+    borderWidth: 1.5,
     transition: "border-color 160ms cubic-bezier(0.16, 1, 0.3, 1)",
   },
   "& .MuiOutlinedInput-root:hover": {
-    backgroundColor: "#fcfdf9",
+    backgroundColor: "var(--input-bg-hover)",
   },
   "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: "color-mix(in srgb, var(--color-leaf) 55%, #c7c7c7)",
+    borderColor: "var(--input-border-hover)",
   },
   "& .MuiOutlinedInput-root.Mui-focused": {
-    backgroundColor: "#fff",
+    backgroundColor: "var(--input-bg)",
     boxShadow: "0 0 0 3px var(--focus-ring)",
   },
   "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
@@ -46,17 +55,27 @@ const CssTextField = styled(TextField)({
     borderWidth: 1.5,
   },
   "& .MuiInputBase-input": {
-    padding: "11px 14px",
+    padding: "12px 14px",
     height: "auto",
+    color: "var(--input-text)",
+    fontWeight: 500,
+  },
+  "& .MuiInputBase-input::placeholder": {
+    color: "var(--input-placeholder)",
+    opacity: 1,
+    fontWeight: 400,
   },
   "& .Mui-disabled": {
     backgroundColor: "var(--color-canvas)",
     cursor: "not-allowed",
+    boxShadow: "none",
   },
   "& .MuiFormHelperText-root": {
     marginLeft: 4,
     marginTop: 6,
     fontSize: "0.75rem",
+    fontWeight: 500,
+    color: "var(--input-helper)",
   },
 });
 

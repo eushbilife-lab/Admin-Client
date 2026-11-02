@@ -108,13 +108,21 @@
 }
 
 .login-form .MuiOutlinedInput-root {
-  background: var(--color-paper);
-  border-radius: var(--border-radius-md);
+  background: var(--input-bg);
+  border-radius: var(--input-radius);
   min-height: var(--fluid-control-h);
+  font-size: var(--input-font-size);
+  font-weight: 500;
+  box-shadow: var(--input-shadow);
 }
 
 .login-form .MuiOutlinedInput-notchedOutline {
-  border-color: var(--color-gray-300);
+  border-color: var(--input-border);
+  border-width: 1.5px;
+}
+
+.login-form .MuiOutlinedInput-root:hover {
+  background: var(--input-bg-hover);
 }
 
 .login-form .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline,
@@ -124,6 +132,13 @@
 
 .login-form .MuiOutlinedInput-root.Mui-focused {
   box-shadow: 0 0 0 3px var(--focus-ring);
+  background: var(--input-bg);
+}
+
+.login-form .MuiInputLabel-root {
+  font-weight: 600;
+  color: var(--input-label);
+  letter-spacing: -0.01em;
 }
 
 .login-forgot {

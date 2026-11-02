@@ -12,8 +12,8 @@
   <title>Eushbi Life · Nutrition Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <script type="module" crossorigin src="/assets/index-DGvbrFvY.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700&display=swap" rel="stylesheet" />
+  <script type="module" crossorigin src="/assets/index-9kbBTJnV.js"></script>
   <link rel="modulepreload" crossorigin href="/assets/jsx-runtime-Dx9TgJjK.js">
   <link rel="modulepreload" crossorigin href="/assets/react-is-Bzw4LM_u.js">
   <link rel="modulepreload" crossorigin href="/assets/DefaultPropsProvider-DeiGNyQe.js">
@@ -47,7 +47,7 @@
   <link rel="modulepreload" crossorigin href="/assets/CircularProgress-Bf_gzind.js">
   <link rel="modulepreload" crossorigin href="/assets/ReduxFormComponent-D2eXqtIY.js">
   <link rel="modulepreload" crossorigin href="/assets/useTranslation-CXMOMVS4.js">
-  <link rel="modulepreload" crossorigin href="/assets/Input-DYruAiEv.js">
+  <link rel="modulepreload" crossorigin href="/assets/Input-BXPp-BAA.js">
   <link rel="modulepreload" crossorigin href="/assets/config-C6bAgxpG.js">
   <link rel="modulepreload" crossorigin href="/assets/toaster.util-DsZ6WPIt.js">
   <link rel="modulepreload" crossorigin href="/assets/modal-Cofr1uX1.js">
@@ -56,7 +56,7 @@
   <link rel="modulepreload" crossorigin href="/assets/nutrition-f0KNJT6i.js">
   <link rel="modulepreload" crossorigin href="/assets/iconBase-C77VNmK1.js">
   <link rel="modulepreload" crossorigin href="/assets/selectOption.util-2ie1eZVv.js">
-  <link rel="stylesheet" crossorigin href="/assets/index-DBVWwlQ-.css">
+  <link rel="stylesheet" crossorigin href="/assets/index-D7aPZN-j.css">
 </head>
 
 <body>
@@ -67,6 +67,10 @@
         var t = localStorage.getItem("eushbi-admin-theme");
         if (t === "dark" || t === "light") {
           document.documentElement.setAttribute("data-theme", t);
+        }
+        var d = localStorage.getItem("eushbi-admin-density");
+        if (d === "compact" || d === "comfortable") {
+          document.documentElement.setAttribute("data-density", d);
         }
       } catch (e) {}
     })();

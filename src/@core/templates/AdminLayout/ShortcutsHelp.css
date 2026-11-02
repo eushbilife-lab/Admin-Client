@@ -1,0 +1,118 @@
+.shortcuts-help {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.shortcuts-help__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(10, 10, 10, 0.42);
+  backdrop-filter: blur(5px);
+  cursor: pointer;
+}
+
+.shortcuts-help__panel {
+  position: relative;
+  z-index: 1;
+  width: min(520px, 100%);
+  border-radius: 18px;
+  border: 1px solid var(--border-color);
+  background: var(--color-paper);
+  box-shadow: var(--shadow-lg);
+  padding: 1.25rem 1.35rem 1.4rem;
+  animation: shortcuts-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes shortcuts-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.shortcuts-help__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.shortcuts-help__head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.shortcuts-help__head p {
+  margin: 0.3rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.shortcuts-help__close {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--color-canvas);
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.shortcuts-help__close:hover {
+  background: var(--color-leaf-soft);
+  color: var(--color-leaf-deep);
+}
+
+.shortcuts-help__list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.shortcuts-help__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-canvas) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+}
+
+.shortcuts-help__list span {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.shortcuts-help__list kbd {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.28rem 0.5rem;
+  border-radius: 8px;
+  background: var(--color-paper);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  box-shadow: 0 1px 0 rgba(20, 40, 10, 0.04);
+}

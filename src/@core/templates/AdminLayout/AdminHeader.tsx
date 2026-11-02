@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MdAdd, MdDarkMode, MdLightMode, MdMenu, MdNotificationsNone, MdSearch } from "react-icons/md";
+import {
+  MdAdd,
+  MdDarkMode,
+  MdDensityMedium,
+  MdDensitySmall,
+  MdHelpOutline,
+  MdLightMode,
+  MdMenu,
+  MdNotificationsNone,
+  MdSearch,
+} from "react-icons/md";
 import { useAppSelector } from "redux/hooks";
 import AuthService from "services/auth.service";
 import NotificationService from "services/notification.service";
@@ -9,38 +19,39 @@ import { config } from "config";
 import { BRAND, displayNameOf } from "constants/brand";
 import { QUICK_CREATE } from "constants/adminCommands";
 import { getSidebarGroups } from "./sidebarNav";
+import { readRecentPages, type AdminDensity, type AdminTheme } from "utils/adminPrefs.util";
 import "./AdminHeader.css";
 
 type AdminHeaderProps = {
   onMenuClick?: () => void;
   onSearchClick?: () => void;
+  onOpenShortcuts?: () => void;
+  theme: AdminTheme;
+  onThemeChange: (theme: AdminTheme) => void;
+  density: AdminDensity;
+  onDensityChange: (density: AdminDensity) => void;
 };
 
 type MenuKey = "search" | "add" | "user" | null;
 
-const THEME_KEY = "eushbi-admin-theme";
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
-function readTheme(): "light" | "dark" {
-  if (typeof document === "undefined") return "light";
-  const stored = localStorage.getItem(THEME_KEY);
-  if (stored === "dark" || stored === "light") return stored;
-  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-}
-
-function applyTheme(theme: "light" | "dark") {
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(THEME_KEY, theme);
-}
-
-export default function AdminHeader({ onMenuClick, onSearchClick }: AdminHeaderProps) {
+export default function AdminHeader({
+  onMenuClick,
+  onSearchClick,
+  onOpenShortcuts,
+  theme,
+  onThemeChange,
+  density,
+  onDensityChange,
+}: AdminHeaderProps) {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
   const noteCount = useAppSelector((state) => state.notification.count);
   const rootRef = useRef<HTMLElement>(null);
   const [openMenu, setOpenMenu] = useState<MenuKey>(null);
   const [query, setQuery] = useState("");
-  const [theme, setTheme] = useState<"light" | "dark">(() => readTheme());
+  const [recent, setRecent] = useState(() => readRecentPages(6));
   const name = displayNameOf(user);
   const firstName = name.split(" ")[0];
   const initial = name.charAt(0).toUpperCase();
@@ -70,14 +81,15 @@ export default function AdminHeader({ onMenuClick, onSearchClick }: AdminHeaderP
   );
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  useEffect(() => {
     if (!canSeeNotes) return;
     const dispatch = getAppDispatch();
     if (dispatch) NotificationService.getAllNotifications({ page: 1, page_size: 1 }, dispatch);
   }, [canSeeNotes]);
+
+  useEffect(() => {
+    if (openMenu !== "search") return;
+    setRecent(readRecentPages(6));
+  }, [openMenu]);
 
   useEffect(() => {
     if (!openMenu) return undefined;
@@ -127,7 +139,7 @@ export default function AdminHeader({ onMenuClick, onSearchClick }: AdminHeaderP
           <input
             type="search"
             value={query}
-            placeholder="Search anything here.."
+            placeholder="Search pages, foods, tools…"
             aria-label="Search admin sections"
             aria-expanded={openMenu === "search"}
             aria-controls="admin-header-search-results"
@@ -171,6 +183,24 @@ export default function AdminHeader({ onMenuClick, onSearchClick }: AdminHeaderP
             className="admin-header__dropdown admin-header__dropdown--search"
             role="listbox"
           >
+            {!query.trim() && recent.length > 0 ? (
+              <>
+                <p className="admin-header__dropdown-note">Recent</p>
+                {recent.map((item) => (
+                  <button
+                    key={item.path}
+                    type="button"
+                    className="admin-header__dropdown-item"
+                    role="option"
+                    onClick={() => go(item.path)}
+                  >
+                    <span>{item.label}</span>
+                    <span className="admin-header__dropdown-path">{item.path}</span>
+                  </button>
+                ))}
+                <p className="admin-header__dropdown-note">Pages</p>
+              </>
+            ) : null}
             {searchHits.length === 0 ? (
               <p className="admin-header__dropdown-empty">No matching sections.</p>
             ) : (
@@ -195,8 +225,30 @@ export default function AdminHeader({ onMenuClick, onSearchClick }: AdminHeaderP
         <button
           type="button"
           className="admin-header__icon"
+          aria-label="Keyboard shortcuts"
+          title="Shortcuts (?)"
+          onClick={() => onOpenShortcuts?.()}
+        >
+          <MdHelpOutline size={18} />
+        </button>
+
+        <button
+          type="button"
+          className="admin-header__icon"
+          aria-label={density === "compact" ? "Switch to comfortable density" : "Switch to compact density"}
+          title="Toggle density"
+          onClick={() =>
+            onDensityChange(density === "compact" ? "comfortable" : "compact")
+          }
+        >
+          {density === "compact" ? <MdDensitySmall size={18} /> : <MdDensityMedium size={18} />}
+        </button>
+
+        <button
+          type="button"
+          className="admin-header__icon"
           aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-          onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          onClick={() => onThemeChange(theme === "dark" ? "light" : "dark")}
         >
           {theme === "dark" ? <MdLightMode size={18} /> : <MdDarkMode size={18} />}
         </button>
@@ -267,6 +319,13 @@ export default function AdminHeader({ onMenuClick, onSearchClick }: AdminHeaderP
             <div className="admin-header__dropdown admin-header__dropdown--right" role="menu">
               <button type="button" className="admin-header__dropdown-item" onClick={() => go("/dashboard")}>
                 Overview
+              </button>
+              <button
+                type="button"
+                className="admin-header__dropdown-item"
+                onClick={() => onOpenShortcuts?.()}
+              >
+                Shortcuts
               </button>
               <button
                 type="button"

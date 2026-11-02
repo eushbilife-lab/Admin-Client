@@ -43,8 +43,17 @@
   flex: 1;
   border: 0;
   outline: none;
-  font-size: 1rem;
+  font-family: var(--font-primary);
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  color: var(--input-text);
   background: transparent;
+}
+
+.command-palette__search input::placeholder {
+  color: var(--input-placeholder);
+  font-weight: 400;
 }
 
 .command-palette__search kbd {

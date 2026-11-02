@@ -18,13 +18,11 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   Button,
   IconButton,
-  Tab,
   Table,
   TableBody,
   TableContainer,
   TableHead,
   TableRow,
-  Tabs,
 } from "@mui/material";
 import BlockComponent from "@core/api-components/BlockComponent";
 import { useTranslation } from "react-i18next";
@@ -33,9 +31,13 @@ import Tooltip from "@core/basic-components/Tooltip";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import AddIcon from "@mui/icons-material/Add";
 import { MODAL, modalActions } from "redux/slices/modal";
 import draftProductService from "services/draftProduct.service";
 import { draftProductActions } from "redux/slices/draftProduct";
+import "./Product.css";
 
 function statusTone(status?: string): "ok" | "warn" | "danger" | "info" {
   const s = String(status || "").toLowerCase();
@@ -45,6 +47,12 @@ function statusTone(status?: string): "ok" | "warn" | "danger" | "info" {
   return "info";
 }
 
+const TAB_META = [
+  { id: 0, label: "Approved" },
+  { id: 1, label: "Under review" },
+  { id: 2, label: "Draft" },
+] as const;
+
 export default function Product() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -52,6 +60,7 @@ export default function Product() {
   const catalogQuery = searchParams.get("q")?.trim() || "";
   const userRole = useAppSelector((state) => state?.auth?.user?.role);
   const [activeTab, setActiveTab] = useState(0);
+  const [showFilters, setShowFilters] = useState(true);
   const { t } = useTranslation();
   const { count, products, loading, refreshLoader, filters, refresh } =
     useAppSelector((state) => state.product);
@@ -74,6 +83,8 @@ export default function Product() {
   const currentCount = activeTab === 2 ? draftCount : count;
   const currentFilters = activeTab === 2 ? draftFilters : filters;
   const pageSize = Number(currentFilters.page_size) || 25;
+  const pageCount = Math.max(1, Math.ceil((currentCount || 0) / pageSize));
+  const showDraftTab = Boolean(userRole?.includes("admin"));
 
   const columns = useMemo(
     () => [
@@ -85,6 +96,17 @@ export default function Product() {
       { id: "action", label: "Action" },
     ],
     []
+  );
+
+  const openEditor = useCallback(
+    (item: any) => {
+      navigate(
+        activeTab === 2
+          ? `/update-draftProduct/${item._id}?isDraft=true`
+          : `/update-product/${item._id}`
+      );
+    },
+    [activeTab, navigate]
   );
 
   const renderRow = useCallback(
@@ -107,7 +129,13 @@ export default function Product() {
         (Array.isArray(item.nf) && item.nf.length > 0);
 
       return (
-        <StyledTableRow key={item._id}>
+        <StyledTableRow
+          key={item._id}
+          hover
+          className="catalog-row"
+          onClick={() => openEditor(item)}
+          sx={{ cursor: "pointer" }}
+        >
           <StyledTableCell>
             <div className="catalog-food">
               {thumb ? (
@@ -161,71 +189,38 @@ export default function Product() {
               tone={statusTone(item?.status)}
             />
           </StyledTableCell>
-          <StyledTableCellAction>
-            <Tooltip title={t("Edit")}>
-              <IconButton
+          <StyledTableCellAction
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="catalog-row-actions">
+              <Button
                 size="small"
-                onClick={() =>
-                  navigate(
-                    activeTab === 2
-                      ? `/update-draftProduct/${item._id}?isDraft=true`
-                      : `/update-product/${item._id}`
-                  )
-                }
+                variant="outlined"
+                startIcon={<EditNoteIcon fontSize="small" />}
+                onClick={() => openEditor(item)}
               >
-                <EditNoteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <BlockComponent allowedRoles={["admin"]}>
-              <Tooltip title={t("Delete")}>
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    dispatch(
-                      modalActions.openModal({
-                        type: MODAL.CONFIRMATION_FORM,
-                        data: {
-                          heading: t("Delete Product"),
-                          message: t(
-                            "Are you sure you want to delete this product?"
-                          ),
-                          confirmAction: () => {
-                            if (activeTab === 2) {
-                              draftProductService.remove(item?._id, dispatch);
-                            } else {
-                              productService.remove(item?._id, dispatch);
-                            }
-                          },
-                        },
-                        width: "500px",
-                      })
-                    )
-                  }
-                >
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </BlockComponent>
-            {activeTab === 1 ? (
+                Manage
+              </Button>
               <BlockComponent allowedRoles={["admin"]}>
-                <Tooltip title={t("Approve")}>
+                <Tooltip title={t("Delete")}>
                   <IconButton
                     size="small"
+                    aria-label="Delete food"
                     onClick={() =>
                       dispatch(
                         modalActions.openModal({
                           type: MODAL.CONFIRMATION_FORM,
                           data: {
-                            heading: t("Approve Product"),
+                            heading: t("Delete Product"),
                             message: t(
-                              "Are you sure you want to approve this product?"
+                              "Are you sure you want to delete this product?"
                             ),
                             confirmAction: () => {
-                              productService.updateStatus(
-                                item._id,
-                                "approved",
-                                dispatch
-                              );
+                              if (activeTab === 2) {
+                                draftProductService.remove(item?._id, dispatch);
+                              } else {
+                                productService.remove(item?._id, dispatch);
+                              }
                             },
                           },
                           width: "500px",
@@ -233,20 +228,54 @@ export default function Product() {
                       )
                     }
                   >
-                    <CheckCircleOutlineIcon fontSize="small" />
+                    <DeleteOutlineIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </BlockComponent>
-            ) : null}
+              {activeTab === 1 ? (
+                <BlockComponent allowedRoles={["admin"]}>
+                  <Tooltip title={t("Approve")}>
+                    <IconButton
+                      size="small"
+                      color="success"
+                      aria-label="Approve food"
+                      onClick={() =>
+                        dispatch(
+                          modalActions.openModal({
+                            type: MODAL.CONFIRMATION_FORM,
+                            data: {
+                              heading: t("Approve Product"),
+                              message: t(
+                                "Are you sure you want to approve this product?"
+                              ),
+                              confirmAction: () => {
+                                productService.updateStatus(
+                                  item._id,
+                                  "approved",
+                                  dispatch
+                                );
+                              },
+                            },
+                            width: "500px",
+                          })
+                        )
+                      }
+                    >
+                      <CheckCircleOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </BlockComponent>
+              ) : null}
+            </div>
           </StyledTableCellAction>
         </StyledTableRow>
       );
     },
-    [activeTab, dispatch, navigate, t]
+    [activeTab, dispatch, openEditor, t]
   );
 
   const handleTabChange = useCallback(
-    (_: any, newTab: number) => {
+    (newTab: number) => {
       setActiveTab(newTab);
       const statusMap = [undefined, "pending", "draft"];
 
@@ -305,6 +334,11 @@ export default function Product() {
     [activeTab, dispatch, draftFilters, filters]
   );
 
+  const refreshList = useCallback(() => {
+    if (activeTab === 2) dispatch(draftProductActions.refresh());
+    else dispatch(productActions.refresh());
+  }, [activeTab, dispatch]);
+
   useEffect(() => {
     if (!catalogQuery) return;
     dispatch(
@@ -343,82 +377,155 @@ export default function Product() {
     };
   }, [dispatch]);
 
+  const activeMeta = TAB_META[activeTab] || TAB_META[0];
+  const emptyMessage =
+    activeTab === 1
+      ? "Nothing in review — pending submissions will land here."
+      : activeTab === 2
+        ? "No drafts yet — save one from Add food to continue later."
+        : t("No Products Data currently available");
+
   return (
     <PageShell
       kicker="Foods"
       title="Catalog"
       subtitle="Barcodes, nutrition facts, front-of-pack marks, and scoring-ready labels."
       actions={
-        <Button variant="contained" onClick={() => navigate("/add-product")}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => navigate("/add-product")}
+        >
           Add food
         </Button>
       }
     >
-      <Tabs
-        value={activeTab}
-        onChange={handleTabChange}
-        sx={{
-          mb: 1.5,
-          "& .MuiTab-root": { fontSize: "14px", textTransform: "capitalize" },
-        }}
-      >
-        <Tab label={t("Approved")} />
-        <Tab label={t("Under Review")} />
-        {userRole?.includes("admin") ? <Tab label={t("Draft")} /> : null}
-      </Tabs>
-
-      <ProductFilters
-        count={currentCount}
-        productActions={
-          activeTab === 2 ? draftProductActions : productActions
-        }
-        refreshLoader={currentRefreshLoader}
-        filters={currentFilters}
-        activeTab={activeTab}
-      />
-
-      <TableWrapper
-        refreshing={currentRefreshLoader || (currentLoading && (currentProducts?.length ?? 0) > 0)}
-      >
-        <TableContainer className="catalog-table-scroll">
-          <Table aria-label="Catalog foods" sx={adminTableSx}>
-            <TableLoadingWrapper
-              coloumns={columns.length}
-              loading={currentLoading}
-              length={currentProducts?.length}
-              message={t("No Products Data currently available")}
+      <div className="catalog-page">
+        <div className="catalog-page__intro">
+          <p className="catalog-page__intro-copy">
+            Keep pack shots, barcodes, and nutrition accurate. Switch tabs to
+            review submissions, polish drafts, or manage live approved foods.
+          </p>
+          <div className="catalog-page__intro-actions">
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<RefreshRoundedIcon />}
+              disabled={!!currentRefreshLoader}
+              onClick={refreshList}
             >
-              <TableHead>
-                <TableRow>
-                  {columns.map((column) =>
-                    column.id === "action" ? (
-                      <StyledTableCellAction key={column.id}>
-                        {column.label}
-                      </StyledTableCellAction>
-                    ) : (
-                      <StyledTableCell key={column.id}>
-                        {column.label}
-                      </StyledTableCell>
-                    )
-                  )}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {currentProducts?.map((item) => renderRow(item))}
-              </TableBody>
-            </TableLoadingWrapper>
-          </Table>
-        </TableContainer>
-        <ListPagination
-          count={currentCount}
-          page={Number(currentFilters.page) || 1}
-          pageSize={pageSize}
-          disabled={currentRefreshLoader}
-          label="foods"
-          onPageChange={handlePageChange}
-          onPageSizeChange={handlePageSizeChange}
-        />
-      </TableWrapper>
+              Refresh
+            </Button>
+            <Button
+              size="small"
+              variant={showFilters ? "contained" : "outlined"}
+              startIcon={<FilterListIcon />}
+              onClick={() => setShowFilters((v) => !v)}
+            >
+              {showFilters ? "Hide filters" : "Filters"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="catalog-page__kpis">
+          <div className="catalog-page__kpi is-active">
+            <span>{activeMeta.label}</span>
+            <strong>{currentCount ?? 0}</strong>
+          </div>
+          <div className="catalog-page__kpi">
+            <span>Page</span>
+            <strong>
+              {Number(currentFilters.page) || 1} / {pageCount}
+            </strong>
+          </div>
+          <div className="catalog-page__kpi">
+            <span>Per page</span>
+            <strong>{pageSize}</strong>
+          </div>
+        </div>
+
+        <div className="catalog-page__tabs" role="tablist" aria-label="Food status">
+          {TAB_META.filter((tab) => tab.id !== 2 || showDraftTab).map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              className={`catalog-page__tab${
+                activeTab === tab.id ? " is-active" : ""
+              }`}
+              onClick={() => handleTabChange(tab.id)}
+            >
+              {t(tab.label) || tab.label}
+              {activeTab === tab.id ? (
+                <em className="catalog-page__tab-count">{currentCount ?? 0}</em>
+              ) : null}
+            </button>
+          ))}
+        </div>
+
+        {showFilters ? (
+          <div className="catalog-page__filters-panel">
+            <ProductFilters
+              count={currentCount}
+              productActions={
+                activeTab === 2 ? draftProductActions : productActions
+              }
+              refreshLoader={currentRefreshLoader}
+              filters={currentFilters}
+              activeTab={activeTab}
+            />
+          </div>
+        ) : null}
+
+        <div className="catalog-page__surface">
+          <TableWrapper
+            refreshing={
+              currentRefreshLoader ||
+              (currentLoading && (currentProducts?.length ?? 0) > 0)
+            }
+          >
+            <TableContainer className="catalog-table-scroll">
+              <Table aria-label="Catalog foods" sx={adminTableSx} stickyHeader>
+                <TableLoadingWrapper
+                  coloumns={columns.length}
+                  loading={currentLoading}
+                  length={currentProducts?.length}
+                  message={emptyMessage}
+                >
+                  <TableHead>
+                    <TableRow>
+                      {columns.map((column) =>
+                        column.id === "action" ? (
+                          <StyledTableCellAction key={column.id}>
+                            {column.label}
+                          </StyledTableCellAction>
+                        ) : (
+                          <StyledTableCell key={column.id}>
+                            {column.label}
+                          </StyledTableCell>
+                        )
+                      )}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {currentProducts?.map((item) => renderRow(item))}
+                  </TableBody>
+                </TableLoadingWrapper>
+              </Table>
+            </TableContainer>
+            <ListPagination
+              count={currentCount}
+              page={Number(currentFilters.page) || 1}
+              pageSize={pageSize}
+              disabled={currentRefreshLoader}
+              label="foods"
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+            />
+          </TableWrapper>
+        </div>
+      </div>
     </PageShell>
   );
 }
