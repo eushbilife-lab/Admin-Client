@@ -208,7 +208,8 @@ export const private_routes: IRoute[] = [
 
 
   { path: "/notifications", element: <Notifications/> },
-  { path: "/add-Notifications", element: <AddNotifications/> },
+  { path: "/add-Notifications", element: <Notifications/> },
+  { path: "/add-notifications", element: <Notifications/> },
   { path: "/update-notifications/:id", element: <UpdateNotifications/> },
   
 ];

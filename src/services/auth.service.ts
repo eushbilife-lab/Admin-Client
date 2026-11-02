@@ -3,7 +3,6 @@ import http from "./http.service";
 // import SocketService from "./socket.service";
 import Promisable from "./promisable.service";
 import { authActions } from "redux/slices/auth";
-import OneSignalService from "./onesignal.service";
 import { getAppDispatch } from "utils/dispatch.util";
 const url="/admins"
 const AuthService = {
@@ -18,7 +17,6 @@ const AuthService = {
       LocalStorage.setItem("token", `Bearer ${jwtToken}`);
       if (refreshToken) LocalStorage.setItem("refreshToken", refreshToken);
       dispatch?.(authActions.setUser(user));
-      OneSignalService.connect(user._id);
     }
     dispatch?.(authActions.setLoading(false));
     return [success, error];
@@ -26,7 +24,6 @@ const AuthService = {
   logout: () => {
     const dispatch = getAppDispatch();
     void Promisable.asPromise(http.post(`/auth/logout`, {})).catch(() => undefined);
-    OneSignalService.disconnect();
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     dispatch?.(authActions.logout());

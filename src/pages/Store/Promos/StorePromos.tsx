@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Button,
   IconButton,
   MenuItem,
   Skeleton,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import storePromoService from "services/storePromo.service";
@@ -39,10 +42,20 @@ const emptyForm = {
 };
 
 export default function StorePromos() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<PromoRow[]>([]);
   const [form, setForm] = useState(emptyForm);
+
+  const notifyPromo = (row: PromoRow) => {
+    const id = row._id || row.id || "";
+    const qs = new URLSearchParams({
+      promo: row.code,
+      ...(id ? { promoId: id } : {}),
+    });
+    navigate(`/notifications?${qs.toString()}`);
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -245,6 +258,16 @@ export default function StorePromos() {
                 label={row.status || "draft"}
               />
               <div className="store-order-detail__btns">
+                <Tooltip title="Send push / inbox about this promo">
+                  <Button
+                    size="small"
+                    variant="contained"
+                    startIcon={<CampaignOutlinedIcon />}
+                    onClick={() => notifyPromo(row)}
+                  >
+                    Notify
+                  </Button>
+                </Tooltip>
                 {row.status !== "published" ? (
                   <Button
                     size="small"
