@@ -19,10 +19,15 @@ type Props = {
   /** Exact pixel size required before upload (e.g. store banners). */
   requiredWidth?: number;
   requiredHeight?: number;
+  /**
+   * Max upload size in MB. Pass `null` / `0` to skip the client-side size check
+   * (server still enforces its own limit).
+   */
+  maxMb?: number | null;
 };
 
 const ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
-const MAX_MB = 5;
+const DEFAULT_MAX_MB = 5;
 
 function readImageSize(file: File): Promise<{ width: number; height: number }> {
   return new Promise((resolve, reject) => {
@@ -53,15 +58,18 @@ export default function StoreImageField({
   folder = "store",
   requiredWidth,
   requiredHeight,
+  maxMb = DEFAULT_MAX_MB,
 }: Props) {
   const inputId = useId();
   const [uploading, setUploading] = useState(false);
   const isMulti = multiple || Boolean(onChangeMany);
   const list = isMulti ? values || [] : value ? [value] : [];
+  const enforceMaxMb = typeof maxMb === "number" && maxMb > 0;
   const sizeHint =
     requiredWidth && requiredHeight
       ? ` · exact ${requiredWidth} × ${requiredHeight} px`
       : "";
+  const sizeLabel = enforceMaxMb ? ` · up to ${maxMb} MB` : "";
 
   const pick = async (fileList: FileList | null) => {
     if (!fileList?.length) return;
@@ -71,8 +79,8 @@ export default function StoreImageField({
 
     const allowed: File[] = [];
     for (const file of files) {
-      if (file.size > MAX_MB * 1024 * 1024) {
-        ToasterService.showError(`Max file size is ${MAX_MB} MB`);
+      if (enforceMaxMb && file.size > maxMb * 1024 * 1024) {
+        ToasterService.showError(`Max file size is ${maxMb} MB`);
         continue;
       }
       if (requiredWidth && requiredHeight) {
@@ -139,7 +147,8 @@ export default function StoreImageField({
       >
         <span>{uploading ? "Uploading…" : isMulti ? "Upload images" : "Upload image"}</span>
         <small>
-          JPG / PNG / WebP · up to {MAX_MB} MB{isMulti ? " · max 5" : ""}
+          JPG / PNG / WebP{sizeLabel}
+          {isMulti ? " · max 5" : ""}
           {sizeHint}
         </small>
         <input
