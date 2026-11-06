@@ -1,78 +1,90 @@
+import type { AppDispatch } from "redux/store";
 import { NavigateFunction } from "react-router-dom";
 import { roleActions } from "redux/slices/role";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import { roleApi } from "redux/api/role/roleApi";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/admins";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const roleService = {
-  createRole: async (data: any, navigate: NavigateFunction,dispatch:Dispatch) => {
-    dispatch?.(roleActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create-user`, data)
-    );
-    if (success) {
-      const { userByRole } = success?.data?.data;
-      dispatch?.(roleActions.setRole(userByRole));
+  createRole: async (
+    data: any,
+    navigate: NavigateFunction,
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(roleActions.setLoading(true));
+    try {
+      const userByRole = await d(
+        roleApi.endpoints.createRole.initiate(data)
+      ).unwrap();
+      d(roleActions.setRole(userByRole));
       navigate("/roles");
+      return [{ data: { data: { userByRole } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(roleActions.setLoading(false));
     }
-    dispatch?.(roleActions.setLoading(false));
-
-    return [success, error];
   },
-  getAllRoles: async (data: any = { all: "true" },dispatch:Dispatch) => {
-    dispatch?.(roleActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
 
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-all-roles`, data)
-    );
-    if (success) {
-      const { usersByRoles, totalCount } = success?.data?.data;
-      dispatch?.(
-        roleActions.setRoles({ Roles: usersByRoles, count: totalCount })
-      );
+  getAllRoles: async (data: any = { all: "true" }, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(roleActions.setLoading(true));
+    try {
+      const result = await d(
+        roleApi.endpoints.getAllRoles.initiate(data, { forceRefetch: true })
+      ).unwrap();
+      d(roleActions.setRoles(result));
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(roleActions.setLoading(false));
     }
-    dispatch?.(roleActions.setLoading(false));
-    return [success, error];
   },
-  getRole: async (id: string,dispatch:Dispatch) => {
-    dispatch?.(roleActions.setLoading(true));
 
-    http.setJWT();
-    http.setLanguage()
-
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}/${id}`)
-    );
-
-    if (success) {
-      const { userByRole } = success.data.data;
-      dispatch?.(roleActions.setRole(userByRole));
-    } else dispatch?.(roleActions.setRole({ data: "Not Found" }));
-
-    dispatch?.(roleActions.setLoading(false));
-    return [success, error];
+  getRole: async (id: string, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(roleActions.setLoading(true));
+    try {
+      const userByRole = await d(
+        roleApi.endpoints.getRole.initiate(id, { forceRefetch: true })
+      ).unwrap();
+      d(roleActions.setRole(userByRole));
+      return [{ data: { data: { userByRole } } }, null];
+    } catch (error) {
+      d(roleActions.setRole({ data: "Not Found" }));
+      return [null, error];
+    } finally {
+      d(roleActions.setLoading(false));
+    }
   },
-  updateRole: async (id: string, data: any, navigate: NavigateFunction,dispatch:Dispatch) => {
-    http.setJWT();
-    http.setLanguage()
 
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`, data)
-    );
-    if (success) {
-      const { updateUsersByRole } = success.data.data;
-      dispatch?.(roleActions.setRole(updateUsersByRole));
+  updateRole: async (
+    id: string,
+    data: any,
+    navigate: NavigateFunction,
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const updateUsersByRole = await d(
+        roleApi.endpoints.updateRole.initiate({ id, data })
+      ).unwrap();
+      d(roleActions.setRole(updateUsersByRole));
       navigate("/roles");
+      return [{ data: { data: { updateUsersByRole } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-
-    return [success, error];
   },
 };
+
 export default roleService;

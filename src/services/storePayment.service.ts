@@ -1,7 +1,6 @@
-import Promisable from "./promisable.service";
-import http from "./http.service";
-
-const url = "/store-payments";
+import type { AppDispatch } from "redux/store";
+import { storePaymentApi } from "redux/api/storePayment/storePaymentApi";
+import { getAppDispatch } from "utils/dispatch.util";
 
 export type StorePayment = {
   _id?: string;
@@ -33,22 +32,64 @@ export type StorePayment = {
 
 const storePaymentService = {
   getAll: async (data: Record<string, unknown> = {}) => {
-    http.setJWT();
-    return Promisable.asPromise(http.post(`${url}/get-All`, data));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const result = await d(
+        storePaymentApi.endpoints.getAllStorePayments.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   get: async (id: string) => {
-    http.setJWT();
-    return Promisable.asPromise(http.get(`${url}/${id}`));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const payment = await d(
+        storePaymentApi.endpoints.getStorePayment.initiate(id, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      return [{ data: { data: { payment } } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   getByOrder: async (orderId: string) => {
-    http.setJWT();
-    return Promisable.asPromise(http.get(`${url}/by-order/${orderId}`));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const payment = await d(
+        storePaymentApi.endpoints.getStorePaymentByOrder.initiate(orderId, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      return [{ data: { data: { payment } } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   refund: async (id: string, reason?: string) => {
-    http.setJWT();
-    return Promisable.asPromise(
-      http.post(`${url}/${id}/refund`, reason ? { reason } : {})
-    );
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const result = await d(
+        storePaymentApi.endpoints.refundStorePayment.initiate({
+          id,
+          reason,
+        })
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
 };
 

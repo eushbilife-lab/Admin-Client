@@ -1,0 +1,1 @@
+import{t as e}from"./dispatch.util-CS_YpSTy.js";function t(t){return t||e()}export{t};

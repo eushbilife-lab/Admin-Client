@@ -64,11 +64,16 @@ export default function StoreBannerEditor() {
       : await storeBannerService.update(String(id), payload, dispatch);
     setSaving(false);
     if (error) {
-      ToasterService.showError(error?.response?.data?.message || "Save failed");
+      const err = error as any;
+      ToasterService.showError(
+        err?.data?.message || err?.response?.data?.message || "Save failed"
+      );
       return;
     }
     ToasterService.showSuccess(isNew ? "Banner created" : "Banner updated");
-    const nextId = success?.data?.data?.banner?._id;
+    const nextId =
+      (success as any)?.data?.data?.banner?._id ||
+      (success as any)?.data?.data?._id;
     navigate(nextId ? `/store/banners/${nextId}` : "/store/banners");
   };
 

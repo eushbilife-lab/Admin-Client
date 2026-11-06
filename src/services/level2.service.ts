@@ -1,90 +1,114 @@
+import type { AppDispatch } from "redux/store";
+import { level2Api } from "redux/api/level2/level2Api";
 import { level2Actions } from "redux/slices/level2";
 import { NavigateFunction } from "react-router-dom";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/categories";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const level2Service = {
-  create: async (data: any, navigate: NavigateFunction,dispatch:Dispatch) => {
-    dispatch?.(level2Actions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create`, data)
-    );
-    if (success) {
-      const { category } = success?.data?.data;
-      dispatch?.(level2Actions.setLevel2(category));
+  create: async (
+    data: any,
+    navigate: NavigateFunction,
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(level2Actions.setLoading(true));
+    try {
+      const category = await d(
+        level2Api.endpoints.createLevel2.initiate(data)
+      ).unwrap();
+      d(level2Actions.setLevel2(category));
       navigate("/level2");
+      return [{ data: { data: { category } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(level2Actions.setLoading(false));
     }
-    dispatch?.(level2Actions.setLoading(false));
-
-    return [success, error];
   },
-  getAll: async (data: any = { all: "true" },dispatch:Dispatch) => {
-    dispatch?.(level2Actions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}`, data)
-    );
-    if (success) {
-      const { categories, totalCount } = success?.data?.data;
-      dispatch?.(
+
+  getAll: async (data: any = { all: "true" }, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(level2Actions.setLoading(true));
+    try {
+      const result = await d(
+        level2Api.endpoints.getAllLevel2.initiate(data, { forceRefetch: true })
+      ).unwrap();
+      d(
         level2Actions.setLevels2({
-          levels2: categories,
-          count: totalCount,
+          levels2: result.categories,
+          count: result.totalCount,
         })
       );
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(level2Actions.setLoading(false));
     }
-    dispatch?.(level2Actions.setLoading(false));
-    return [success, error];
   },
-  getOptions: async (data: any,dispatch:Dispatch) => {
-    dispatch?.(level2Actions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-options`, data)
-    );
-    if (success) {
-      const { categories } = success?.data?.data;
-      dispatch?.(level2Actions.setOptions({ levels2: categories }));
+
+  getOptions: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(level2Actions.setLoading(true));
+    try {
+      const categories = await d(
+        level2Api.endpoints.getLevel2Options.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(level2Actions.setOptions({ levels2: categories }));
+      return [{ data: { data: { categories } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(level2Actions.setLoading(false));
     }
-    dispatch?.(level2Actions.setLoading(false));
-    return [success, error];
   },
-  get: async (id: string,dispatch:Dispatch) => {
-    dispatch?.(level2Actions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}/${id}`)
-    );
 
-    if (success) {
-      const { categorie } = success.data.data;
-      dispatch?.(level2Actions.setLevel2(categorie));
-    } else dispatch?.(level2Actions.setLevel2({ data: "Not Found" }));
-
-    dispatch?.(level2Actions.setLoading(false));
-    return [success, error];
+  get: async (id: string, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(level2Actions.setLoading(true));
+    try {
+      const categorie = await d(
+        level2Api.endpoints.getLevel2.initiate(id, { forceRefetch: true })
+      ).unwrap();
+      d(level2Actions.setLevel2(categorie));
+      return [{ data: { data: { categorie } } }, null];
+    } catch (error) {
+      d(level2Actions.setLevel2({ data: "Not Found" }));
+      return [null, error];
+    } finally {
+      d(level2Actions.setLoading(false));
+    }
   },
-  update: async (id: string, data: any, navigate: NavigateFunction,dispatch:Dispatch) => {
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`, data)
-    );
-    if (success) {
-      const { categorie } = success.data.data;
-      dispatch?.(level2Actions.setLevel2(categorie));
+
+  update: async (
+    id: string,
+    data: any,
+    navigate: NavigateFunction,
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const categorie = await d(
+        level2Api.endpoints.updateLevel2.initiate({ id, data })
+      ).unwrap();
+      d(level2Actions.setLevel2(categorie));
       navigate("/level2");
+      return [{ data: { data: { categorie } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-
-    return [success, error];
   },
 };
+
 export default level2Service;

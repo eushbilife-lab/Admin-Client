@@ -1,0 +1,1 @@
+var e,t=()=>e,n=t=>e=t;export{n,t};

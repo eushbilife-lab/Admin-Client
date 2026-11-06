@@ -1,85 +1,110 @@
+import type { AppDispatch } from "redux/store";
+import { exerciseApi } from "redux/api/exercise/exerciseApi";
 import { exerciseActions } from "redux/slices/exercise";
 import { modalActions } from "redux/slices/modal";
-import Promisable from "./promisable.service";
-import http from "./http.service";
-import { Dispatch } from "@reduxjs/toolkit";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/exercises";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const exerciseService = {
-  create: async (data: any, filters: any, dispatch: Dispatch) => {
-    http.setJWT();
-    dispatch?.(modalActions.setLoading(true));
-
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create`, data)
-    );
-    if (success) {
-      exerciseService.getAll(filters, dispatch);
-      dispatch?.(modalActions.closeModal());
+  create: async (data: any, filters: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const result = await d(
+        exerciseApi.endpoints.createExercise.initiate(data)
+      ).unwrap();
+      exerciseService.getAll(filters, d);
+      d(modalActions.closeModal());
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
 
-  getAll: async (data: any = { page: 1, page_size: 10 }, dispatch: Dispatch) => {
-    dispatch?.(exerciseActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-All`, { ...data, isDelete: false })
-    );
-    if (success) {
-      const { exercises, count } = success?.data?.data;
-      dispatch?.(
+  getAll: async (
+    data: any = { page: 1, page_size: 10 },
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(exerciseActions.setLoading(true));
+    try {
+      const { exercises, count } = await d(
+        exerciseApi.endpoints.getAllExercises.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         exerciseActions.setExercises({
           exercises: exercises || [],
           count: count || 0,
         })
       );
+      return [{ data: { data: { exercises, count } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(exerciseActions.setLoading(false));
     }
-    dispatch?.(exerciseActions.setLoading(false));
-    return [success, error];
   },
 
-  getOptions: async (data: any = { status: "active" }, dispatch: Dispatch) => {
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-Options`, data)
-    );
-    if (success) {
-      const { exercises } = success?.data?.data;
-      dispatch?.(exerciseActions.setOptions({ exercises: exercises || [] }));
+  getOptions: async (
+    data: any = { status: "active" },
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const { exercises } = await d(
+        exerciseApi.endpoints.getExerciseOptions.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(exerciseActions.setOptions({ exercises: exercises || [] }));
+      return [{ data: { data: { exercises } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
 
-  update: async (id: string, data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`, data)
-    );
-    if (success) {
-      const { exercise } = success?.data?.data;
-      dispatch?.(exerciseActions.setExercise({ data: exercise }));
-      dispatch?.(modalActions.closeModal());
+  update: async (id: string, data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const exercise = await d(
+        exerciseApi.endpoints.updateExercise.initiate({ id, data })
+      ).unwrap();
+      d(exerciseActions.setExercise({ data: exercise }));
+      d(modalActions.closeModal());
+      return [{ data: { data: { exercise } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
 
-  remove: async (id: string, filters: any, dispatch: Dispatch) => {
-    http.setJWT();
-    dispatch?.(exerciseActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.delete(`${url}/${id}`)
-    );
-    if (success) {
-      await exerciseService.getAll(filters, dispatch);
-      dispatch?.(modalActions.closeModal());
+  remove: async (id: string, filters: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(exerciseActions.setLoading(true));
+    try {
+      await d(exerciseApi.endpoints.removeExercise.initiate(id)).unwrap();
+      await exerciseService.getAll(filters, d);
+      d(modalActions.closeModal());
+      return [{ data: { data: {} } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(exerciseActions.setLoading(false));
     }
-    dispatch?.(exerciseActions.setLoading(false));
-    return [success, error];
   },
 };
 

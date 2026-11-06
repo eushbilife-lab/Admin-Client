@@ -1,106 +1,116 @@
+import type { AppDispatch } from "redux/store";
+import { dynamicApi } from "redux/api/dynamic/dynamicApi";
 import { dynamicActions } from "redux/slices/dynamic";
 import { modalActions } from "redux/slices/modal";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/dynamics";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const dynamicService = {
-  create: async (data: any,dispatch:Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create`, data)
-    );
-    if (success) {
-      const { dynamic } = success?.data.data;
+  create: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const dynamic = await d(
+        dynamicApi.endpoints.createDynamic.initiate(data)
+      ).unwrap();
       const type = dynamic?.type || data?.type;
       if (dynamic) {
-        dispatch?.(
-          dynamicActions.setDynamic({ type: dynamic.type, data: dynamic })
-        );
+        d(dynamicActions.setDynamic({ type: dynamic.type, data: dynamic }));
       }
       if (type) {
-        dynamicService.getAllDynamics(type, { page: 1, page_size: 20 }, dispatch);
-        dynamicService.getOptions({ type, status: "active" }, dispatch);
+        dynamicService.getAllDynamics(type, { page: 1, page_size: 20 }, d);
+        dynamicService.getOptions({ type, status: "active" }, d);
       }
-      dispatch?.(modalActions.closeModal());
+      d(modalActions.closeModal());
+      return [{ data: { data: { dynamic } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
-  getAllDynamics: async (type: any, filters: any,dispatch:Dispatch) => {
-    dispatch?.(dynamicActions.setLoading({ type, loading: true }));
-    http.setJWT();
-    const payload = {
-      type,
-      page: filters.page,
-      page_size: filters.page_size,
-      ...(filters.name ? { name: filters.name } : {}),
-    };
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-All-Dynamics`, payload)
-    );
 
-    if (success) {
-      const { dynamic, count } = success?.data?.data;
-      dispatch?.(
+  getAllDynamics: async (type: any, filters: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(dynamicActions.setLoading({ type, loading: true }));
+    try {
+      const result = await d(
+        dynamicApi.endpoints.getAllDynamics.initiate(
+          {
+            type,
+            page: filters.page,
+            page_size: filters.page_size,
+            ...(filters.name ? { name: filters.name } : {}),
+          },
+          { forceRefetch: true }
+        )
+      ).unwrap();
+      d(
         dynamicActions.setDynamics({
-          data: dynamic,
+          data: result.dynamic,
           type,
-          count,
+          count: result.count,
         })
       );
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(dynamicActions.setLoading({ type, loading: false }));
     }
-    dispatch?.(dynamicActions.setLoading({ type, loading: false }));
-    return [success, error];
   },
-  updateDynamic: async (id: string, data: any,dispatch:Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    const updatedData = {
-      ...data,
-      ar: {
-        ...data.ar,
-        name: data.ar?.name?.trim() ? data.ar.name : "",
-      },
-    };
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`, updatedData)
-    );
-    if (success) {
-      const { dynamics } = success?.data?.data;
+
+  updateDynamic: async (id: string, data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const dynamics = await d(
+        dynamicApi.endpoints.updateDynamic.initiate({ id, data })
+      ).unwrap();
       const type = dynamics?.type || data?.type;
       if (dynamics) {
-        dispatch?.(
+        d(
           dynamicActions.setDynamic({ type: dynamics.type, data: dynamics })
         );
       }
       if (type) {
-        dynamicService.getOptions({ type, status: "active" }, dispatch);
+        dynamicService.getOptions({ type, status: "active" }, d);
       }
-      dispatch?.(modalActions.closeModal());
+      d(modalActions.closeModal());
+      return [{ data: { data: { dynamics } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-
-    return [success, error];
   },
-  getOptions: async (data: any = { all: "true" },dispatch:Dispatch) => {
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-Options`, data)
-    );
-    if (success) {
-      const { dynamics } = success?.data?.data;
-      dispatch?.(
+
+  getOptions: async (data: any = { all: "true" }, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const dynamics = await d(
+        dynamicApi.endpoints.getDynamicOptions.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         dynamicActions.setOptions({
-          dynamics: dynamics,
+          dynamics,
           type: data?.type,
         })
       );
+      return [{ data: { data: { dynamics } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
 };
+
 export default dynamicService;

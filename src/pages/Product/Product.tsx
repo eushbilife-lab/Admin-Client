@@ -8,7 +8,13 @@ import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import TableWrapper from "@core/templates/TableWrapper";
 import ListPagination from "@core/templates/ListPagination";
-import productService from "services/product.service";
+import {
+  useGetAllProductsQuery,
+  useGetAllDraftProductsQuery,
+  useRemoveProductMutation,
+  useRemoveDraftProductMutation,
+  useUpdateProductStatusMutation,
+} from "redux/api";
 import { productActions } from "redux/slices/product";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ProductFilters from "./ProductFilters";
@@ -35,7 +41,6 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import AddIcon from "@mui/icons-material/Add";
 import { MODAL, modalActions } from "redux/slices/modal";
-import draftProductService from "services/draftProduct.service";
 import { draftProductActions } from "redux/slices/draftProduct";
 import "./Product.css";
 
@@ -62,24 +67,51 @@ export default function Product() {
   const [activeTab, setActiveTab] = useState(0);
   const [showFilters, setShowFilters] = useState(true);
   const { t } = useTranslation();
-  const { count, products, loading, refreshLoader, filters, refresh } =
-    useAppSelector((state) => state.product);
+  const { filters, refresh } = useAppSelector((state) => state.product);
+  const { filters: draftFilters, refresh: draftRefresh } = useAppSelector(
+    (state) => state.draftProduct
+  );
+
+  const [removeProduct] = useRemoveProductMutation();
+  const [removeDraftProduct] = useRemoveDraftProductMutation();
+  const [updateProductStatus] = useUpdateProductStatusMutation();
+
+  const productQueryArgs = useMemo(() => {
+    const base = activeTab === 0 ? { ...filters, status: undefined } : filters;
+    return base as Record<string, unknown>;
+  }, [activeTab, filters]);
+
   const {
-    count: draftCount,
-    draftProducts,
-    loading: draftLoading,
-    refreshLoader: draftRefreshLoader,
-    filters: draftFilters,
-    refresh: draftRefresh,
-  } = useAppSelector((state) => state.draftProduct);
+    data: productsData,
+    isFetching: productsFetching,
+    isLoading: productsLoading,
+    refetch: refetchProducts,
+  } = useGetAllProductsQuery(productQueryArgs, { skip: activeTab === 2 });
+
+  const {
+    data: draftsData,
+    isFetching: draftsFetching,
+    isLoading: draftsLoading,
+    refetch: refetchDrafts,
+  } = useGetAllDraftProductsQuery(draftFilters as Record<string, unknown>, {
+    skip: activeTab !== 2,
+  });
+
+  const products = productsData?.products || [];
+  const count = productsData?.totalCount ?? 0;
+  const draftProducts = draftsData?.products || [];
+  const draftCount = draftsData?.totalCount ?? 0;
 
   const currentProducts = useMemo(
     () => (activeTab === 2 ? draftProducts : products),
     [activeTab, draftProducts, products]
   );
-  const currentLoading = activeTab === 2 ? draftLoading : loading;
+  const currentLoading =
+    activeTab === 2
+      ? draftsLoading || (draftsFetching && draftProducts.length === 0)
+      : productsLoading || (productsFetching && products.length === 0);
   const currentRefreshLoader =
-    activeTab === 2 ? draftRefreshLoader : refreshLoader;
+    activeTab === 2 ? draftsFetching : productsFetching;
   const currentCount = activeTab === 2 ? draftCount : count;
   const currentFilters = activeTab === 2 ? draftFilters : filters;
   const pageSize = Number(currentFilters.page_size) || 25;
@@ -204,11 +236,11 @@ export default function Product() {
               <ConfirmDeleteButton
                 title={t("Delete Product")}
                 message={t("Are you sure you want to delete this product?")}
-                onConfirm={() => {
+                onConfirm={async () => {
                   if (activeTab === 2) {
-                    draftProductService.remove(item?._id, dispatch);
+                    await removeDraftProduct(item?._id).unwrap();
                   } else {
-                    productService.remove(item?._id, dispatch);
+                    await removeProduct(item?._id).unwrap();
                   }
                 }}
               />
@@ -228,12 +260,12 @@ export default function Product() {
                               message: t(
                                 "Are you sure you want to approve this product?"
                               ),
-                              confirmAction: () => {
-                                productService.updateStatus(
-                                  item._id,
-                                  "approved",
-                                  dispatch
-                                );
+                              confirmAction: async () => {
+                                // Match legacy call body shape used by catalog approve.
+                                await updateProductStatus({
+                                  id: item._id,
+                                  data: "approved" as any,
+                                }).unwrap();
                               },
                             },
                             width: "500px",
@@ -251,7 +283,15 @@ export default function Product() {
         </StyledTableRow>
       );
     },
-    [activeTab, dispatch, openEditor, t]
+    [
+      activeTab,
+      dispatch,
+      openEditor,
+      t,
+      removeDraftProduct,
+      removeProduct,
+      updateProductStatus,
+    ]
   );
 
   const handleTabChange = useCallback(
@@ -315,9 +355,14 @@ export default function Product() {
   );
 
   const refreshList = useCallback(() => {
-    if (activeTab === 2) dispatch(draftProductActions.refresh());
-    else dispatch(productActions.refresh());
-  }, [activeTab, dispatch]);
+    if (activeTab === 2) {
+      dispatch(draftProductActions.refresh());
+      void refetchDrafts();
+    } else {
+      dispatch(productActions.refresh());
+      void refetchProducts();
+    }
+  }, [activeTab, dispatch, refetchDrafts, refetchProducts]);
 
   useEffect(() => {
     if (!catalogQuery) return;
@@ -331,23 +376,12 @@ export default function Product() {
   }, [catalogQuery, dispatch, filters.page_size]);
 
   useEffect(() => {
-    if (catalogQuery && filters.productName !== catalogQuery) return;
-    if (activeTab === 2) {
-      draftProductService.getAll(draftFilters, dispatch);
-    } else {
-      const apiFilters =
-        activeTab === 0 ? { ...filters, status: undefined } : filters;
-      productService.getAll(apiFilters, dispatch);
-    }
-  }, [
-    dispatch,
-    activeTab,
-    refresh,
-    filters,
-    draftRefresh,
-    draftFilters,
-    catalogQuery,
-  ]);
+    if (refresh > 0 && activeTab !== 2) void refetchProducts();
+  }, [refresh, activeTab, refetchProducts]);
+
+  useEffect(() => {
+    if (draftRefresh > 0 && activeTab === 2) void refetchDrafts();
+  }, [draftRefresh, activeTab, refetchDrafts]);
 
   useEffect(() => {
     return () => {

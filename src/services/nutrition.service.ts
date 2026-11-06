@@ -1,43 +1,48 @@
+import type { AppDispatch } from "redux/store";
+import { nutritionApi } from "redux/api/nutrition/nutritionApi";
 import { nutritionActions } from "redux/slices/nutrition";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/nutrition";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const nutritionService = {
-  update: async (data: any,dispatch:Dispatch) => {
-    dispatch?.(nutritionActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.put(`${url}`, data)
-    );
-    if (success) {
-      const payload = success.data?.data || {};
-      const list = payload.nutritions || payload.Nutritions || [];
-      dispatch?.(nutritionActions.setNutritions({ nutritions: list }));
+  update: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(nutritionActions.setLoading(true));
+    try {
+      const list = await d(
+        nutritionApi.endpoints.updateNutrition.initiate(data)
+      ).unwrap();
+      d(nutritionActions.setNutritions({ nutritions: list }));
+      return [{ data: { data: { nutritions: list } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(nutritionActions.setLoading(false));
     }
-    dispatch?.(nutritionActions.setLoading(false));
-    return [success, error];
   },
-  getAll: async (dispatch:Dispatch) => {
-    dispatch?.(nutritionActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}`)
-    );
-    if (success) {
-      const { Nutritions } = success?.data?.data;
-      dispatch?.(
-        nutritionActions.setNutritions({
-          nutritions: Nutritions
+
+  getAll: async (dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(nutritionActions.setLoading(true));
+    try {
+      const Nutritions = await d(
+        nutritionApi.endpoints.getAllNutritions.initiate(undefined, {
+          forceRefetch: true,
         })
-      );
+      ).unwrap();
+      d(nutritionActions.setNutritions({ nutritions: Nutritions }));
+      return [{ data: { data: { Nutritions } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(nutritionActions.setLoading(false));
     }
-    dispatch?.(nutritionActions.setLoading(false));
-    return [success, error];
   },
 };
+
 export default nutritionService;

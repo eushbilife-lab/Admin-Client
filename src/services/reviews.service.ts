@@ -1,29 +1,36 @@
-import Promisable from "./promisable.service";
-import http from "./http.service";
-import { Dispatch } from "@reduxjs/toolkit";
+import type { AppDispatch } from "redux/store";
+import { reviewsApi } from "redux/api/reviews/reviewsApi";
 import { reviewsActions } from "redux/slices/Reviews";
+import { resolveDispatch } from "redux/api/runEndpoint";
 
-const url = "/product-reviews";
+function dispatchOr(d?: AppDispatch) {
+  return resolveDispatch(d);
+}
 
 const reviewsService = {
-  getAll: async (data: any = { all: "true" }, dispatch: Dispatch) => {
-    dispatch?.(reviewsActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}`, data)
-    );
-    if (success) {
-      const { productReviews, totalCount } = success?.data?.data;
-      dispatch?.(
+  getAll: async (data: any = { all: "true" }, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(reviewsActions.setLoading(true));
+    try {
+      const result = await d(
+        reviewsApi.endpoints.getAllReviews.initiate(data || { all: "true" }, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         reviewsActions.setReviews({
-          Reviews: productReviews,
-          count: totalCount,
+          Reviews: result.productReviews,
+          count: result.totalCount,
         })
       );
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(reviewsActions.setLoading(false));
     }
-    dispatch?.(reviewsActions.setLoading(false));
-    return [success, error];
   },
 };
+
 export default reviewsService;

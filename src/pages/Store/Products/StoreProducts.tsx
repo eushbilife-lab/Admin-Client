@@ -5,8 +5,11 @@ import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import storeProductService from "services/storeProduct.service";
-import storeCategoryService from "services/storeCategory.service";
+import {
+  useGetAllStoreProductsQuery,
+  useGetAllStoreCategoriesQuery,
+  useRemoveStoreProductMutation,
+} from "redux/api";
 import { storeProductActions } from "redux/slices/storeProduct";
 import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import ToasterService from "utils/toaster.util";
@@ -54,7 +57,9 @@ function ProductCard({
           label={product.status}
         />
         <h3>{product.name}</h3>
-        <p>{product.shortDescription || product.categoryLabel || product.category}</p>
+        <p>
+          {product.shortDescription || product.categoryLabel || product.category}
+        </p>
         <strong>
           {product.currency || "PKR"}{" "}
           {Number(product.price || 0).toLocaleString()}
@@ -89,38 +94,29 @@ function ProductCard({
 export default function StoreProducts() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { products, loading, refresh, count, filters } = useAppSelector(
-    (state) => state.storeProduct
-  );
+  const { refresh, filters } = useAppSelector((state) => state.storeProduct);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"all" | string>("all");
-  const [categories, setCategories] = useState<Cat[]>([]);
 
-  useEffect(() => {
-    storeCategoryService.getAll({}).then(([success]: any) => {
-      const list = success?.data?.data?.categories || [];
-      setCategories(
-        list.map((c: any) => ({
-          id: String(c.id || c._id || ""),
-          key: c.key,
-          label: c.label,
-          description: c.description,
-          sortOrder: c.sortOrder,
-        }))
-      );
-    });
-  }, [refresh]);
-
-  useEffect(() => {
-    const payload: any = {
+  const payload = useMemo(() => {
+    const body: Record<string, unknown> = {
       page: filters.page || 1,
       page_size: filters.page_size || 48,
       isDelete: false,
     };
-    if (category !== "all") payload.category = category;
-    if (query.trim()) payload.name = query.trim();
-    storeProductService.getAll(payload, dispatch);
-  }, [dispatch, refresh, filters.page, filters.page_size, category, query]);
+    if (category !== "all") body.category = category;
+    if (query.trim()) body.name = query.trim();
+    return body;
+  }, [filters.page, filters.page_size, category, query]);
+
+  const { data, isFetching, isLoading, refetch } =
+    useGetAllStoreProductsQuery(payload);
+  const { data: categoriesData } = useGetAllStoreCategoriesQuery({});
+  const [removeStoreProduct] = useRemoveStoreProductMutation();
+
+  useEffect(() => {
+    if (refresh > 0) void refetch();
+  }, [refresh, refetch]);
 
   useEffect(() => {
     return () => {
@@ -128,8 +124,22 @@ export default function StoreProducts() {
     };
   }, [dispatch]);
 
-  const items = useMemo(() => products || [], [products]);
+  const items = data?.products || [];
+  const count = data?.count ?? 0;
+  const loading = isLoading || (isFetching && items.length === 0);
   const pages = Math.max(1, Math.ceil((count || 0) / (filters.page_size || 48)));
+
+  const categories: Cat[] = useMemo(
+    () =>
+      (categoriesData?.categories || []).map((c: any) => ({
+        id: String(c.id || c._id || ""),
+        key: c.key,
+        label: c.label,
+        description: c.description,
+        sortOrder: c.sortOrder,
+      })),
+    [categoriesData]
+  );
 
   const filterKeys = useMemo(
     () =>
@@ -145,8 +155,18 @@ export default function StoreProducts() {
       categories.length > 0
         ? categories
         : [
-            { id: "", key: "supper_foods", label: "Supper Foods", description: "" },
-            { id: "", key: "supplements", label: "Supplements", description: "" },
+            {
+              id: "",
+              key: "supper_foods",
+              label: "Supper Foods",
+              description: "",
+            },
+            {
+              id: "",
+              key: "supplements",
+              label: "Supplements",
+              description: "",
+            },
           ];
     return list
       .map((section) => ({
@@ -163,8 +183,13 @@ export default function StoreProducts() {
       subtitle="Filter by shop section. Add new sections under Store → Sections, then assign them on each product."
       actions={
         <>
-          <Button onClick={() => navigate("/store/sections")}>Manage sections</Button>
-          <Button variant="contained" onClick={() => navigate("/store/products/new")}>
+          <Button onClick={() => navigate("/store/sections")}>
+            Manage sections
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/store/products/new")}
+          >
             New product
           </Button>
         </>
@@ -209,12 +234,18 @@ export default function StoreProducts() {
       ) : null}
 
       {loading && items.length === 0 ? (
-        <GridSkeleton cards={8} columns="repeat(auto-fill, minmax(220px, 1fr))" />
+        <GridSkeleton
+          cards={8}
+          columns="repeat(auto-fill, minmax(220px, 1fr))"
+        />
       ) : items.length === 0 ? (
         <div className="store-empty">
           <h2>No store products yet</h2>
           <p>Add a product and choose a shop section.</p>
-          <Button variant="contained" onClick={() => navigate("/store/products/new")}>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/store/products/new")}
+          >
             New product
           </Button>
         </div>
@@ -240,7 +271,9 @@ export default function StoreProducts() {
               </div>
             </div>
             {section.products.length === 0 ? (
-              <p className="store-section-block__empty">No products in this section yet.</p>
+              <p className="store-section-block__empty">
+                No products in this section yet.
+              </p>
             ) : (
               <div className="store-grid">
                 {section.products.map((product: any) => (
@@ -249,13 +282,13 @@ export default function StoreProducts() {
                     product={product}
                     onOpen={() => navigate(`/store/products/${product._id}`)}
                     onDelete={async () => {
-                      const [, error]: any = await storeProductService.remove(
-                        product._id,
-                        dispatch
-                      );
-                      if (error) {
+                      try {
+                        await removeStoreProduct(product._id).unwrap();
+                      } catch (error: any) {
                         ToasterService.showError(
-                          error?.response?.data?.message || "Delete failed"
+                          error?.data?.message ||
+                            error?.message ||
+                            "Delete failed"
                         );
                       }
                     }}

@@ -1,158 +1,169 @@
-import { modalActions } from "redux/slices/modal";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import type { AppDispatch } from "redux/store";
+import { foodIntoleranceApi } from "redux/api/foodIntolerance/foodIntoleranceApi";
 import { foodIntoleranceActions } from "redux/slices/foodIntolerance";
+import { modalActions } from "redux/slices/modal";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/food-intolerances";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const foodIntoleranceService = {
-  createMajor: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create-major`, data)
-    );
-    if (success) {
-      const { majorIntolerance } = success?.data.data;
+  createMajor: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const majorIntolerance = await d(
+        foodIntoleranceApi.endpoints.createMajorFoodIntolerance.initiate(data)
+      ).unwrap();
       if (!majorIntolerance) {
-        dispatch?.(
-          foodIntoleranceActions.setFoodIntolerances(majorIntolerance)
-        );
+        d(foodIntoleranceActions.setFoodIntolerances(majorIntolerance));
+      } else {
+        foodIntoleranceService.getAllMajor({ page: 1, page_size: 3 }, d);
       }
-      else{
-        foodIntoleranceService.getAllMajor({ page: 1, page_size: 3 },dispatch);
-      }
-      dispatch?.(modalActions.closeModal());
+      d(modalActions.closeModal());
+      return [{ data: { data: { majorIntolerance } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
-  createMinor: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create-minor`, data)
-    );
-    if (success) {
-      const { minorIntolerance } = success?.data.data;
-      if (!minorIntolerance) {
-        dispatch?.(
-          foodIntoleranceActions.setFoodIntolerances(minorIntolerance)
-        );
-      }
-      else{
-        foodIntoleranceService.getAllMinor({ page: 1, page_size: 3 },dispatch);
-      }
-      dispatch?.(modalActions.closeModal());
-    }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
-  },
-  getAllMajor: async (filters: any, dispatch: Dispatch) => {
-    dispatch?.(foodIntoleranceActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const payload = {
-      page: filters.page,
-      page_size: filters.page_size,
-      ...(filters.name ? { name: filters.name } : {}),
-      ...(filters.status ? { status: filters.status } : {}),
-    };
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/major-FoodIntolerance`, payload)
-    );
 
-    if (success) {
-      const { intolerances, count } = success?.data?.data;
-      dispatch?.(
+  createMinor: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const minorIntolerance = await d(
+        foodIntoleranceApi.endpoints.createMinorFoodIntolerance.initiate(data)
+      ).unwrap();
+      if (!minorIntolerance) {
+        d(foodIntoleranceActions.setFoodIntolerances(minorIntolerance));
+      } else {
+        foodIntoleranceService.getAllMinor({ page: 1, page_size: 3 }, d);
+      }
+      d(modalActions.closeModal());
+      return [{ data: { data: { minorIntolerance } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
+    }
+  },
+
+  getAllMajor: async (filters: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(foodIntoleranceActions.setLoading(true));
+    try {
+      const { foodIntolerances: intolerances, count } = await d(
+        foodIntoleranceApi.endpoints.getAllMajorFoodIntolerances.initiate(
+          filters,
+          { forceRefetch: true }
+        )
+      ).unwrap();
+      d(
         foodIntoleranceActions.setFoodIntolerances({
           foodIntolerances: intolerances,
           count,
         })
       );
+      return [{ data: { data: { intolerances, count } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(foodIntoleranceActions.setLoading(false));
     }
-    dispatch?.(foodIntoleranceActions.setLoading(false));
-    return [success, error];
   },
-  getAllMinor: async (filters: any, dispatch: Dispatch) => {
-    dispatch?.(foodIntoleranceActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const payload = {
-      page: filters.page,
-      page_size: filters.page_size,
-      ...(filters.name ? { name: filters.name } : {}),
-      ...(filters.status ? { status: filters.status } : {}),
-    };
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/minor-FoodIntolerance`, payload)
-    );
-    if (success) {
-    const { intolerances, count } = success?.data?.data;
-      dispatch?.(
-          foodIntoleranceActions.setFoodIntolerances({
+
+  getAllMinor: async (filters: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(foodIntoleranceActions.setLoading(true));
+    try {
+      const { foodIntolerances: intolerances, count } = await d(
+        foodIntoleranceApi.endpoints.getAllMinorFoodIntolerances.initiate(
+          filters,
+          { forceRefetch: true }
+        )
+      ).unwrap();
+      d(
+        foodIntoleranceActions.setFoodIntolerances({
           foodIntolerances: intolerances,
           count,
         })
       );
+      return [{ data: { data: { intolerances, count } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(foodIntoleranceActions.setLoading(false));
     }
-    dispatch?.(foodIntoleranceActions.setLoading(false));
-    return [success, error];
   },
-  updateMajor: async (id: string, data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/update-Major/${id}`, data)
-    );
-    if (success) {
-      const { updated } = success?.data?.data;
-      dispatch?.(
-        foodIntoleranceActions.setFoodIntolerance({data:updated})
-      );
-      dispatch?.(modalActions.closeModal());
-    }
-    dispatch?.(modalActions.setLoading(false));
 
-    return [success, error];
-  },
-  updateMinor: async (id: string, data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/update-Minor/${id}`, data)
-    );
-    if (success) {
-      const { updated } = success?.data?.data;
-      dispatch?.(
-          foodIntoleranceActions.setFoodIntolerance({data:updated})
-      );
-      dispatch?.(modalActions.closeModal());
+  updateMajor: async (id: string, data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const updated = await d(
+        foodIntoleranceApi.endpoints.updateMajorFoodIntolerance.initiate({
+          id,
+          data,
+        })
+      ).unwrap();
+      d(foodIntoleranceActions.setFoodIntolerance({ data: updated }));
+      d(modalActions.closeModal());
+      return [{ data: { data: { updated } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-
-    return [success, error];
   },
-  getOptions: async (data: any,dispatch:Dispatch) => {
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-Options`, data)
-    );
-    if (success) {
-      const { options } = success?.data?.data;
-      dispatch?.(
+
+  updateMinor: async (id: string, data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const updated = await d(
+        foodIntoleranceApi.endpoints.updateMinorFoodIntolerance.initiate({
+          id,
+          data,
+        })
+      ).unwrap();
+      d(foodIntoleranceActions.setFoodIntolerance({ data: updated }));
+      d(modalActions.closeModal());
+      return [{ data: { data: { updated } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
+    }
+  },
+
+  getOptions: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const { foodIntolerances: options } = await d(
+        foodIntoleranceApi.endpoints.getFoodIntoleranceOptions.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         foodIntoleranceActions.setOptions({
           foodIntolerances: options,
         })
       );
+      return [{ data: { data: { options } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
 };
+
 export default foodIntoleranceService;

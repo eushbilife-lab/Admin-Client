@@ -402,11 +402,14 @@ export default function StoreProductEditor() {
       : await storeProductService.update(String(id), payload, dispatch);
     setSaving(false);
     if (error) {
-      ToasterService.showError(error?.response?.data?.message || "Save failed");
+      const err = error as any;
+      ToasterService.showError(
+        err?.data?.message || err?.response?.data?.message || "Save failed"
+      );
       return;
     }
     ToasterService.showSuccess(isNew ? "Product created" : "Product updated");
-    const nextId = success?.data?.data?.product?._id;
+    const nextId = (success as any)?.data?.data?.product?._id || (success as any)?.data?.data?._id;
     navigate(nextId ? `/store/products/${nextId}` : "/store/products");
   };
 

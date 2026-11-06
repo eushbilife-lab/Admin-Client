@@ -5,7 +5,10 @@ import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import recipeService from "services/recipe.service";
+import {
+  useGetAllRecipesQuery,
+  useRemoveRecipeMutation,
+} from "redux/api";
 import { recipeActions } from "redux/slices/recipe";
 import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import ToasterService from "utils/toaster.util";
@@ -22,22 +25,28 @@ const STATUS_TONE: Record<string, "ok" | "warn" | "info"> = {
 export default function Recipes() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { recipes, loading, refresh, count, filters } = useAppSelector(
-    (state) => state.recipe
-  );
+  const { refresh, filters } = useAppSelector((state) => state.recipe);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<"all" | string>("all");
 
-  useEffect(() => {
-    const payload: any = {
+  const payload = useMemo(() => {
+    const body: Record<string, unknown> = {
       page: filters.page || 1,
       page_size: filters.page_size || 24,
       isDelete: false,
     };
-    if (status !== "all") payload.status = status;
-    if (query.trim()) payload.name = query.trim();
-    recipeService.getAll(payload, dispatch);
-  }, [dispatch, refresh, filters.page, filters.page_size, status, query]);
+    if (status !== "all") body.status = status;
+    if (query.trim()) body.name = query.trim();
+    return body;
+  }, [filters.page, filters.page_size, status, query]);
+
+  const { data, isFetching, isLoading, refetch } =
+    useGetAllRecipesQuery(payload);
+  const [removeRecipe] = useRemoveRecipeMutation();
+
+  useEffect(() => {
+    if (refresh > 0) void refetch();
+  }, [refresh, refetch]);
 
   useEffect(() => {
     return () => {
@@ -45,7 +54,9 @@ export default function Recipes() {
     };
   }, [dispatch]);
 
-  const items = useMemo(() => recipes || [], [recipes]);
+  const items = data?.recipes || [];
+  const count = data?.count ?? 0;
+  const loading = isLoading || (isFetching && items.length === 0);
 
   return (
     <PageShell
@@ -92,13 +103,22 @@ export default function Recipes() {
       ) : items.length === 0 ? (
         <div className="recipes-empty">
           <h2>No recipes yet</h2>
-          <p>Add a recipe and tag the diets it suits (vegan, keto, Mediterranean…).</p>
+          <p>
+            Add a recipe and tag the diets it suits (vegan, keto, Mediterranean…).
+          </p>
           <Button variant="contained" onClick={() => navigate("/recipes/new")}>
             New recipe
           </Button>
         </div>
       ) : (
-        <div className="recipes-grid" style={{ position: "relative", opacity: loading ? 0.72 : 1, transition: "opacity 160ms ease" }}>
+        <div
+          className="recipes-grid"
+          style={{
+            position: "relative",
+            opacity: isFetching ? 0.72 : 1,
+            transition: "opacity 160ms ease",
+          }}
+        >
           {items.map((recipe: any) => (
             <article key={recipe._id} className="recipe-card">
               {recipe.imageUrl || recipe.thumbnailUrl ? (
@@ -151,14 +171,14 @@ export default function Recipes() {
                 <ConfirmDeleteButton
                   title="Delete recipe"
                   message={`Delete “${recipe.name}”? This cannot be undone.`}
-                    onConfirm={async () => {
-                    const [, error]: any = await recipeService.remove(
-                      recipe._id,
-                      dispatch
-                    );
-                    if (error) {
+                  onConfirm={async () => {
+                    try {
+                      await removeRecipe(recipe._id).unwrap();
+                    } catch (error: any) {
                       ToasterService.showError(
-                        error?.response?.data?.message || "Delete failed"
+                        error?.data?.message ||
+                          error?.message ||
+                          "Delete failed"
                       );
                     }
                   }}

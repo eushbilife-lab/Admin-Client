@@ -33,9 +33,11 @@ import processingLevelReducer from "./slices/processingLevel";
 import hnssProductCategoryReducer from "./slices/hnssProductCategory";
 import foodIntoleranceReducer from "./slices/foodIntolerance";
 import draftProductReducer from "./slices/draftProduct";
+import { baseApi } from "./api/baseApi";
 
 const appReducer = combineReducers({
   form: formReducer,
+  [baseApi.reducerPath]: baseApi.reducer,
   auth: authReducer,
   user: userReducer,
   modal: modalReducer,

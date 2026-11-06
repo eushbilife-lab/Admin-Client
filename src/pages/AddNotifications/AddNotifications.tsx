@@ -15,12 +15,13 @@ export default function AddNotifications() {
   const { loading } = useAppSelector((state) => state.role);
 
   const handleSubmit = async (values: any) => {
-    let data = { ...values };
+    const data = { ...values };
     if (id) {
-      await NotificationService.updateNotification(`${id}`, data, navigate, dispatch);
-    } else {
-      await NotificationService.addNotification(data, navigate, dispatch);
+      // Broadcasts are immutable — send a new one instead of editing.
+      await NotificationService.updateNotification();
+      return;
     }
+    await NotificationService.addNotification(data, navigate, dispatch);
   };
 
   return (

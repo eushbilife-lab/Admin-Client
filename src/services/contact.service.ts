@@ -1,53 +1,60 @@
+import { contactApi } from "redux/api/contact/contactApi";
 import { contactActions, ContactType } from "redux/slices/contact";
 import { formLoaderActions } from "redux/slices/formLoader";
 import { getAppDispatch } from "utils/dispatch.util";
 import { modalActions } from "redux/slices/modal";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
 import { change } from "redux-form";
-import http from "./http.service";
 import moment from "moment";
 import ToasterService from "utils/toaster.util";
+import { AppDispatch } from "redux/store";
 
-const contactNumbersUrl = "/contact-numbers";
-const contactsUrl = "/contacts";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const contactService = {
   getOverview: async () => {
-    http.setJWT();
-    http.setLanguage();
-    const [success]: any = await Promisable.asPromise(
-      http.get(`${contactsUrl}/overview`, {
-        headers: { "X-Skip-Toast": "1" },
-      })
-    );
-    return success?.data?.data || null;
+    const d = getAppDispatch();
+    if (!d) return null;
+    try {
+      return await d(
+        contactApi.endpoints.getContactOverview.initiate(undefined, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+    } catch {
+      return null;
+    }
   },
 
-  setContactNumbers: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(formLoaderActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${contactNumbersUrl}`, data)
-    );
-    dispatch?.(formLoaderActions.setLoading(false));
-    return [success, error];
+  setContactNumbers: async (data: any, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(formLoaderActions.setLoading(true));
+    try {
+      const result = await d(
+        contactApi.endpoints.setContactNumbers.initiate(data)
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(formLoaderActions.setLoading(false));
+    }
   },
 
   getContactNumbers: async () => {
-    const dispatch = getAppDispatch();
-    dispatch?.(formLoaderActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${contactNumbersUrl}`, {
-        headers: { "X-Skip-Toast": "1" },
-      })
-    );
-    if (success) {
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    d(formLoaderActions.setLoading(true));
+    try {
+      const payload = await d(
+        contactApi.endpoints.getContactNumbers.initiate(undefined, {
+          forceRefetch: true,
+        })
+      ).unwrap();
       const contacts: any[] = [];
-      const { number } = success.data.data || {};
+      const { number } = (payload as { number?: { contacts?: any[] } }) || {};
       const contact_numbers: any[] = [...(number?.contacts || [])];
       contact_numbers.forEach(({ number, country_code }) => {
         const dial = String(country_code || "").replace(/^\+/, "");
@@ -61,15 +68,16 @@ const contactService = {
           },
         });
       });
-      dispatch?.(
+      d(
         change("AddContactForm", "contacts", contacts.length ? contacts : [{}])
       );
-    } else {
-      dispatch?.(change("AddContactForm", "contacts", [{}]));
+      return [{ data: { data: payload } }, null];
+    } catch (error) {
+      d(change("AddContactForm", "contacts", [{}]));
+      return [null, error];
+    } finally {
+      d(formLoaderActions.setLoading(false));
     }
-
-    dispatch?.(formLoaderActions.setLoading(false));
-    return [success, error];
   },
 
   getAllContacts: async (
@@ -77,24 +85,21 @@ const contactService = {
     type: ContactType,
     exportFile: Boolean
   ) => {
-    const dispatch = getAppDispatch();
-    if (exportFile) dispatch?.(modalActions.setLoading(true));
-    else dispatch?.(contactActions.setLoading({ type, loading: true }));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    if (exportFile) d(modalActions.setLoading(true));
+    else d(contactActions.setLoading({ type, loading: true }));
 
-    http.setJWT();
-    http.setLanguage();
-
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${contactsUrl}/${type}`, filters, {
-        headers: { "X-Skip-Toast": "1" },
-      })
-    );
-
-    if (success) {
-      const { requests, count } = success.data.data;
+    try {
+      const { requests, count } = await d(
+        contactApi.endpoints.getAllContacts.initiate(
+          { filters, type },
+          { forceRefetch: true }
+        )
+      ).unwrap();
       const contacts = requests || [];
       if (exportFile) {
-        dispatch?.(
+        d(
           modalActions.updateData({
             table_data: contacts.map((contact: any) => ({
               "Creation Date": moment(contact?.createdAt).format(
@@ -115,47 +120,51 @@ const contactService = {
           })
         );
       } else {
-        dispatch?.(contactActions.setContacts({ type, contacts, count }));
+        d(contactActions.setContacts({ type, contacts, count }));
       }
-    } else if (!exportFile) {
-      dispatch?.(
-        contactActions.setContacts({ type, contacts: [], count: 0 })
-      );
-      ToasterService.showError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Could not load support tickets"
-      );
+      return [{ data: { data: { requests: contacts, count } } }, null];
+    } catch (error) {
+      if (!exportFile) {
+        d(contactActions.setContacts({ type, contacts: [], count: 0 }));
+        const err = error as {
+          data?: { message?: string };
+          message?: string;
+        };
+        ToasterService.showError(
+          err?.data?.message ||
+            err?.message ||
+            "Could not load support tickets"
+        );
+      }
+      return [null, error];
+    } finally {
+      if (exportFile) d(modalActions.setLoading(false));
+      else d(contactActions.setLoading({ type, loading: false }));
     }
-
-    if (exportFile) dispatch?.(modalActions.setLoading(false));
-    else dispatch?.(contactActions.setLoading({ type, loading: false }));
-    return [success, error];
   },
 
   deleteContactRequest: async (type: ContactType, id: any) => {
-    const dispatch = getAppDispatch();
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${contactsUrl}/update-status/${id}`)
-    );
-    if (success) {
-      const contact =
-        success.data.data.contact ||
-        success.data.data.updatedContact ||
-        { _id: id };
-      dispatch?.(modalActions.closeModal());
-      dispatch?.(contactActions.deleteContactRequestById({ type, contact }));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const updated = await d(
+        contactApi.endpoints.deleteContactRequest.initiate({ type, id })
+      ).unwrap();
+      const contact = updated || { _id: id };
+      d(modalActions.closeModal());
+      d(contactActions.deleteContactRequestById({ type, contact }));
       ToasterService.showSuccess("Ticket closed");
-    } else {
+      return [{ data: { data: { contact } } }, null];
+    } catch (error) {
+      const err = error as { data?: { message?: string } };
       ToasterService.showError(
-        error?.response?.data?.message || "Could not close ticket"
+        err?.data?.message || "Could not close ticket"
       );
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
 
   replyToTicket: async (
@@ -164,45 +173,54 @@ const contactService = {
     response: string,
     options: { close?: boolean } = {}
   ) => {
-    const dispatch = getAppDispatch();
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${contactsUrl}/reply/${id}`, {
-        response,
-        close: options.close !== false,
-      })
-    );
-    if (success) {
-      const ticket = success.data?.data?.ticket || { _id: id };
-      const emailSent = Boolean(success.data?.data?.emailSent);
-      dispatch?.(modalActions.closeModal());
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const { ticket, emailSent, message } = await d(
+        contactApi.endpoints.replyToContactTicket.initiate({
+          type,
+          id,
+          response,
+          close: options.close,
+        })
+      ).unwrap();
+      const resolvedTicket = ticket || { _id: id };
+      d(modalActions.closeModal());
       if (options.close !== false) {
-        dispatch?.(
-          contactActions.deleteContactRequestById({ type, contact: ticket })
+        d(
+          contactActions.deleteContactRequestById({
+            type,
+            contact: resolvedTicket,
+          })
         );
-        dispatch?.(contactActions.resetFilters("close" as ContactType));
+        d(contactActions.resetFilters("close" as ContactType));
       } else {
-        dispatch?.(contactActions.resetFilters(type));
+        d(contactActions.resetFilters(type));
       }
       if (emailSent) {
-        ToasterService.showSuccess(
-          success.data?.message || "Reply emailed to the member"
-        );
+        ToasterService.showSuccess(message || "Reply emailed to the member");
       } else {
         ToasterService.showError(
-          success.data?.message ||
-            "Reply saved, but email failed — check RESEND_API_KEY"
+          message || "Reply saved, but email failed — check RESEND_API_KEY"
         );
       }
-    } else {
-      ToasterService.showError(
-        error?.response?.data?.message || "Could not send reply"
-      );
+      return [
+        {
+          data: {
+            data: { ticket: resolvedTicket, emailSent },
+            message,
+          },
+        },
+        null,
+      ];
+    } catch (error) {
+      const err = error as { data?: { message?: string } };
+      ToasterService.showError(err?.data?.message || "Could not send reply");
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
 };
 

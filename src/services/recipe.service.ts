@@ -1,83 +1,105 @@
+import type { AppDispatch } from "redux/store";
+import { recipeApi } from "redux/api/recipe/recipeApi";
 import { recipeActions } from "redux/slices/recipe";
-import Promisable from "./promisable.service";
-import http from "./http.service";
-import { Dispatch } from "@reduxjs/toolkit";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/recipes";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const recipeService = {
-  getAll: async (data: any = { page: 1, page_size: 50 }, dispatch: Dispatch) => {
-    dispatch?.(recipeActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-All`, { ...data, isDelete: false })
-    );
-    if (success) {
-      const { recipes, count } = success?.data?.data || {};
-      dispatch?.(
+  getAll: async (
+    data: any = { page: 1, page_size: 50 },
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(recipeActions.setLoading(true));
+    try {
+      const { recipes, count } = await d(
+        recipeApi.endpoints.getAllRecipes.initiate(data, { forceRefetch: true })
+      ).unwrap();
+      d(
         recipeActions.setRecipes({
           recipes: recipes || [],
           count: count || 0,
         })
       );
+      return [{ data: { data: { recipes, count } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(recipeActions.setLoading(false));
     }
-    dispatch?.(recipeActions.setLoading(false));
-    return [success, error];
   },
 
-  get: async (id: string, dispatch: Dispatch) => {
-    dispatch?.(recipeActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}/${id}`)
-    );
-    if (success) {
-      dispatch?.(recipeActions.setRecipe(success?.data?.data?.recipe || null));
+  get: async (id: string, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(recipeActions.setLoading(true));
+    try {
+      const recipe = await d(
+        recipeApi.endpoints.getRecipe.initiate(id, { forceRefetch: true })
+      ).unwrap();
+      d(recipeActions.setRecipe(recipe || null));
+      return [{ data: { data: { recipe } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(recipeActions.setLoading(false));
     }
-    dispatch?.(recipeActions.setLoading(false));
-    return [success, error];
   },
 
-  create: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(recipeActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create`, data)
-    );
-    if (success) {
-      dispatch?.(recipeActions.setRecipe(success?.data?.data?.recipe));
-      dispatch?.(recipeActions.refresh());
+  create: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(recipeActions.setLoading(true));
+    try {
+      const recipe = await d(
+        recipeApi.endpoints.createRecipe.initiate(data)
+      ).unwrap();
+      d(recipeActions.setRecipe(recipe));
+      d(recipeActions.refresh());
+      return [{ data: { data: { recipe } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(recipeActions.setLoading(false));
     }
-    dispatch?.(recipeActions.setLoading(false));
-    return [success, error];
   },
 
-  update: async (id: string, data: any, dispatch: Dispatch) => {
-    dispatch?.(recipeActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`, data)
-    );
-    if (success) {
-      dispatch?.(recipeActions.setRecipe(success?.data?.data?.recipe));
-      dispatch?.(recipeActions.refresh());
+  update: async (id: string, data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(recipeActions.setLoading(true));
+    try {
+      const recipe = await d(
+        recipeApi.endpoints.updateRecipe.initiate({ id, data })
+      ).unwrap();
+      d(recipeActions.setRecipe(recipe));
+      d(recipeActions.refresh());
+      return [{ data: { data: { recipe } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(recipeActions.setLoading(false));
     }
-    dispatch?.(recipeActions.setLoading(false));
-    return [success, error];
   },
 
-  remove: async (id: string, dispatch: Dispatch) => {
-    dispatch?.(recipeActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.delete(`${url}/${id}`)
-    );
-    if (success) {
-      dispatch?.(recipeActions.removeRecipe(id));
-      dispatch?.(recipeActions.refresh());
+  remove: async (id: string, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(recipeActions.setLoading(true));
+    try {
+      await d(recipeApi.endpoints.removeRecipe.initiate(id)).unwrap();
+      d(recipeActions.removeRecipe(id));
+      d(recipeActions.refresh());
+      return [{ data: { data: {} } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(recipeActions.setLoading(false));
     }
-    dispatch?.(recipeActions.setLoading(false));
-    return [success, error];
   },
 };
 

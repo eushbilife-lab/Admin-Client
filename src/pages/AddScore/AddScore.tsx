@@ -86,7 +86,9 @@ export default function AddScore() {
         );
       }
       ToasterService.showError(
-        posCheck.message || negCheck.message || "Fix highlighted fields"
+        (posCheck as any).message ||
+          (negCheck as any).message ||
+          "Fix highlighted fields"
       );
       return;
     }

@@ -1,16 +1,34 @@
-import Promisable from "./promisable.service";
-import http from "./http.service";
-
-const url = "/legal";
+import type { AppDispatch } from "redux/store";
+import { legalApi } from "redux/api/legal/legalApi";
+import { getAppDispatch } from "utils/dispatch.util";
 
 const legalService = {
   getAll: async (data: Record<string, unknown> = {}) => {
-    http.setJWT();
-    return Promisable.asPromise(http.post(`${url}/get-All`, data));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const result = await d(
+        legalApi.endpoints.getAllLegalPages.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   upsert: async (data: Record<string, unknown>) => {
-    http.setJWT();
-    return Promisable.asPromise(http.post(`${url}/upsert`, data));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const result = await d(
+        legalApi.endpoints.upsertLegalPage.initiate(data)
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
 };
 

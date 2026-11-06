@@ -1,5 +1,5 @@
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import { useEffect, memo, useCallback } from "react";
+import { memo, useCallback, useEffect } from "react";
 import moment from "moment";
 import {
   Button,
@@ -10,7 +10,10 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import UserService from "services/user.service";
+import {
+  useGetAllUsersQuery,
+  useRemoveUserMutation,
+} from "redux/api";
 import { userActions } from "redux/slices/user";
 import UsersFilters from "./UsersFilters";
 import { useNavigate } from "react-router-dom";
@@ -31,12 +34,18 @@ import "./Users.css";
 export default function Users() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { count, users, loading, refreshLoader, filters, refresh } =
-    useAppSelector((state) => state.user);
+  const { filters, refresh } = useAppSelector((state) => state.user);
+
+  const { data, isFetching, isLoading, refetch } = useGetAllUsersQuery(filters);
+  const [removeUser] = useRemoveUserMutation();
+
+  const users = data?.users || [];
+  const count = data?.totalCount ?? 0;
+  const loading = isLoading || (isFetching && users.length === 0);
 
   useEffect(() => {
-    UserService.getAllUsers(filters, dispatch);
-  }, [filters, refresh, dispatch]);
+    if (refresh > 0) void refetch();
+  }, [refresh, refetch]);
 
   useEffect(() => {
     return () => {
@@ -77,10 +86,10 @@ export default function Users() {
       <UsersFilters
         count={count}
         userActions={userActions}
-        refreshLoader={refreshLoader}
+        refreshLoader={isFetching}
         filters={filters}
       />
-      <TableWrapper refreshing={refreshLoader}>
+      <TableWrapper refreshing={isFetching}>
         <TableContainer>
           <Table aria-label="Users table" sx={adminTableSx}>
             <TableLoadingWrapper
@@ -107,7 +116,19 @@ export default function Users() {
                     key={user._id}
                     user={user}
                     onOpen={openMember}
-                    onDeleted={() => dispatch(userActions.refresh())}
+                    onDelete={async (id, name) => {
+                      try {
+                        await removeUser(id).unwrap();
+                        ToasterService.showSuccess("User deleted");
+                        dispatch(userActions.refresh());
+                      } catch (error: any) {
+                        ToasterService.showError(
+                          error?.data?.message ||
+                            error?.message ||
+                            "Delete failed"
+                        );
+                      }
+                    }}
                   />
                 ))}
               </TableBody>
@@ -123,7 +144,7 @@ export default function Users() {
               variant="outlined"
               color="primary"
               page={filters.page}
-              disabled={refreshLoader}
+              disabled={isFetching}
               count={Math.ceil(count / filters.page_size)}
               onChange={(_, page) => dispatch(userActions.setPage(page))}
             />
@@ -138,11 +159,11 @@ const UserRow = memo(
   ({
     user,
     onOpen,
-    onDeleted,
+    onDelete,
   }: {
     user: any;
     onOpen: (id: string) => void;
-    onDeleted: () => void;
+    onDelete: (id: string, name: string) => Promise<void>;
   }) => {
     const navigate = useNavigate();
     const nutrition = user.nutrition || user.profiles?.[0];
@@ -172,15 +193,7 @@ const UserRow = memo(
             deleteTitle="Delete user"
             deleteMessage={`Permanently delete “${name}” (GDPR anonymize)? This cannot be undone.`}
             onDelete={async () => {
-              const [, error]: any = await UserService.removeUser(user._id);
-              if (error) {
-                ToasterService.showError(
-                  error?.response?.data?.message || "Delete failed"
-                );
-                return;
-              }
-              ToasterService.showSuccess("User deleted");
-              onDeleted();
+              await onDelete(user._id, name);
             }}
           />
         </StyledTableCellAction>

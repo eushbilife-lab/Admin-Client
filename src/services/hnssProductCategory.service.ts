@@ -1,27 +1,33 @@
-import { healthPrefernceActions } from "redux/slices/healthPrefernce";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import type { AppDispatch } from "redux/store";
+import { hnssProductCategoryApi } from "redux/api/hnssProductCategory/hnssProductCategoryApi";
 import { hnssProductCategoryActions } from "redux/slices/hnssProductCategory";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/hnss-product-categories";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const hnssProductCategoryService = {
-  getOptions: async (data: any, dispatch: Dispatch) => {
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-options`, data)
-    );
-    if (success) {
-      const { HNSSCategories } = success?.data?.data;
-      dispatch?.(
+  getOptions: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const { hnssProductCategories: HNSSCategories } = await d(
+        hnssProductCategoryApi.endpoints.getHnssProductCategoryOptions.initiate(
+          data,
+          { forceRefetch: true }
+        )
+      ).unwrap();
+      d(
         hnssProductCategoryActions?.setOptions({
           hnssProductCategories: HNSSCategories,
         })
       );
+      return [{ data: { data: { HNSSCategories } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
 };
+
 export default hnssProductCategoryService;

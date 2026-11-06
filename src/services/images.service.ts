@@ -1,163 +1,176 @@
-import { healthPrefernceActions } from "redux/slices/healthPrefernce";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import type { AppDispatch } from "redux/store";
+import { imagesApi } from "redux/api/images/imagesApi";
 import { imageActions } from "redux/slices/images";
-import { NavigateFunction } from "react-router-dom";
 import { modalActions } from "redux/slices/modal";
 import ImageService from "./image.service";
+import { resolveDispatch } from "redux/api/runEndpoint";
 
-const url = "/images";
+function dispatchOr(d?: AppDispatch) {
+  return resolveDispatch(d);
+}
 
 const imagesService = {
-  getOptions: async (data: any, dispatch: Dispatch) => {
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-Options`, data)
-    );
-    if (success) {
-      const { images } = success?.data?.data;
-      dispatch?.(
+  getOptions: async (data: any, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const images = await d(
+        imagesApi.endpoints.getImageOptions.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         imageActions.setOptions({
-          images: images,
+          images,
           type: data?.type,
         })
       );
+      return [{ data: { data: { images } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
-  create: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-   const check = await ImageService.getImageFileFromBlob({
-      blob: data.url,
-      name: data.url.name,
-      type: data.url.type,
-    });
-    let formData = new FormData();
-    formData.append("url", check);
-    formData.append("name", String(data.name || "").trim());
-    formData.append("type", data.type);
-    const folder = "certificate";
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/${folder}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-    );
-    if (success) {
-      const { image } = success?.data?.data;
-      if(!image){
-        dispatch?.(
-          imageActions.setImage({ type: image?.type, data: image })
-        )
-      }else{
-        imagesService.getAll(image?.type, { page: 1, page_size: 20 },dispatch);
-      }
-      dispatch?.(modalActions.closeModal());
-    }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
-  },
-  getAll: async (type: any, filters: any, dispatch: Dispatch) => {
-    dispatch?.(imageActions.setLoading({ type, loading: true }));
-    http.setJWT();
-    const payload = {
-      type,
-      page: filters.page,
-      page_size: filters.page_size,
-      isDelete: false,
-      ...(filters.name ? { name: filters.name } : {}),
-      ...(filters.status ? { status: filters.status } : {}),
-    };
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-All-images`, payload)
-    );
-    if (success) {
-      const { image, count } = success?.data?.data;
-      dispatch?.(
-        imageActions.setImages({
-          data: image,
-          type,
-          count,
-        })
-      );
-    }
-    dispatch?.(imageActions.setLoading({ type, loading: false }));
-    return [success, error];
-  },
-  get: async (data:any, dispatch: Dispatch) => {
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-Options`, data)
-    );
-    if (success) {
-      const { images } = success?.data?.data;
-      dispatch?.(
-        imageActions.setOptions({
-          images: images,
-          type: data?.type,
-        })
-      );
-    }
-    return [success, error];
-  },
-  update: async (id: string, data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    let formData = new FormData();
-    if (data.url && typeof data.url !== "string" && data.url.blob) {
+
+  create: async (data: any, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
       const check = await ImageService.getImageFileFromBlob({
         blob: data.url,
         name: data.url.name,
         type: data.url.type,
       });
+      const formData = new FormData();
       formData.append("url", check);
-    }
-    formData.append("name", String(data.name || "").trim());
-    formData.append("type", data.type);
-    if (data.previousImageUrl) {
-      formData.append("previousImageUrl", data.previousImageUrl);
-    }
-    const folder = "certificate";
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}/${folder}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-    );
-    if (success) {
-      const { images } = success?.data?.data;
-      dispatch?.(imageActions.setImage({ type: data.type, data: images }));
-      dispatch?.(modalActions.closeModal());
-    }
-    dispatch?.(modalActions.setLoading(false));
+      formData.append("name", String(data.name || "").trim());
+      formData.append("type", data.type);
 
-    return [success, error];
+      const image = await d(
+        imagesApi.endpoints.createImage.initiate(formData)
+      ).unwrap();
+      if (!image) {
+        d(imageActions.setImage({ type: image?.type, data: image }));
+      } else {
+        imagesService.getAll(image?.type, { page: 1, page_size: 20 }, dispatch);
+      }
+      d(modalActions.closeModal());
+      return [{ data: { data: { image } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
+    }
   },
-  remove: async (id: string, dispatch: Dispatch, type: string, filters: any) => {
-    http.setJWT();
-    http.setLanguage();
-  
-    dispatch?.(imageActions.setLoading({ type: "product_certificate", loading: true }));
-  
-    const [success, error]: any = await Promisable.asPromise(http.delete(`${url}/${id}`));
-  
-    if (success) {
+
+  getAll: async (type: any, filters: any, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(imageActions.setLoading({ type, loading: true }));
+    try {
+      const result = await d(
+        imagesApi.endpoints.getAllImages.initiate(
+          { type, filters },
+          { forceRefetch: true }
+        )
+      ).unwrap();
+      d(
+        imageActions.setImages({
+          data: result.image,
+          type,
+          count: result.count,
+        })
+      );
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(imageActions.setLoading({ type, loading: false }));
+    }
+  },
+
+  get: async (data: any, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const images = await d(
+        imagesApi.endpoints.getImages.initiate(data, { forceRefetch: true })
+      ).unwrap();
+      d(
+        imageActions.setOptions({
+          images,
+          type: data?.type,
+        })
+      );
+      return [{ data: { data: { images } } }, null];
+    } catch (error) {
+      return [null, error];
+    }
+  },
+
+  update: async (id: string, data: any, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const formData = new FormData();
+      if (data.url && typeof data.url !== "string" && data.url.blob) {
+        const check = await ImageService.getImageFileFromBlob({
+          blob: data.url,
+          name: data.url.name,
+          type: data.url.type,
+        });
+        formData.append("url", check);
+      }
+      formData.append("name", String(data.name || "").trim());
+      formData.append("type", data.type);
+      if (data.previousImageUrl) {
+        formData.append("previousImageUrl", data.previousImageUrl);
+      }
+
+      const images = await d(
+        imagesApi.endpoints.updateImage.initiate({ id, formData })
+      ).unwrap();
+      d(imageActions.setImage({ type: data.type, data: images }));
+      d(modalActions.closeModal());
+      return [{ data: { data: { images } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
+    }
+  },
+
+  remove: async (id: string, dispatch: AppDispatch, type: string, filters: any) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(imageActions.setLoading({ type: "product_certificate", loading: true }));
+    try {
+      await d(imagesApi.endpoints.removeImage.initiate(id)).unwrap();
+
       let currentPage = filters.page;
-      const [fetchSuccess]: any = await imagesService.getAll(type, { ...filters }, dispatch);
+      const [fetchSuccess]: any = await imagesService.getAll(
+        type,
+        { ...filters },
+        dispatch
+      );
       const currentImages = fetchSuccess?.data?.data?.image ?? [];
       if (currentImages.length === 0 && currentPage > 1) {
         currentPage -= 1;
-     await imagesService.getAll(type, { ...filters, page: currentPage }, dispatch);
+        await imagesService.getAll(
+          type,
+          { ...filters, page: currentPage },
+          dispatch
+        );
       }
-      dispatch?.(modalActions.closeModal());
+      d(modalActions.closeModal());
+      return [{ data: { data: {} } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(imageActions.setLoading({ type: "product_certificate", loading: false }));
     }
-    dispatch?.(imageActions.setLoading({ type: "product_certificate", loading: false }));
-  
-    return [success, error];
   },
-  
-  
 };
+
 export default imagesService;

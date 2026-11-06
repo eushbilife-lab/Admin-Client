@@ -1,5 +1,5 @@
-import http from "./http.service";
-import Promisable from "./promisable.service";
+import { getAppDispatch } from "utils/dispatch.util";
+import { dashboardApi } from "redux/api/dashboard/dashboardApi";
 import {
   getFunnel,
   getMealsSeries,
@@ -24,8 +24,6 @@ export type ProductAnalyticsPayload = {
   insight?: string;
 };
 
-const silent = { headers: { "X-Skip-Toast": "1" } };
-
 function mockOverview(range: DateRangeKey): ProductAnalyticsPayload {
   return {
     kpis: getProductKpis(range),
@@ -38,7 +36,7 @@ function mockOverview(range: DateRangeKey): ProductAnalyticsPayload {
   };
 }
 
-function normalizeLive(raw: any, range: DateRangeKey): ProductAnalyticsPayload {
+function normalizeLive(raw: any, _range: DateRangeKey): ProductAnalyticsPayload {
   const kpis = raw?.kpis || {};
   return {
     kpis: {
@@ -68,13 +66,14 @@ function normalizeLive(raw: any, range: DateRangeKey): ProductAnalyticsPayload {
 /** Prefers live Admin `/dashboard/product-analytics`; falls back to mock if offline. */
 const ProductMetricsService = {
   async overview(range: DateRangeKey = "30d"): Promise<ProductAnalyticsPayload> {
+    const dispatch = getAppDispatch();
+    if (!dispatch) return mockOverview(range);
     try {
-      http.setJWT();
-      http.setLanguage();
-      const [ok]: any = await Promisable.asPromise(
-        http.get(`/dashboard/product-analytics?range=${range}`, silent)
-      );
-      const analytics = ok?.data?.data?.analytics;
+      const analytics = await dispatch(
+        dashboardApi.endpoints.getProductAnalytics.initiate(range, {
+          forceRefetch: true,
+        })
+      ).unwrap();
       if (analytics?.kpis) return normalizeLive(analytics, range);
     } catch {
       /* fall through to mock */

@@ -61,7 +61,7 @@ export default function AddContactUs() {
   });
 
   const loadStats = async () => {
-    const data = await ContactService.getOverview();
+    const data: any = await ContactService.getOverview();
     if (data?.stats) setStats(data.stats);
   };
 

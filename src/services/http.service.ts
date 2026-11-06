@@ -1,5 +1,4 @@
 import axios from "axios";
-import AuthService from "./auth.service";
 import { log } from "../utils/logger.util";
 import { config as configs } from "config";
 import ToasterService from "../utils/toaster.util";
@@ -11,13 +10,23 @@ const CancelToken = axios.CancelToken;
 
 let source = CancelToken.source();
 
+type UnauthorizedHandler = () => void;
+let onUnauthorized: UnauthorizedHandler | null = null;
+
+/** Register from app bootstrap to avoid circular imports with auth/RTK. */
+export function setUnauthorizedHandler(handler: UnauthorizedHandler | null) {
+  onUnauthorized = handler;
+}
+
 function readBearer(): string {
   const raw = LocalStorage.getItem("token");
   if (!raw) return "";
   if (typeof raw === "string") {
     // LocalStorage may JSON-stringify the Bearer string — strip surrounding quotes.
     const trimmed = raw.replace(/^"|"$/g, "");
-    return trimmed.startsWith("Bearer ") ? trimmed : `Bearer ${trimmed.replace(/^Bearer\s+/i, "")}`;
+    return trimmed.startsWith("Bearer ")
+      ? trimmed
+      : `Bearer ${trimmed.replace(/^Bearer\s+/i, "")}`;
   }
   return "";
 }
@@ -77,7 +86,7 @@ axios.interceptors.response.use(
         message === "Password has been changed, Login again" ||
         message === "Login session has been expired, Login again")
     ) {
-      AuthService.logout();
+      onUnauthorized?.();
       source.cancel(message);
 
       setTimeout(() => {
@@ -91,23 +100,24 @@ axios.interceptors.response.use(
   }
 );
 
-const http = {
-  get: axios.get,
-  put: axios.put,
-  post: axios.post,
-  patch: axios.patch,
-  delete: axios.delete,
+type HttpClient = typeof axios & {
   /** @deprecated Auth header is attached by the request interceptor. */
-  setJWT: () => {
-    const bearer = readBearer();
-    if (bearer) axios.defaults.headers.common["Authorization"] = bearer;
-  },
-  setMultiPart: () => {
-    axios.defaults.headers.common["Content-Type"] = "multipart/form-data";
-  },
-  setLanguage: () => {
-    axios.defaults.headers.common["Accept-Language"] = getLanguage();
-  },
+  setJWT: () => void;
+  setMultiPart: () => void;
+  setLanguage: () => void;
+};
+
+const http = axios as HttpClient;
+
+http.setJWT = () => {
+  const bearer = readBearer();
+  if (bearer) axios.defaults.headers.common["Authorization"] = bearer;
+};
+http.setMultiPart = () => {
+  axios.defaults.headers.common["Content-Type"] = "multipart/form-data";
+};
+http.setLanguage = () => {
+  axios.defaults.headers.common["Accept-Language"] = getLanguage();
 };
 
 export default http;

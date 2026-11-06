@@ -1,3 +1,4 @@
+import type { AppDispatch } from "redux/store";
 import { modalActions } from "redux/slices/modal";
 import { getAppDispatch } from "utils/dispatch.util";
 import http from "./http.service";

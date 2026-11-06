@@ -1,88 +1,102 @@
+import type { AppDispatch } from "redux/store";
 import { productActions } from "redux/slices/product";
 import { NavigateFunction } from "react-router-dom";
-import Promisable from "./promisable.service";
-import http from "./http.service";
-import { Dispatch } from "@reduxjs/toolkit";
 import ImageService from "./image.service";
 import { modalActions } from "redux/slices/modal";
-
-const url = "/products";
+import { productApi } from "redux/api/product/productApi";
+import { resolveDispatch } from "redux/api/runEndpoint";
 
 const productService = {
-  create: async (data: any, navigate: NavigateFunction, dispatch: Dispatch) => {
-    http.setJWT();
-    http.setLanguage();
-    dispatch?.(productActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}`, data)
-    );
-    if (success) {
-      const { product } = success?.data?.data;
-      dispatch?.(productActions.setProduct(product));
+  create: async (data: any, navigate: NavigateFunction, dispatch: AppDispatch) => {
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      const product = await d(
+        productApi.endpoints.createProduct.initiate(data)
+      ).unwrap();
+      d(productActions.setProduct(product));
+      return [{ data: { data: { product } } }, null, product];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return success ? [success, error, success?.data?.data?.product] : [success, error];
   },
 
-  getAll: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(productActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/query`, { ...data, isDelete: false })
-    );
-    if (success) {
-      const { products, totalCount } = success?.data?.data;
-      dispatch?.(
-        productActions.setProducts({ products, count: totalCount })
+  getAll: async (data: any, dispatch: AppDispatch) => {
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      const result = await d(
+        productApi.endpoints.getAllProducts.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
+        productActions.setProducts({
+          products: result.products,
+          count: result.totalCount,
+        })
       );
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 
-  get: async (id: string, dispatch: Dispatch) => {
-    dispatch?.(productActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}/${id}`)
-    );
-    if (success) {
-      dispatch?.(productActions.setProduct(success.data.data.product));
+  get: async (id: string, dispatch: AppDispatch) => {
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      const product = await d(
+        productApi.endpoints.getProduct.initiate(id, { forceRefetch: true })
+      ).unwrap();
+      d(productActions.setProduct(product));
+      return [{ data: { data: { product } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 
-  /** Pass `navigate` to leave the page after success; pass `null` to stay. */
   update: async (
     id: string,
     data: any,
     navigate: NavigateFunction | null,
-    dispatch: Dispatch
+    dispatch: AppDispatch
   ) => {
-    dispatch?.(productActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`, data)
-    );
-    if (success) {
-      dispatch?.(productActions.setProduct(success.data.data.updatedProduct));
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      const updatedProduct = await d(
+        productApi.endpoints.updateProduct.initiate({ id, data })
+      ).unwrap();
+      d(productActions.setProduct(updatedProduct));
       navigate?.("/products");
+      return [{ data: { data: { updatedProduct } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 
   updateImage: async (
     id: string,
     files: any[],
     prevImages: string[],
-    dispatch: Dispatch
+    dispatch: AppDispatch
   ) => {
     if (!files?.length) return [null, null];
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
     const imageFiles = await Promise.all(
       files.map((file: any) =>
         ImageService.getImageFileFromBlob({
@@ -95,83 +109,99 @@ const productService = {
     const formData = new FormData();
     imageFiles.forEach((file) => formData.append("productImages", file));
 
-    http.setJWT();
-    http.setLanguage();
-    dispatch?.(productActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/${id}/images`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        params: { previousImages: JSON.stringify(prevImages) },
-      })
-    );
-    if (success) {
-      dispatch?.(productActions.setProduct(success.data.data.updatedProduct));
-      dispatch?.(productActions.refresh());
+    d(productActions.setLoading(true));
+    try {
+      const updatedProduct = await d(
+        productApi.endpoints.updateProductImages.initiate({
+          id,
+          formData,
+          previousImages: prevImages,
+        })
+      ).unwrap();
+      d(productActions.setProduct(updatedProduct));
+      d(productActions.refresh());
+      return [{ data: { data: { updatedProduct } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 
-  updateStatus: async (id: string, data: any, dispatch: Dispatch) => {
-    http.setJWT();
-    http.setLanguage();
-    dispatch?.(productActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}/status`, data)
-    );
-    if (success) {
-      const { updatedStatus } = success.data.data;
-      dispatch?.(productActions.setProduct(updatedStatus));
-      dispatch(productActions.removeProduct(updatedStatus._id));
-      dispatch?.(modalActions.closeModal());
+  updateStatus: async (id: string, data: any, dispatch: AppDispatch) => {
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      const updatedStatus = await d(
+        productApi.endpoints.updateProductStatus.initiate({ id, data })
+      ).unwrap();
+      d(productActions.setProduct(updatedStatus));
+      d(productActions.removeProduct(updatedStatus._id));
+      d(modalActions.closeModal());
+      return [{ data: { data: { updatedStatus } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 
-  keepImages: async (id: string, productImages: string[], dispatch: Dispatch) => {
-    http.setJWT();
-    http.setLanguage();
-    dispatch?.(productActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}/gallery`, { productImages })
-    );
-    if (success) {
-      dispatch?.(productActions.setProduct(success.data.data.updatedProduct));
+  keepImages: async (
+    id: string,
+    productImages: string[],
+    dispatch: AppDispatch
+  ) => {
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      const updatedProduct = await d(
+        productApi.endpoints.keepProductImages.initiate({
+          id,
+          productImages,
+        })
+      ).unwrap();
+      d(productActions.setProduct(updatedProduct));
+      return [{ data: { data: { updatedProduct } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 
-  updateProductImage: async (id: string, data: any, dispatch: Dispatch) => {
-    http.setJWT();
-    http.setLanguage();
-    dispatch?.(productActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}/image`, data)
-    );
-    if (success) {
-      dispatch?.(
-        productActions.setProduct(success.data.data.updatedProductImage)
-      );
+  updateProductImage: async (id: string, data: any, dispatch: AppDispatch) => {
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      const updatedProductImage = await d(
+        productApi.endpoints.updateProductImage.initiate({ id, data })
+      ).unwrap();
+      d(productActions.setProduct(updatedProductImage));
+      return [{ data: { data: { updatedProductImage } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 
-  remove: async (id: string, dispatch: Dispatch) => {
-    http.setJWT();
-    http.setLanguage();
-    dispatch?.(productActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.delete(`${url}/${id}`)
-    );
-    if (success) {
-      dispatch(productActions.removeProduct(id));
-      dispatch?.(modalActions.closeModal());
+  remove: async (id: string, dispatch: AppDispatch) => {
+    const d = resolveDispatch(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(productActions.setLoading(true));
+    try {
+      await d(productApi.endpoints.removeProduct.initiate(id)).unwrap();
+      d(productActions.removeProduct(id));
+      d(modalActions.closeModal());
+      return [{ data: { data: {} } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(productActions.setLoading(false));
     }
-    dispatch?.(productActions.setLoading(false));
-    return [success, error];
   },
 };
 

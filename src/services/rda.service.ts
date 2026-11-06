@@ -1,41 +1,44 @@
-import { getAppDispatch } from "utils/dispatch.util";
-import Promisable from "./promisable.service";
+import type { AppDispatch } from "redux/store";
+import { rdaApi } from "redux/api/rda/rdaApi";
 import { rdaActions } from "redux/slices/rda";
-import http from "./http.service";
-import { Dispatch } from "@reduxjs/toolkit";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/rda";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const rdaService = {
-  update: async (data: any,dispatch:Dispatch) => {
-    dispatch?.(rdaActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.put(`${url}`, data)
-    );
-    if (success) {
-      const { rdas } = success.data.data;
-      dispatch?.(rdaActions?.setRdas({rdas}));
+  update: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(rdaActions.setLoading(true));
+    try {
+      const rdas = await d(rdaApi.endpoints.updateRda.initiate(data)).unwrap();
+      d(rdaActions.setRdas({ rdas }));
+      return [{ data: { data: { rdas } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(rdaActions.setLoading(false));
     }
-    dispatch?.(rdaActions.setLoading(false));
-    return [success, error];
   },
-  getAll: async (dispatch:Dispatch) => {
-    dispatch?.(rdaActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}`)
-    );
-    if (success) {
-      const { Rdas } = success?.data?.data;
-      dispatch?.(
-        rdaActions.setRdas({rdas:Rdas})
-      );
+
+  getAll: async (dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(rdaActions.setLoading(true));
+    try {
+      const Rdas = await d(
+        rdaApi.endpoints.getAllRdas.initiate(undefined, { forceRefetch: true })
+      ).unwrap();
+      d(rdaActions.setRdas({ rdas: Rdas }));
+      return [{ data: { data: { Rdas } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(rdaActions.setLoading(false));
     }
-    dispatch?.(rdaActions.setLoading(false));
-    return [success, error];
   },
 };
+
 export default rdaService;

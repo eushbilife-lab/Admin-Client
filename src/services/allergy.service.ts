@@ -1,159 +1,161 @@
-import { dynamicActions } from "redux/slices/dynamic";
-import { modalActions } from "redux/slices/modal";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import type { AppDispatch } from "redux/store";
+import { allergyApi } from "redux/api/allergy/allergyApi";
 import { allergyActions } from "redux/slices/allergies";
+import { modalActions } from "redux/slices/modal";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/allergies";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const allergyService = {
-  createMajor: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create-major`, data)
-    );
-    if (success) {
-      const { allergyCategory } = success?.data.data;
+  createMajor: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const allergyCategory = await d(
+        allergyApi.endpoints.createMajorAllergy.initiate(data)
+      ).unwrap();
       if (!allergyCategory) {
-        dispatch?.(
-          allergyActions.setAllergy(allergyCategory)
-        );
+        d(allergyActions.setAllergy(allergyCategory));
+      } else {
+        allergyService.getAllMajor({ page: 1, page_size: 3 }, d);
       }
-      else{
-        allergyService.getAllMajor({ page: 1, page_size: 3 },dispatch);
-      }
-      dispatch?.(modalActions.closeModal());
+      d(modalActions.closeModal());
+      return [{ data: { data: { allergyCategory } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
-  createMinor: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create-minor`, data)
-    );
-    if (success) {
-      const { allergySubCategory } = success?.data.data;
+
+  createMinor: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const allergySubCategory = await d(
+        allergyApi.endpoints.createMinorAllergy.initiate(data)
+      ).unwrap();
       if (!allergySubCategory) {
-        dispatch?.(
-          allergyActions.setAllergy(allergySubCategory)
-        );
+        d(allergyActions.setAllergy(allergySubCategory));
+      } else {
+        allergyService.getAllMinor({ page: 1, page_size: 3 }, d);
       }
-      else{
-        allergyService.getAllMinor({ page: 1, page_size: 3 },dispatch);
-      }
-      dispatch?.(modalActions.closeModal());
+      d(modalActions.closeModal());
+      return [{ data: { data: { allergySubCategory } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-    return [success, error];
   },
-  getAllMajor: async (filters: any, dispatch: Dispatch) => {
-    dispatch?.(allergyActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const payload = {
-      page: filters.page,
-      page_size: filters.page_size,
-      ...(filters.name ? { name: filters.name } : {}),
-      ...(filters.status ? { status: filters.status } : {}),
-    };
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/major-Allergy`, payload)
-    );
 
-    if (success) {
-      const { allergies, count } = success?.data?.data;
-      dispatch?.(
+  getAllMajor: async (filters: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(allergyActions.setLoading(true));
+    try {
+      const { allergies, count } = await d(
+        allergyApi.endpoints.getAllMajorAllergies.initiate(filters, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         allergyActions.setAllergies({
-          allergies: allergies,
+          allergies,
           count,
         })
       );
+      return [{ data: { data: { allergies, count } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(allergyActions.setLoading(false));
     }
-    dispatch?.(allergyActions.setLoading(false));
-    return [success, error];
   },
-  getAllMinor: async (filters: any, dispatch: Dispatch) => {
-    dispatch?.(allergyActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const payload = {
-      page: filters.page,
-      page_size: filters.page_size,
-      ...(filters.name ? { name: filters.name } : {}),
-      ...(filters.status ? { status: filters.status } : {}),
-    };
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/minor-Allergy`, payload)
-    );
-    if (success) {
-      const { allergies, count } = success?.data?.data;
-      dispatch?.(
+
+  getAllMinor: async (filters: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(allergyActions.setLoading(true));
+    try {
+      const { allergies, count } = await d(
+        allergyApi.endpoints.getAllMinorAllergies.initiate(filters, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         allergyActions.setAllergies({
-          allergies: allergies,
+          allergies,
           count,
         })
       );
+      return [{ data: { data: { allergies, count } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(allergyActions.setLoading(false));
     }
-    dispatch?.(allergyActions.setLoading(false));
-    return [success, error];
   },
-  updateMajor: async (id: string, data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}/update-Major`, data)
-    );
-    if (success) {
-      const { allergyCategorys } = success?.data?.data;
-      dispatch?.(
-        allergyActions.setAllergy({data:allergyCategorys})
-      );
-      dispatch?.(modalActions.closeModal());
-    }
-    dispatch?.(modalActions.setLoading(false));
 
-    return [success, error];
-  },
-  updateMinor: async (id: string, data: any, dispatch: Dispatch) => {
-    dispatch?.(modalActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}/update-Minor`, data)
-    );
-    if (success) {
-      const { allergySubCatrgory } = success?.data?.data;
-      dispatch?.(
-        allergyActions.setAllergy({data:allergySubCatrgory})
-      );
-      dispatch?.(modalActions.closeModal());
+  updateMajor: async (id: string, data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const allergyCategorys = await d(
+        allergyApi.endpoints.updateMajorAllergy.initiate({ id, data })
+      ).unwrap();
+      d(allergyActions.setAllergy({ data: allergyCategorys }));
+      d(modalActions.closeModal());
+      return [{ data: { data: { allergyCategorys } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
     }
-    dispatch?.(modalActions.setLoading(false));
-
-    return [success, error];
   },
-  getOptions: async (data: any = { all: "true" },dispatch:Dispatch) => {
-    http.setJWT();
-    http.setLanguage()
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/get-Options`, data)
-    );
-    if (success) {
-      const { allergies } = success?.data?.data;
-      dispatch?.(
+
+  updateMinor: async (id: string, data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(modalActions.setLoading(true));
+    try {
+      const allergySubCatrgory = await d(
+        allergyApi.endpoints.updateMinorAllergy.initiate({ id, data })
+      ).unwrap();
+      d(allergyActions.setAllergy({ data: allergySubCatrgory }));
+      d(modalActions.closeModal());
+      return [{ data: { data: { allergySubCatrgory } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(modalActions.setLoading(false));
+    }
+  },
+
+  getOptions: async (data: any = { all: "true" }, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const { allergies } = await d(
+        allergyApi.endpoints.getAllergyOptions.initiate(data, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      d(
         allergyActions.setOptions({
-          allergies: allergies,
+          allergies,
         })
       );
+      return [{ data: { data: { allergies } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
 };
+
 export default allergyService;

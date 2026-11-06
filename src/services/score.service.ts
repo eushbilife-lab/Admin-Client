@@ -1,92 +1,101 @@
+import type { AppDispatch } from "redux/store";
 import { scoreCalculationActions } from "redux/slices/scoreCalculation";
 import { NavigateFunction } from "react-router-dom";
-import Promisable from "./promisable.service";
-import { Dispatch } from "@reduxjs/toolkit";
-import http from "./http.service";
+import { scoreApi } from "redux/api/score/scoreApi";
 import ToasterService from "utils/toaster.util";
+import { resolveDispatch } from "redux/api/runEndpoint";
 
-const url = "/scores";
+function dispatchOr(d?: AppDispatch) {
+  return resolveDispatch(d);
+}
 
 const scoreService = {
-  create: async (data: any, navigate: NavigateFunction, dispatch: Dispatch) => {
-    dispatch?.(scoreCalculationActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/create`, data)
-    );
-    if (success) {
+  create: async (data: any, navigate: NavigateFunction, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(scoreCalculationActions.setLoading(true));
+    try {
+      const result = await d(
+        scoreApi.endpoints.createScore.initiate(data)
+      ).unwrap();
       ToasterService.showSuccess("Health score created");
       navigate("/scores");
-    } else {
+      return [{ data: { data: result } }, null];
+    } catch (error: any) {
       ToasterService.showError(
-        error?.response?.data?.message || "Could not create score"
+        error?.response?.data?.message || error?.data?.message || "Could not create score"
       );
+      return [null, error];
+    } finally {
+      d(scoreCalculationActions.setLoading(false));
     }
-    dispatch?.(scoreCalculationActions.setLoading(false));
-    return [success, error];
   },
 
-  getAll: async (data: any, dispatch: Dispatch) => {
-    dispatch?.(scoreCalculationActions.setLoading(true));
-    http.setJWT();
-    http.setLanguage();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}`, data)
-    );
-    if (success) {
-      const { requiredHNSS, totalCount } = success?.data?.data || {};
-      dispatch?.(
+  getAll: async (data: any, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(scoreCalculationActions.setLoading(true));
+    try {
+      const result = await d(
+        scoreApi.endpoints.getAllScores.initiate(data, { forceRefetch: true })
+      ).unwrap();
+      d(
         scoreCalculationActions.setScoreCalculations({
-          scoreCalculations: requiredHNSS || [],
-          count: totalCount || 0,
+          scoreCalculations: result.requiredHNSS || [],
+          count: result.totalCount || 0,
         })
       );
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(scoreCalculationActions.setLoading(false));
     }
-    dispatch?.(scoreCalculationActions.setLoading(false));
-    return [success, error];
   },
 
-  get: async (id: string, dispatch: Dispatch) => {
-    dispatch?.(scoreCalculationActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}/${id}`)
-    );
-    if (success) {
-      const { scoreData } = success.data.data || {};
-      dispatch?.(scoreCalculationActions.setScore(scoreData || {}));
-    } else {
-      dispatch?.(scoreCalculationActions.setScore({}));
+  get: async (id: string, dispatch: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(scoreCalculationActions.setLoading(true));
+    try {
+      const scoreData = await d(
+        scoreApi.endpoints.getScore.initiate(id, { forceRefetch: true })
+      ).unwrap();
+      d(scoreCalculationActions.setScore(scoreData || {}));
+      return [{ data: { data: { scoreData } } }, null];
+    } catch (error) {
+      d(scoreCalculationActions.setScore({}));
       ToasterService.showError("Score not found");
+      return [null, error];
+    } finally {
+      d(scoreCalculationActions.setLoading(false));
     }
-
-    dispatch?.(scoreCalculationActions.setLoading(false));
-    return [success, error];
   },
 
   update: async (
     id: string,
     data: any,
     navigate: NavigateFunction,
-    dispatch: Dispatch
+    dispatch: AppDispatch
   ) => {
-    http.setJWT();
-    dispatch?.(scoreCalculationActions.setLoading(true));
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`, data)
-    );
-    if (success) {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(scoreCalculationActions.setLoading(true));
+    try {
+      const result = await d(
+        scoreApi.endpoints.updateScore.initiate({ id, data })
+      ).unwrap();
       ToasterService.showSuccess("Health score updated");
       navigate("/scores");
-    } else {
+      return [{ data: { data: result } }, null];
+    } catch (error: any) {
       ToasterService.showError(
-        error?.response?.data?.message || "Could not update score"
+        error?.response?.data?.message || error?.data?.message || "Could not update score"
       );
+      return [null, error];
+    } finally {
+      d(scoreCalculationActions.setLoading(false));
     }
-    dispatch?.(scoreCalculationActions.setLoading(false));
-    return [success, error];
   },
 };
 

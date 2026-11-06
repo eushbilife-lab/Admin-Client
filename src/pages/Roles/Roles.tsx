@@ -8,7 +8,7 @@ import TableLoadingWrapper from "@core/templates/TableLoadingWrapper";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import TableWrapper from "@core/templates/TableWrapper";
 import { roleActions } from "redux/slices/role";
-import roleService from "services/role.service";
+import { useGetAllRolesQuery } from "redux/api";
 import { useNavigate } from "react-router-dom";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
@@ -37,34 +37,34 @@ type StaffStatus = "all" | "active" | "inactive";
 export default function Roles() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { count, Roles, loading, refreshLoader, refresh } = useAppSelector(
-    (state) => state.role
-  );
+  const { refresh } = useAppSelector((state) => state.role);
 
   const listQuery = useListQueryParams();
   const [sort, setSort] = useState<NameSort>("az");
 
-  useEffect(() => {
+  const queryArgs = useMemo(() => {
     const q = listQuery.debouncedSearch;
-    roleService.getAllRoles(
-      {
-        page: listQuery.page,
-        page_size: listQuery.limit,
-        ...(q ? { name: q } : {}),
-        ...(listQuery.status !== "all"
-          ? { currentStatus: listQuery.status }
-          : {}),
-      },
-      dispatch
-    );
+    return {
+      page: listQuery.page,
+      page_size: listQuery.limit,
+      ...(q ? { name: q } : {}),
+      ...(listQuery.status !== "all"
+        ? { currentStatus: listQuery.status }
+        : {}),
+    };
   }, [
-    dispatch,
-    refresh,
     listQuery.page,
     listQuery.limit,
     listQuery.debouncedSearch,
     listQuery.status,
   ]);
+
+  const { data, isFetching, isLoading, refetch } =
+    useGetAllRolesQuery(queryArgs);
+
+  useEffect(() => {
+    if (refresh > 0) void refetch();
+  }, [refresh, refetch]);
 
   useEffect(() => {
     return () => {
@@ -72,10 +72,14 @@ export default function Roles() {
     };
   }, [dispatch]);
 
+  const Roles = data?.Roles || [];
+  const count = data?.count ?? 0;
+  const loading = isLoading || (isFetching && Roles.length === 0);
+
   const statusCounts = useMemo(() => {
     let active = 0;
     let inactive = 0;
-    (Roles || []).forEach((item: any) => {
+    Roles.forEach((item: any) => {
       if (item?.currentStatus === "active") active += 1;
       else inactive += 1;
     });
@@ -94,7 +98,6 @@ export default function Roles() {
       title="Staff"
       subtitle="Accounts that can enter, review, and publish catalog data."
     >
-
       <CatalogToolbar
         hint="Search staff by name, email, or role."
         search={listQuery.searchInput}
@@ -128,7 +131,7 @@ export default function Roles() {
       />
 
       <TableWrapper
-        refreshing={refreshLoader || (!!loading && (Roles?.length ?? 0) > 0)}
+        refreshing={isFetching && Roles.length > 0}
       >
         <TableContainer>
           <Table aria-label="Staff table" sx={adminTableSx}>
@@ -188,7 +191,7 @@ export default function Roles() {
               variant="outlined"
               color="primary"
               page={listQuery.page}
-              disabled={refreshLoader}
+              disabled={isFetching}
               count={Math.ceil(count / listQuery.limit) || 1}
               onChange={(_e, page) => listQuery.setPage(page)}
             />

@@ -1,79 +1,101 @@
-import http from "./http.service";
-import Promisable from "./promisable.service";
+import type { AppDispatch } from "redux/store";
+import { userApi } from "redux/api/user/userApi";
 import { userActions } from "redux/slices/user";
-import { Dispatch } from "@reduxjs/toolkit";
 import { NavigateFunction } from "react-router-dom";
+import { getAppDispatch } from "utils/dispatch.util";
 
-const url = "/users";
+function dispatchOr(d?: AppDispatch) {
+  return d || getAppDispatch();
+}
 
 const UserService = {
-  getAllUsers: async (data: any,dispatch:Dispatch) => {
-    dispatch?.(userActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/query`, data)
-    );
-    if (success) {
-      const { users, totalCount } = success?.data?.data;
-      dispatch?.(
-        userActions.setUsers({ users: users, count: totalCount })
+  getAllUsers: async (data: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(userActions.setLoading(true));
+    try {
+      const result = await d(
+        userApi.endpoints.getAllUsers.initiate(data, { forceRefetch: true })
+      ).unwrap();
+      d(
+        userActions.setUsers({
+          users: result.users,
+          count: result.totalCount,
+        })
       );
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(userActions.setLoading(false));
     }
-    dispatch?.(userActions.setLoading(false));
-    return [success, error];
   },
-  getUser: async (id: any ,dispatch:Dispatch) => {
-    dispatch?.(userActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.get(`${url}/${id}`)
-    );
-    if (success) {
-      const { user } = success?.data?.data;
-      dispatch?.(
-        userActions.setUser(user)
-      );
+
+  getUser: async (id: any, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(userActions.setLoading(true));
+    try {
+      const user = await d(
+        userApi.endpoints.getUser.initiate(id, { forceRefetch: true })
+      ).unwrap();
+      d(userActions.setUser(user));
+      return [{ data: { data: { user } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(userActions.setLoading(false));
     }
-    dispatch?.(userActions.setLoading(false));
-    return [success, error];
   },
-  updateUser:async (id:any,data:any,navigate:NavigateFunction,dispatch:Dispatch) => {
-    dispatch?.(userActions.setLoading(true));
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.patch(`${url}/${id}`,data)
-    );
-    if (success) {
-      const { user } = success?.data?.data;
-      dispatch?.(userActions.setUser(user));
-      navigate("/users")
+
+  updateUser: async (
+    id: any,
+    data: any,
+    navigate: NavigateFunction,
+    dispatch?: AppDispatch
+  ) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    d(userActions.setLoading(true));
+    try {
+      const user = await d(
+        userApi.endpoints.updateUser.initiate({ id, data })
+      ).unwrap();
+      d(userActions.setUser(user));
+      navigate("/users");
+      return [{ data: { data: { user } } }, null];
+    } catch (error) {
+      return [null, error];
+    } finally {
+      d(userActions.setLoading(false));
     }
-    dispatch?.(userActions.setLoading(false));
-    return [success, error];
   },
-  suspendUser: async (id: string, dispatch?: Dispatch) => {
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.post(`${url}/${id}/suspend`)
-    );
-    if (success) {
-      const { user } = success?.data?.data || {};
-      if (user) dispatch?.(userActions.setUser(user));
-      dispatch?.(userActions.refresh());
+
+  suspendUser: async (id: string, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const user = await d(userApi.endpoints.suspendUser.initiate(id)).unwrap();
+      if (user) d(userActions.setUser(user));
+      d(userActions.refresh());
+      return [{ data: { data: { user } } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
-  removeUser: async (id: string, dispatch?: Dispatch) => {
-    http.setJWT();
-    const [success, error]: any = await Promisable.asPromise(
-      http.delete(`${url}/${id}`)
-    );
-    if (success) {
-      dispatch?.(userActions.deleteUserById(id));
-      dispatch?.(userActions.setUser(null));
-      dispatch?.(userActions.refresh());
+
+  removeUser: async (id: string, dispatch?: AppDispatch) => {
+    const d = dispatchOr(dispatch);
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      await d(userApi.endpoints.removeUser.initiate(id)).unwrap();
+      d(userActions.deleteUserById(id));
+      d(userActions.setUser(null));
+      d(userActions.refresh());
+      return [{ data: { data: {} } }, null];
+    } catch (error) {
+      return [null, error];
     }
-    return [success, error];
   },
 };
 

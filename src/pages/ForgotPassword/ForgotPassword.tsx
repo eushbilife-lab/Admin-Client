@@ -21,7 +21,7 @@ const ForgotPassword = () => {
   const sendCode = () => {
     AuthService.forgot({ email }).then(([otpExpiry]) => {
       if (otpExpiry) {
-        setOtpExp(otpExpiry);
+        setOtpExp(String(otpExpiry));
         setScreenType("otp");
         setOtpReset((value) => value + 1);
       }

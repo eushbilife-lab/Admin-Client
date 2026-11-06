@@ -1,32 +1,90 @@
-import Promisable from "./promisable.service";
-import http from "./http.service";
-
-const url = "/formulas";
+import type { AppDispatch } from "redux/store";
+import { formulaApi } from "redux/api/formula/formulaApi";
+import { getAppDispatch } from "utils/dispatch.util";
 
 const formulaService = {
   getActive: async () => {
-    http.setJWT();
-    return Promisable.asPromise(http.get(url));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const config = await d(
+        formulaApi.endpoints.getActiveFormula.initiate(undefined, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      return [{ data: { data: { config } } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   getDefaults: async () => {
-    http.setJWT();
-    return Promisable.asPromise(http.get(`${url}/defaults`));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const result = await d(
+        formulaApi.endpoints.getFormulaDefaults.initiate(undefined, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   getSection: async (section: string) => {
-    http.setJWT();
-    return Promisable.asPromise(http.get(`${url}/sections/${section}`));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const result = await d(
+        formulaApi.endpoints.getFormulaSection.initiate(section, {
+          forceRefetch: true,
+        })
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   saveSection: async (section: string, data: Record<string, unknown>) => {
-    http.setJWT();
-    return Promisable.asPromise(http.patch(`${url}/sections/${section}`, data));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const config = await d(
+        formulaApi.endpoints.saveFormulaSection.initiate({ section, data })
+      ).unwrap();
+      return [{ data: { data: { config } } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   replace: async (data: Record<string, unknown>) => {
-    http.setJWT();
-    return Promisable.asPromise(http.put(url, data));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const result = await d(
+        formulaApi.endpoints.replaceFormula.initiate(data)
+      ).unwrap();
+      return [{ data: { data: result } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
+
   reset: async () => {
-    http.setJWT();
-    return Promisable.asPromise(http.post(`${url}/reset`));
+    const d = getAppDispatch();
+    if (!d) return [null, new Error("Store not ready")];
+    try {
+      const config = await d(
+        formulaApi.endpoints.resetFormula.initiate()
+      ).unwrap();
+      return [{ data: { data: { config } } }, null];
+    } catch (error) {
+      return [null, error];
+    }
   },
 };
 

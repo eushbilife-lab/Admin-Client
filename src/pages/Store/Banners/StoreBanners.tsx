@@ -5,7 +5,10 @@ import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
-import storeBannerService from "services/storeBanner.service";
+import {
+  useGetAllStoreBannersQuery,
+  useRemoveStoreBannerMutation,
+} from "redux/api";
 import { storeBannerActions } from "redux/slices/storeBanner";
 import RowActions from "@core/api-components/RowActions";
 import ToasterService from "utils/toaster.util";
@@ -14,18 +17,28 @@ import "../Store.css";
 export default function StoreBanners() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { banners, loading, refresh, count, filters } = useAppSelector(
-    (state) => state.storeBanner
+  const { refresh, filters } = useAppSelector((state) => state.storeBanner);
+
+  const payload = useMemo(
+    () => ({
+      page: filters.page || 1,
+      page_size: filters.page_size || 24,
+      isDelete: false,
+    }),
+    [filters.page, filters.page_size]
   );
 
-  useEffect(() => {
-    storeBannerService.getAll(
-      { page: filters.page || 1, page_size: filters.page_size || 24, isDelete: false },
-      dispatch
-    );
-  }, [dispatch, refresh, filters.page, filters.page_size]);
+  const { data, isFetching, isLoading, refetch } =
+    useGetAllStoreBannersQuery(payload);
+  const [removeBanner] = useRemoveStoreBannerMutation();
 
-  const items = useMemo(() => banners || [], [banners]);
+  useEffect(() => {
+    if (refresh > 0) void refetch();
+  }, [refresh, refetch]);
+
+  const items = data?.banners || [];
+  const count = data?.count ?? 0;
+  const loading = isLoading || (isFetching && items.length === 0);
   const pages = Math.max(1, Math.ceil((count || 0) / (filters.page_size || 24)));
 
   return (
@@ -34,22 +47,37 @@ export default function StoreBanners() {
       title="Store banners"
       subtitle="Promo carousel on the mobile Store home (Keto Water, PCOS Water, etc.)."
       actions={
-        <Button variant="contained" onClick={() => navigate("/store/banners/new")}>
+        <Button
+          variant="contained"
+          onClick={() => navigate("/store/banners/new")}
+        >
           New banner
         </Button>
       }
     >
       {loading && items.length === 0 ? (
-        <GridSkeleton cards={6} columns="repeat(auto-fill, minmax(220px, 1fr))" />
+        <GridSkeleton
+          cards={6}
+          columns="repeat(auto-fill, minmax(220px, 1fr))"
+        />
       ) : items.length === 0 ? (
         <div className="store-empty">
           <h2>No banners yet</h2>
-          <Button variant="contained" onClick={() => navigate("/store/banners/new")}>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/store/banners/new")}
+          >
             New banner
           </Button>
         </div>
       ) : (
-        <div className="store-grid" style={{ opacity: loading ? 0.72 : 1, transition: "opacity 160ms ease" }}>
+        <div
+          className="store-grid"
+          style={{
+            opacity: isFetching ? 0.72 : 1,
+            transition: "opacity 160ms ease",
+          }}
+        >
           {items.map((banner: any) => (
             <article key={banner._id} className="store-card">
               <div
@@ -82,13 +110,13 @@ export default function StoreBanners() {
                     deleteTitle="Delete banner"
                     deleteMessage={`Delete “${banner.title}”?`}
                     onDelete={async () => {
-                      const [, error]: any = await storeBannerService.remove(
-                        banner._id,
-                        dispatch
-                      );
-                      if (error) {
+                      try {
+                        await removeBanner(banner._id).unwrap();
+                      } catch (error: any) {
                         ToasterService.showError(
-                          error?.response?.data?.message || "Delete failed"
+                          error?.data?.message ||
+                            error?.message ||
+                            "Delete failed"
                         );
                       }
                     }}
