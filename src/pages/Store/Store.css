@@ -96,6 +96,15 @@
   color: #7a857a;
 }
 
+.store-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  cursor: default;
+}
+
 .store-empty {
   text-align: center;
   padding: 48px 16px;

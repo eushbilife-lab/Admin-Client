@@ -7,6 +7,8 @@ import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeBannerService from "services/storeBanner.service";
 import { storeBannerActions } from "redux/slices/storeBanner";
+import RowActions from "@core/api-components/RowActions";
+import ToasterService from "utils/toaster.util";
 import "../Store.css";
 
 export default function StoreBanners() {
@@ -49,11 +51,7 @@ export default function StoreBanners() {
       ) : (
         <div className="store-grid" style={{ opacity: loading ? 0.72 : 1, transition: "opacity 160ms ease" }}>
           {items.map((banner: any) => (
-            <article
-              key={banner._id}
-              className="store-card"
-              onClick={() => navigate(`/store/banners/${banner._id}`)}
-            >
+            <article key={banner._id} className="store-card">
               <div
                 className="store-card__media"
                 style={{
@@ -61,6 +59,8 @@ export default function StoreBanners() {
                     ? `url(${banner.imageUrl})`
                     : undefined,
                 }}
+                onClick={() => navigate(`/store/banners/${banner._id}`)}
+                role="presentation"
               />
               <div className="store-card__body">
                 <StatusChip
@@ -73,6 +73,27 @@ export default function StoreBanners() {
                 />
                 <h3>{banner.title}</h3>
                 <p>{banner.subtitle || "—"}</p>
+                <div
+                  className="store-card__actions"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <RowActions
+                    onEdit={() => navigate(`/store/banners/${banner._id}`)}
+                    deleteTitle="Delete banner"
+                    deleteMessage={`Delete “${banner.title}”?`}
+                    onDelete={async () => {
+                      const [, error]: any = await storeBannerService.remove(
+                        banner._id,
+                        dispatch
+                      );
+                      if (error) {
+                        ToasterService.showError(
+                          error?.response?.data?.message || "Delete failed"
+                        );
+                      }
+                    }}
+                  />
+                </div>
               </div>
             </article>
           ))}

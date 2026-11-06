@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link as RouterLink } from "react-router-dom";
 import { Button } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
@@ -80,6 +81,16 @@ export default function Dietitians() {
       kicker="People"
       title="Dietitians"
       subtitle="Onboarding, credential checks, caseload, and ratings."
+      actions={
+        <Button
+          component={RouterLink}
+          to="/nutritionist-requests"
+          variant="outlined"
+          size="small"
+        >
+          Nutritionist inbox
+        </Button>
+      }
     >
       <DataTable
         columns={columns}

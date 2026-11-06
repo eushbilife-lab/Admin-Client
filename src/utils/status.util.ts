@@ -1,6 +1,6 @@
 export const  status =(t:Function) => [
-  { value: t("active"), label: t("Active") },
-  { value: t("inactive"), label: t("In Active") },
+  { value: "active", label: t("Active") },
+  { value: "inactive", label: t("In Active") },
 ];
 
 export const  levels =(t:Function) => [

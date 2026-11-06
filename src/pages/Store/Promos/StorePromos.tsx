@@ -2,18 +2,17 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
-  IconButton,
   MenuItem,
   Skeleton,
   TextField,
   Tooltip,
 } from "@mui/material";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import storePromoService from "services/storePromo.service";
 import ToasterService from "utils/toaster.util";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import "../Store.css";
 
 type PromoRow = {
@@ -119,7 +118,6 @@ export default function StorePromos() {
   const remove = async (row: PromoRow) => {
     const id = row._id || row.id;
     if (!id) return;
-    if (!window.confirm(`Delete promo ${row.code}?`)) return;
     const [, error]: any = await storePromoService.remove(id);
     if (error) {
       ToasterService.showError(
@@ -285,13 +283,11 @@ export default function StorePromos() {
                     Disable
                   </Button>
                 )}
-                <IconButton
-                  size="small"
-                  aria-label="Delete"
-                  onClick={() => remove(row)}
-                >
-                  <DeleteOutlineIcon fontSize="small" />
-                </IconButton>
+                <ConfirmDeleteButton
+                  title="Delete promo"
+                  message={`Delete promo ${row.code}?`}
+                  onConfirm={() => remove(row)}
+                />
               </div>
             </article>
           ))}

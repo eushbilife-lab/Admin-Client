@@ -7,6 +7,8 @@ import GridSkeleton from "@core/templates/GridSkeleton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import recipeService from "services/recipe.service";
 import { recipeActions } from "redux/slices/recipe";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
+import ToasterService from "utils/toaster.util";
 import "./Recipes.css";
 
 const STATUS_TONE: Record<string, "ok" | "warn" | "info"> = {
@@ -138,13 +140,30 @@ export default function Recipes() {
                   <Chip key={tag} size="small" label={tag} />
                 ))}
               </div>
-              <button
-                type="button"
-                className="recipe-card__open"
-                onClick={() => navigate(`/recipes/${recipe._id}`)}
-              >
-                Open
-              </button>
+              <div className="recipe-card__actions">
+                <button
+                  type="button"
+                  className="recipe-card__open"
+                  onClick={() => navigate(`/recipes/${recipe._id}`)}
+                >
+                  Edit
+                </button>
+                <ConfirmDeleteButton
+                  title="Delete recipe"
+                  message={`Delete “${recipe.name}”? This cannot be undone.`}
+                    onConfirm={async () => {
+                    const [, error]: any = await recipeService.remove(
+                      recipe._id,
+                      dispatch
+                    );
+                    if (error) {
+                      ToasterService.showError(
+                        error?.response?.data?.message || "Delete failed"
+                      );
+                    }
+                  }}
+                />
+              </div>
             </article>
           ))}
         </div>

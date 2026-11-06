@@ -25,9 +25,8 @@ import MeasurementScaleService from "services/measurementScale.service";
 import { measurementScaleActions } from "redux/slices/measurementScale";
 import { localizedData } from "utils/localizedData.util";
 import Tooltip from "@core/basic-components/Tooltip";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
-import BlockComponent from "@core/api-components/BlockComponent";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import CatalogToolbar, {
   CatalogMetaPill,
@@ -190,36 +189,18 @@ export default function UOM({ type }: any) {
                         </IconButton>
                       </Tooltip>
 
-                      <BlockComponent allowedRoles={["admin"]}>
-                        <Tooltip title={t("Delete")}>
-                          <IconButton
-                            onClick={() =>
-                              dispatch(
-                                modalActions.openModal({
-                                  type: MODAL.CONFIRMATION_FORM,
-                                  data: {
-                                    heading: t("Delete UOM"),
-                                    message: t(
-                                      "Are you sure you want to delete this UOM?"
-                                    ),
-                                    confirmAction: () => {
-                                      MeasurementScaleService.remove(
-                                        item._id,
-                                        dispatch,
-                                        type,
-                                        filters
-                                      );
-                                    },
-                                  },
-                                  width: "500px",
-                                })
-                              )
-                            }
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </BlockComponent>
+                      <ConfirmDeleteButton
+                        title={t("Delete UOM")}
+                        message={t("Are you sure you want to delete this UOM?")}
+                        onConfirm={() =>
+                          MeasurementScaleService.remove(
+                            item._id,
+                            dispatch,
+                            type,
+                            filters
+                          )
+                        }
+                      />
                     </StyledTableCellAction>
                   </StyledTableRow>
                 ))}

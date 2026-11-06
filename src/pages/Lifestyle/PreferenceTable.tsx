@@ -23,9 +23,8 @@ import {
 import healthPreferenceService from "services/healthPreference.service";
 import { healthPrefernceActions } from "redux/slices/healthPrefernce";
 import Tooltip from "@core/basic-components/Tooltip";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
-import BlockComponent from "@core/api-components/BlockComponent";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import type { healthPrefernceType } from "redux/slices/healthPrefernce";
 import { optionLabel } from "utils/selectOption.util";
@@ -193,35 +192,18 @@ export default function PreferenceTable({
                             <EditNoteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <BlockComponent allowedRoles={["admin"]}>
-                          <Tooltip title="Delete">
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                dispatch(
-                                  modalActions.openModal({
-                                    type: MODAL.CONFIRMATION_FORM,
-                                    data: {
-                                      heading: "Delete",
-                                      message:
-                                        "Are you sure you want to delete this item?",
-                                      confirmAction: () =>
-                                        healthPreferenceService.remove(
-                                          item._id,
-                                          dispatch,
-                                          type,
-                                          listQuery.filters
-                                        ),
-                                    },
-                                    width: "480px",
-                                  })
-                                )
-                              }
-                            >
-                              <DeleteOutlineIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </BlockComponent>
+                        <ConfirmDeleteButton
+                          title="Delete"
+                          message="Are you sure you want to delete this item?"
+                          onConfirm={() =>
+                            healthPreferenceService.remove(
+                              item._id,
+                              dispatch,
+                              type,
+                              listQuery.filters
+                            )
+                          }
+                        />
                       </StyledTableCellAction>
                     </StyledTableRow>
                   );

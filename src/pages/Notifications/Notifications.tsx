@@ -7,13 +7,13 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import NotificationService from "services/notification.service";
 import storePromoService from "services/storePromo.service";
 import ToasterService from "utils/toaster.util";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import "./Notifications.css";
 
 type Audience = "all" | "user" | "recent" | "newsletter";
@@ -231,7 +231,6 @@ export default function Notifications() {
   const remove = async (row: any) => {
     const id = row._id || row.id;
     if (!id) return;
-    if (!window.confirm("Delete this broadcast and its inbox copies?")) return;
     const [, error]: any = await NotificationService.remove(id);
     if (error) {
       ToasterService.showError(
@@ -485,14 +484,11 @@ export default function Notifications() {
                     <Button size="small" variant="outlined" onClick={() => reuse(row)}>
                       Reuse
                     </Button>
-                    <IconButton
-                      size="small"
-                      color="error"
-                      aria-label="Delete"
-                      onClick={() => void remove(row)}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
+                    <ConfirmDeleteButton
+                      title="Delete broadcast"
+                      message="Delete this broadcast and its inbox copies?"
+                      onConfirm={() => remove(row)}
+                    />
                   </div>
                 </li>
               ))}

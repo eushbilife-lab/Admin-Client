@@ -99,7 +99,9 @@ export default function StoreBannerEditor() {
           label="Banner image"
           value={imageUrl}
           onChange={setImageUrl}
-          helperText="Upload a wide slide image for the store home carousel"
+          requiredWidth={2400}
+          requiredHeight={750}
+          helperText="Required size: 2400 × 750 px (store home carousel)"
         />
         <div className="store-editor__row">
           <TextField select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} fullWidth>

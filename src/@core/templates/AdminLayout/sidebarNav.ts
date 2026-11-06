@@ -33,6 +33,8 @@ import {
   MdLocalOffer,
   MdShoppingBag,
   MdViewModule,
+  MdDescription,
+  MdChat,
 } from "react-icons/md";
 import type { IconType } from "react-icons";
 
@@ -237,6 +239,14 @@ export const sidebarGroups: NavGroup[] = [
         hint: "RDA / daily values",
       },
       {
+        label: "Formulas",
+        path: "/formulas",
+        icon: MdScience,
+        roles: ["admin"],
+        keywords: "bmi bmr pal macros clinical rda intake coefficients",
+        hint: "Health calc coefficients",
+      },
+      {
         label: "Health scores",
         path: "/scores",
         icon: MdStar,
@@ -381,17 +391,25 @@ export const sidebarGroups: NavGroup[] = [
     ],
   },
   {
-    id: "people",
-    label: "People",
-    blurb: "Members, dietitians, staff",
+    id: "users",
+    label: "Users",
+    blurb: "Accounts, profiles, dietitians & staff",
     items: [
       {
-        label: "Households",
+        label: "Users",
         path: "/users",
         icon: MdPeople,
         roles: ["admin"],
-        keywords: "members users customers",
-        hint: "App members",
+        keywords: "members users customers households accounts",
+        hint: "App user accounts",
+      },
+      {
+        label: "Profiles",
+        path: "/profiles",
+        icon: MdHealthAndSafety,
+        roles: ["admin"],
+        keywords: "profiles nutrition bmi household family",
+        hint: "Nutrition profiles",
       },
       {
         label: "Dietitians",
@@ -400,6 +418,14 @@ export const sidebarGroups: NavGroup[] = [
         roles: ["admin"],
         keywords: "nutritionist coach",
         hint: "Dietitian accounts",
+      },
+      {
+        label: "Consult inbox",
+        path: "/nutritionist-requests",
+        icon: MdChat,
+        roles: ["admin"],
+        keywords: "talk to nutritionist premium request consult",
+        hint: "Member consult requests",
       },
       {
         label: "Staff",
@@ -447,6 +473,14 @@ export const sidebarGroups: NavGroup[] = [
         roles: ["admin"],
         keywords: "push alerts broadcast",
         hint: "Push campaigns",
+      },
+      {
+        label: "Legal pages",
+        path: "/legal",
+        icon: MdDescription,
+        roles: ["admin"],
+        keywords: "privacy terms refund shipping help policy",
+        hint: "Mobile legal / help CMS",
       },
       {
         label: "Settings",

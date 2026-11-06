@@ -8,6 +8,8 @@ import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeProductService from "services/storeProduct.service";
 import storeCategoryService from "services/storeCategory.service";
 import { storeProductActions } from "redux/slices/storeProduct";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
+import ToasterService from "utils/toaster.util";
 import "../Store.css";
 
 const STATUS_TONE: Record<string, "ok" | "warn" | "info"> = {
@@ -28,12 +30,14 @@ type Cat = {
 function ProductCard({
   product,
   onOpen,
+  onDelete,
 }: {
   product: any;
   onOpen: () => void;
+  onDelete: () => void | Promise<void>;
 }) {
   return (
-    <article className="store-card" onClick={onOpen}>
+    <article className="store-card">
       <div
         className="store-card__media"
         style={{
@@ -41,6 +45,8 @@ function ProductCard({
             ? `url(${product.imageUrl})`
             : undefined,
         }}
+        onClick={onOpen}
+        role="presentation"
       />
       <div className="store-card__body">
         <StatusChip
@@ -65,6 +71,16 @@ function ProductCard({
         {product.variants?.length ? (
           <small>{product.variants.length} pack options</small>
         ) : null}
+        <div className="store-card__actions" onClick={(e) => e.stopPropagation()}>
+          <Button size="small" onClick={onOpen}>
+            Edit
+          </Button>
+          <ConfirmDeleteButton
+            title="Delete store product"
+            message={`Delete “${product.name}”?`}
+            onConfirm={onDelete}
+          />
+        </div>
       </div>
     </article>
   );
@@ -232,6 +248,17 @@ export default function StoreProducts() {
                     key={product._id}
                     product={product}
                     onOpen={() => navigate(`/store/products/${product._id}`)}
+                    onDelete={async () => {
+                      const [, error]: any = await storeProductService.remove(
+                        product._id,
+                        dispatch
+                      );
+                      if (error) {
+                        ToasterService.showError(
+                          error?.response?.data?.message || "Delete failed"
+                        );
+                      }
+                    }}
                   />
                 ))}
               </div>

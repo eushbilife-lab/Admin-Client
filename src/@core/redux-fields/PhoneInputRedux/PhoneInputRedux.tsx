@@ -1,34 +1,48 @@
 import PhoneInput from "@core/basic-components/PhoneInput";
 
 export default function PhoneInputRedux({
-	id,
-	input,
-	label,
-	handleBlur,
-	handleFocus,
-	PhoneInputProps,
-	meta: { error, touched, invalid },
+  id,
+  input,
+  label,
+  handleBlur,
+  handleFocus,
+  PhoneInputProps,
+  meta: { error, touched, invalid },
 }: any) {
-	return (
-		<PhoneInput
-			{...PhoneInputProps}
-			id={id}
-			name={input?.name}
-			specialLabel={label}
-			value={input?.value?.value}
-			helperText={touched && invalid && error}
-			error={touched && invalid && error && true}
-			onBlur={(e) => {
-				handleBlur?.(e);
-				e.preventDefault();
-			}}
-			onFocus={(e) => {
-				handleFocus?.(e);
-				e.preventDefault();
-			}}
-			onChange={(value: any, data: any, _e: any, formattedValue: any) => {
-				input.onChange({ value, data, formattedValue });
-			}}
-		/>
-	);
+  const rawValue = input?.value;
+  const value =
+    typeof rawValue === "string"
+      ? rawValue
+      : rawValue?.value || rawValue?.number || "";
+
+  return (
+    <PhoneInput
+      {...PhoneInputProps}
+      id={id}
+      name={input?.name}
+      specialLabel={label || "Phone"}
+      value={value}
+      helperText={touched && invalid && error}
+      error={touched && invalid && error && true}
+      onBlur={(e: any) => {
+        handleBlur?.(e);
+        e.preventDefault();
+      }}
+      onFocus={(e: any) => {
+        handleFocus?.(e);
+        e.preventDefault();
+      }}
+      onChange={(value: any, data: any, _e: any, formattedValue: any) => {
+        input.onChange({
+          value,
+          data: {
+            countryCode: data?.countryCode,
+            dialCode: data?.dialCode,
+            name: data?.name,
+          },
+          formattedValue,
+        });
+      }}
+    />
+  );
 }

@@ -72,7 +72,10 @@ const recipeService = {
     const [success, error]: any = await Promisable.asPromise(
       http.delete(`${url}/${id}`)
     );
-    if (success) dispatch?.(recipeActions.refresh());
+    if (success) {
+      dispatch?.(recipeActions.removeRecipe(id));
+      dispatch?.(recipeActions.refresh());
+    }
     dispatch?.(recipeActions.setLoading(false));
     return [success, error];
   },

@@ -51,6 +51,30 @@ const UserService = {
     dispatch?.(userActions.setLoading(false));
     return [success, error];
   },
+  suspendUser: async (id: string, dispatch?: Dispatch) => {
+    http.setJWT();
+    const [success, error]: any = await Promisable.asPromise(
+      http.post(`${url}/${id}/suspend`)
+    );
+    if (success) {
+      const { user } = success?.data?.data || {};
+      if (user) dispatch?.(userActions.setUser(user));
+      dispatch?.(userActions.refresh());
+    }
+    return [success, error];
+  },
+  removeUser: async (id: string, dispatch?: Dispatch) => {
+    http.setJWT();
+    const [success, error]: any = await Promisable.asPromise(
+      http.delete(`${url}/${id}`)
+    );
+    if (success) {
+      dispatch?.(userActions.deleteUserById(id));
+      dispatch?.(userActions.setUser(null));
+      dispatch?.(userActions.refresh());
+    }
+    return [success, error];
+  },
 };
 
 export default UserService;

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Button, IconButton, MenuItem, Skeleton, TextField } from "@mui/material";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import PageShell from "@core/templates/PageShell";
 import StoreImageField from "pages/Store/StoreImageField";
 import storeCategoryService from "services/storeCategory.service";
 import ToasterService from "utils/toaster.util";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import "../Store.css";
 
 type CategoryRow = {
@@ -248,13 +248,11 @@ export default function StoreCategories() {
                     <EditOutlinedIcon fontSize="small" />
                   </IconButton>
                   {!locked ? (
-                    <IconButton
-                      size="small"
-                      aria-label="Delete section"
-                      onClick={() => void remove(row)}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
+                    <ConfirmDeleteButton
+                      title="Delete section"
+                      message={`Delete “${row.label}”?`}
+                      onConfirm={() => remove(row)}
+                    />
                   ) : (
                     <small>Default</small>
                   )}

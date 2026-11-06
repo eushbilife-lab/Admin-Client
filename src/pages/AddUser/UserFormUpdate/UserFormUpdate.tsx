@@ -1,14 +1,34 @@
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { change } from "redux-form";
 import { useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import UserService from "services/user.service";
 import { userActions } from "redux/slices/user";
+
+function toPhoneFieldValue(phone: any) {
+  if (!phone || typeof phone !== "object") return phone || "";
+  const dial = String(phone.dialingCode || phone.dialCode || "").replace(
+    /\D/g,
+    ""
+  );
+  const local = String(phone.number || "")
+    .replace(/\D/g, "")
+    .replace(/^0+/, "");
+  const value = dial ? `${dial}${local}` : local;
+  const countryCode = String(phone.countryCode || "pk").toLowerCase();
+  return {
+    value,
+    data: {
+      countryCode,
+      dialCode: dial || "92",
+      name: "",
+    },
+    formattedValue: phone.number || value,
+  };
+}
 
 export default function UserFormUpdate({ id }: any) {
   const form = "AddUserForm";
   const dispatch = useAppDispatch();
-  const { t } = useTranslation();
   const { user } = useAppSelector((state) => state.user);
 
   useEffect(() => {
@@ -25,25 +45,13 @@ export default function UserFormUpdate({ id }: any) {
       change(
         form,
         "currentStatus",
-        currentStatus === "active" ? t("active") : t("isactive")
+        currentStatus === "inactive" ? "inactive" : "active"
       )
     );
-    dispatch(change(form, "firstName", firstName) || "");
-    dispatch(change(form, "lastName", lastName) || "");
-    dispatch(change(form, "email", email) || "");
-    const formattedPhone =
-      typeof phone === "object"
-        ? {
-            formattedValue: phone,
-            value: phone?.number?.replace(/\D/g, ""),
-            data: {
-              countryCode: phone?.countryCode,
-              dialingCode: phone?.dialingCode,
-            },
-          }
-        : phone;
-
-    dispatch(change(form, "phone", formattedPhone));
+    dispatch(change(form, "firstName", firstName || ""));
+    dispatch(change(form, "lastName", lastName || ""));
+    dispatch(change(form, "email", email || ""));
+    dispatch(change(form, "phone", toPhoneFieldValue(phone)));
   }, [user, dispatch]);
 
   return null;

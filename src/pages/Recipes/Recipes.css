@@ -111,8 +111,15 @@
   color: var(--text-secondary);
 }
 
-.recipe-card__open {
+.recipe-card__actions {
   margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.recipe-card__open {
   align-self: flex-start;
   border: 0;
   background: var(--color-leaf-soft);

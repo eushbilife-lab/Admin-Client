@@ -73,7 +73,10 @@ const storeBannerService = {
     const [success, error]: any = await Promisable.asPromise(
       http.delete(`${url}/${id}`)
     );
-    if (success) dispatch?.(storeBannerActions.refresh());
+    if (success) {
+      dispatch?.(storeBannerActions.removeBanner(id));
+      dispatch?.(storeBannerActions.refresh());
+    }
     return [success, error];
   },
 };

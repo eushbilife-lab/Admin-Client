@@ -1,0 +1,33 @@
+.confirm-delete-icon {
+  border: 1px solid rgba(198, 40, 40, 0.28) !important;
+  border-radius: 8px !important;
+  color: #c62828 !important;
+  background: #fff !important;
+}
+
+.confirm-delete-icon:hover {
+  background: rgba(198, 40, 40, 0.08) !important;
+  border-color: #c62828 !important;
+}
+
+.confirm-delete-text {
+  border: 1px solid rgba(198, 40, 40, 0.28);
+  background: #fff;
+  color: #c62828;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.confirm-delete-text:hover {
+  background: rgba(198, 40, 40, 0.08);
+}
+
+.confirm-delete-text:disabled,
+.confirm-delete-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

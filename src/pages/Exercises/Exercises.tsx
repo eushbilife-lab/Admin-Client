@@ -29,8 +29,8 @@ import exerciseService from "services/exercise.service";
 import useListQueryParams from "hooks/useListQueryParams";
 import { useEffect, useMemo } from "react";
 import EditNoteIcon from "@mui/icons-material/EditNote";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import BlockComponent from "@core/api-components/BlockComponent";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
+import ToasterService from "utils/toaster.util";
 import CatalogToolbar, {
   CatalogMetaPill,
 } from "@core/templates/CatalogToolbar";
@@ -69,19 +69,19 @@ export default function Exercises() {
     );
   };
 
-  const remove = (row: any) => {
-    dispatch(
-      modalActions.openModal({
-        type: MODAL.CONFIRMATION_FORM,
-        data: {
-          heading: "Delete",
-          message: `Remove “${row.name || "this exercise"}”? Members will no longer see it.`,
-          confirmAction: () =>
-            exerciseService.remove(row._id, listQuery.filters, dispatch),
-        },
-        width: "500px",
-      })
+  const remove = async (row: any) => {
+    const [, error]: any = await exerciseService.remove(
+      row._id,
+      listQuery.filters,
+      dispatch
     );
+    if (error) {
+      ToasterService.showError(
+        error?.response?.data?.message || "Delete failed"
+      );
+      return;
+    }
+    ToasterService.showSuccess("Exercise deleted");
   };
 
   const statusCounts = useMemo(
@@ -214,16 +214,11 @@ export default function Exercises() {
                                 <EditNoteIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <BlockComponent allowedRoles={["admin"]}>
-                              <Tooltip title="Remove">
-                                <IconButton
-                                  size="small"
-                                  onClick={() => remove(row)}
-                                >
-                                  <DeleteOutlineIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </BlockComponent>
+                            <ConfirmDeleteButton
+                              title="Delete exercise"
+                              message={`Remove “${row.name || "this exercise"}”? Members will no longer see it.`}
+                              onConfirm={() => remove(row)}
+                            />
                           </Box>
                         </StyledTableCellAction>
                       </StyledTableRow>

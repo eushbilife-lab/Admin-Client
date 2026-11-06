@@ -1,0 +1,1 @@
+import{n as e,t}from"./promisable.service-BxvLx7Y_.js";var n=`/store-promos`,r={getAll:async(r={})=>(e.setJWT(),t.asPromise(e.post(`${n}/get-All`,r))),create:async r=>(e.setJWT(),t.asPromise(e.post(`${n}/create`,r))),update:async(r,i)=>(e.setJWT(),t.asPromise(e.patch(`${n}/${r}`,i))),remove:async r=>(e.setJWT(),t.asPromise(e.delete(`${n}/${r}`)))};export{r as t};

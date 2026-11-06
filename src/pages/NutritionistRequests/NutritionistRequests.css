@@ -1,0 +1,51 @@
+.nr-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.nr-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color, #e2e8e0);
+  background: #fff;
+  margin-bottom: 12px;
+}
+
+.nr-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.nr-card__meta {
+  color: #7a857b;
+  font-size: 0.85rem;
+}
+
+.nr-card__message {
+  margin: 8px 0 12px;
+  color: #2f3a31;
+  white-space: pre-wrap;
+}
+
+.nr-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.nr-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: #7a857b;
+  border-radius: 14px;
+  border: 1px dashed var(--border-color, #e2e8e0);
+  background: #fafcfa;
+}

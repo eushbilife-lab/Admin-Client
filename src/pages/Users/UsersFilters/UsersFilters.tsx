@@ -29,7 +29,10 @@ export default function UsersFilters({ filters, count, userActions, refreshLoade
       page_size
     } = values;
     
-    if (currentStatus) data.currentStatus = currentStatus === "active" ? "active" : "inactive";
+    if (currentStatus) {
+      const raw = String(currentStatus).toLowerCase();
+      data.currentStatus = raw.includes("inactive") ? "inactive" : "active";
+    }
     if (firstName) data.firstName = firstName;
     if (lastName) data.lastName = lastName;
     if (email) data.email = email;

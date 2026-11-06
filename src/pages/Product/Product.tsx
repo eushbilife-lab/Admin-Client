@@ -25,11 +25,11 @@ import {
   TableRow,
 } from "@mui/material";
 import BlockComponent from "@core/api-components/BlockComponent";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import { useTranslation } from "react-i18next";
 import { englishName } from "utils/localizedData.util";
 import Tooltip from "@core/basic-components/Tooltip";
 import EditNoteIcon from "@mui/icons-material/EditNote";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
@@ -201,37 +201,17 @@ export default function Product() {
               >
                 Manage
               </Button>
-              <BlockComponent allowedRoles={["admin"]}>
-                <Tooltip title={t("Delete")}>
-                  <IconButton
-                    size="small"
-                    aria-label="Delete food"
-                    onClick={() =>
-                      dispatch(
-                        modalActions.openModal({
-                          type: MODAL.CONFIRMATION_FORM,
-                          data: {
-                            heading: t("Delete Product"),
-                            message: t(
-                              "Are you sure you want to delete this product?"
-                            ),
-                            confirmAction: () => {
-                              if (activeTab === 2) {
-                                draftProductService.remove(item?._id, dispatch);
-                              } else {
-                                productService.remove(item?._id, dispatch);
-                              }
-                            },
-                          },
-                          width: "500px",
-                        })
-                      )
-                    }
-                  >
-                    <DeleteOutlineIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </BlockComponent>
+              <ConfirmDeleteButton
+                title={t("Delete Product")}
+                message={t("Are you sure you want to delete this product?")}
+                onConfirm={() => {
+                  if (activeTab === 2) {
+                    draftProductService.remove(item?._id, dispatch);
+                  } else {
+                    productService.remove(item?._id, dispatch);
+                  }
+                }}
+              />
               {activeTab === 1 ? (
                 <BlockComponent allowedRoles={["admin"]}>
                   <Tooltip title={t("Approve")}>

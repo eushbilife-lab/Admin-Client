@@ -73,7 +73,10 @@ const storeProductService = {
     const [success, error]: any = await Promisable.asPromise(
       http.delete(`${url}/${id}`)
     );
-    if (success) dispatch?.(storeProductActions.refresh());
+    if (success) {
+      dispatch?.(storeProductActions.removeProduct(id));
+      dispatch?.(storeProductActions.refresh());
+    }
     return [success, error];
   },
 };

@@ -33,6 +33,16 @@ export const recipeSlice = createSlice({
       state.count = action.payload.count || 0;
       state.refreshLoader = false;
     },
+    removeRecipe: (state, action: PayloadAction<string>) => {
+      const id = action.payload;
+      const before = state.recipes.length;
+      state.recipes = state.recipes.filter((r) => r._id !== id);
+      if (state.recipes.length < before) {
+        state.count = Math.max(0, (state.count || 0) - 1);
+      }
+      if (state.recipe?._id === id) state.recipe = null;
+      state.refreshLoader = false;
+    },
     refresh: (state) => {
       state.refresh += 1;
       state.refreshLoader = true;

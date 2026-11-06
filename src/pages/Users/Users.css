@@ -1,0 +1,18 @@
+.users-section-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.profiles-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}

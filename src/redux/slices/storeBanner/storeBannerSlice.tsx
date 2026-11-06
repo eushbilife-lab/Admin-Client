@@ -25,6 +25,15 @@ export const storeBannerSlice = createSlice({
       state.banners = action.payload.banners || [];
       state.count = action.payload.count || 0;
     },
+    removeBanner: (state, action: PayloadAction<string>) => {
+      const id = action.payload;
+      const before = state.banners.length;
+      state.banners = state.banners.filter((b: any) => b._id !== id);
+      if (state.banners.length < before) {
+        state.count = Math.max(0, (state.count || 0) - 1);
+      }
+      if (state.banner?._id === id) state.banner = null;
+    },
     refresh: (state) => {
       state.refresh += 1;
     },

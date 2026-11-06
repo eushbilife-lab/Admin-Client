@@ -1,0 +1,82 @@
+.formulas-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  align-items: center;
+  margin-bottom: 16px;
+  color: #5c675e;
+  font-size: 0.9rem;
+}
+
+.formulas-panel {
+  margin-top: 8px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color, #e2e8e0);
+  background: #fff;
+}
+
+.formulas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.formulas-group {
+  margin-bottom: 20px;
+}
+
+.formulas-group h4 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: #2f3a31;
+}
+
+.formulas-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color, #e2e8e0);
+}
+
+.formulas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.formulas-table th,
+.formulas-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid #e8eee8;
+  vertical-align: middle;
+}
+
+.formulas-table th {
+  color: #5c675e;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.formulas-rule-note {
+  color: #7a857b;
+  font-size: 0.8rem;
+  max-width: 280px;
+}
+
+.formulas-band-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.formulas-hint {
+  margin: 0 0 12px;
+  color: #7a857b;
+  font-size: 0.85rem;
+}

@@ -1,17 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  Button,
-  IconButton,
-  MenuItem,
-  Skeleton,
-  TextField,
-} from "@mui/material";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { Button, MenuItem, Skeleton, TextField } from "@mui/material";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
 import StoreImageField from "pages/Store/StoreImageField";
 import dietPlanService from "services/dietPlan.service";
 import ToasterService from "utils/toaster.util";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import "./DietPlans.css";
 
 type PlanRow = {
@@ -130,7 +124,6 @@ export default function DietPlans() {
   const remove = async (row: PlanRow) => {
     const id = row._id || row.id;
     if (!id) return;
-    if (!window.confirm(`Delete diet plan “${row.title}”?`)) return;
     const [, error]: any = await dietPlanService.remove(id);
     if (error) {
       ToasterService.showError(
@@ -274,13 +267,11 @@ export default function DietPlans() {
                         Publish
                       </Button>
                     )}
-                    <IconButton
-                      aria-label="Delete"
-                      color="error"
-                      onClick={() => void remove(row)}
-                    >
-                      <DeleteOutlineIcon />
-                    </IconButton>
+                    <ConfirmDeleteButton
+                      title="Delete diet plan"
+                      message={`Delete “${row.title}”?`}
+                      onConfirm={() => remove(row)}
+                    />
                   </div>
                 </article>
               );

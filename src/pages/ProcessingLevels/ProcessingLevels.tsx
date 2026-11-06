@@ -10,7 +10,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import PageShell from "@core/templates/PageShell";
 import StatusChip from "@core/templates/PageShell/StatusChip";
@@ -32,7 +31,7 @@ import {
   type StatusFilter,
 } from "@core/templates/CatalogToolbar/catalogList.util";
 import Tooltip from "@core/basic-components/Tooltip";
-import BlockComponent from "@core/api-components/BlockComponent";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import { MODAL, modalActions } from "redux/slices/modal";
 import { processingLevelActions } from "redux/slices/processingLevel";
@@ -175,33 +174,17 @@ export default function ProcessingLevels() {
                           <EditNoteIcon />
                         </IconButton>
                       </Tooltip>
-                      <BlockComponent allowedRoles={["admin"]}>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            onClick={() =>
-                              dispatch(
-                                modalActions.openModal({
-                                  type: MODAL.CONFIRMATION_FORM,
-                                  data: {
-                                    heading: "Delete processing level",
-                                    message: `Remove “${row.name}”? Products that already use level ${row.levelValue} keep their saved value.`,
-                                    confirmAction: () => {
-                                      processingLevelService.remove(
-                                        row._id,
-                                        listQuery.filters,
-                                        dispatch
-                                      );
-                                    },
-                                  },
-                                  width: "500px",
-                                })
-                              )
-                            }
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </BlockComponent>
+                      <ConfirmDeleteButton
+                        title="Delete processing level"
+                        message={`Remove “${row.name}”? Products that already use level ${row.levelValue} keep their saved value.`}
+                        onConfirm={() =>
+                          processingLevelService.remove(
+                            row._id,
+                            listQuery.filters,
+                            dispatch
+                          )
+                        }
+                      />
                     </StyledTableCellAction>
                   </StyledTableRow>
                 ))}

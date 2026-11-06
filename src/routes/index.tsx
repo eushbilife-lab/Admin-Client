@@ -56,10 +56,13 @@ const StorePaymentDetail = lazy(
   () => import("pages/Store/Payments/StorePaymentDetail")
 );
 const DietPlans = lazy(() => import("pages/DietPlans"));
+const Formulas = lazy(() => import("pages/Formulas"));
 const MealPlans = lazy(() => import("pages/MealPlans"));
 const MealPlanEditor = lazy(() => import("pages/MealPlans/MealPlanEditor"));
 const Subscriptions = lazy(() => import("pages/Subscriptions"));
 const Dietitians = lazy(() => import("pages/Dietitians"));
+const NutritionistRequests = lazy(() => import("pages/NutritionistRequests"));
+const Legal = lazy(() => import("pages/Legal"));
 const Settings = lazy(() => import("pages/Settings"));
 const MemberDetail = lazy(() => import("pages/Members"));
 const DietitianQueue = lazy(() => import("pages/Queue"));
@@ -83,6 +86,7 @@ const Reviews = lazy(() => import("pages/Reviews"));
 
 // Users
 const Users = lazy(() => import("pages/Users"));
+const Profiles = lazy(() => import("pages/Profiles"));
 const UpdateUsers = lazy(() => import("pages/AddUser"));
 
 //Product Contacts Routes
@@ -130,11 +134,14 @@ export const private_routes: IRoute[] = [
   { path: "/store/payments", element: <StorePayments /> },
   { path: "/store/payments/:id", element: <StorePaymentDetail /> },
   { path: "/diet-plans", element: <DietPlans /> },
+  { path: "/formulas", element: <Formulas /> },
   { path: "/meal-plans", element: <MealPlans /> },
   { path: "/meal-plans/new", element: <MealPlanEditor /> },
   { path: "/meal-plans/:id", element: <MealPlanEditor /> },
   { path: "/subscriptions", element: <Subscriptions /> },
   { path: "/dietitians", element: <Dietitians /> },
+  { path: "/nutritionist-requests", element: <NutritionistRequests /> },
+  { path: "/legal", element: <Legal /> },
   { path: "/settings", element: <Settings /> },
   { path: "/queue", element: <DietitianQueue /> },
   { path: "/app", element: <AppDesk /> },
@@ -203,6 +210,7 @@ export const private_routes: IRoute[] = [
   { path: "/contacts", element: <Contacts /> },
   
   { path: "/users", element: <Users/> },
+  { path: "/profiles", element: <Profiles/> },
   { path: "/members/:id", element: <MemberDetail /> },
   { path: "/update-users/:id", element: <UpdateUsers/> },
 

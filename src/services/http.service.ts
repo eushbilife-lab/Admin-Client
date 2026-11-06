@@ -46,7 +46,7 @@ axios.interceptors.response.use(
       config?.headers?.["x-skip-toast"] ||
       (typeof config?.headers?.get === "function" &&
         config.headers.get("X-Skip-Toast"));
-    if (!skipToast) {
+    if (!skipToast && message) {
       ToasterService.showSuccess(message);
     }
 

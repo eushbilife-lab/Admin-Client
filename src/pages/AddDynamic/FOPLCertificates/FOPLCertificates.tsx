@@ -24,9 +24,8 @@ import {
 import { useTranslation } from "react-i18next";
 import imagesService from "services/images.service";
 import { imageActions } from "redux/slices/images";
-import BlockComponent from "@core/api-components/BlockComponent";
+import ConfirmDeleteButton from "@core/api-components/ConfirmDeleteButton";
 import Tooltip from "@core/basic-components/Tooltip";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import CatalogToolbar, {
   CatalogMetaPill,
@@ -179,36 +178,20 @@ export default function FOPLCertificates({ type }: any) {
                         </IconButton>
                       </Tooltip>
 
-                      <BlockComponent allowedRoles={["admin"]}>
-                        <Tooltip title={t("Delete")}>
-                          <IconButton
-                            onClick={() =>
-                              dispatch(
-                                modalActions.openModal({
-                                  type: MODAL.CONFIRMATION_FORM,
-                                  data: {
-                                    heading: t("Delete FOPL Certificate"),
-                                    message: t(
-                                      "Are you sure you want to delete this FOPL Certificate?"
-                                    ),
-                                    confirmAction: () => {
-                                      imagesService.remove(
-                                        item._id,
-                                        dispatch,
-                                        type,
-                                        filters
-                                      );
-                                    },
-                                  },
-                                  width: "500px",
-                                })
-                              )
-                            }
-                          >
-                            <DeleteOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </BlockComponent>
+                      <ConfirmDeleteButton
+                        title={t("Delete FOPL Certificate")}
+                        message={t(
+                          "Are you sure you want to delete this FOPL Certificate?"
+                        )}
+                        onConfirm={() =>
+                          imagesService.remove(
+                            item._id,
+                            dispatch,
+                            type,
+                            filters
+                          )
+                        }
+                      />
                     </StyledTableCellAction>
                   </StyledTableRow>
                 ))}

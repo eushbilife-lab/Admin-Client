@@ -16,10 +16,31 @@ type Props = {
   multiple?: boolean;
   helperText?: string;
   folder?: string;
+  /** Exact pixel size required before upload (e.g. store banners). */
+  requiredWidth?: number;
+  requiredHeight?: number;
 };
 
 const ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
 const MAX_MB = 5;
+
+function readImageSize(file: File): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const width = img.naturalWidth || img.width;
+      const height = img.naturalHeight || img.height;
+      URL.revokeObjectURL(url);
+      resolve({ width, height });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read image"));
+    };
+    img.src = url;
+  });
+}
 
 export default function StoreImageField({
   label,
@@ -30,11 +51,17 @@ export default function StoreImageField({
   multiple = false,
   helperText,
   folder = "store",
+  requiredWidth,
+  requiredHeight,
 }: Props) {
   const inputId = useId();
   const [uploading, setUploading] = useState(false);
   const isMulti = multiple || Boolean(onChangeMany);
   const list = isMulti ? values || [] : value ? [value] : [];
+  const sizeHint =
+    requiredWidth && requiredHeight
+      ? ` · exact ${requiredWidth} × ${requiredHeight} px`
+      : "";
 
   const pick = async (fileList: FileList | null) => {
     if (!fileList?.length) return;
@@ -42,17 +69,32 @@ export default function StoreImageField({
     if (!isMulti) files = files.slice(0, 1);
     else files = files.slice(0, 5);
 
-    files = files.filter((file) => {
+    const allowed: File[] = [];
+    for (const file of files) {
       if (file.size > MAX_MB * 1024 * 1024) {
         ToasterService.showError(`Max file size is ${MAX_MB} MB`);
-        return false;
+        continue;
       }
-      return true;
-    });
-    if (!files.length) return;
+      if (requiredWidth && requiredHeight) {
+        try {
+          const { width, height } = await readImageSize(file);
+          if (width !== requiredWidth || height !== requiredHeight) {
+            ToasterService.showError(
+              `Image must be exactly ${requiredWidth} × ${requiredHeight} px (got ${width} × ${height})`
+            );
+            continue;
+          }
+        } catch {
+          ToasterService.showError("Could not read image dimensions");
+          continue;
+        }
+      }
+      allowed.push(file);
+    }
+    if (!allowed.length) return;
 
     setUploading(true);
-    const urls = await storeUploadService.upload(files, folder);
+    const urls = await storeUploadService.upload(allowed, folder);
     setUploading(false);
     if (!urls.length) return;
 
@@ -96,7 +138,10 @@ export default function StoreImageField({
         className={`store-image-field__drop${uploading ? " is-busy" : ""}`}
       >
         <span>{uploading ? "Uploading…" : isMulti ? "Upload images" : "Upload image"}</span>
-        <small>JPG / PNG / WebP · up to {MAX_MB} MB{isMulti ? " · max 5" : ""}</small>
+        <small>
+          JPG / PNG / WebP · up to {MAX_MB} MB{isMulti ? " · max 5" : ""}
+          {sizeHint}
+        </small>
         <input
           id={inputId}
           type="file"
