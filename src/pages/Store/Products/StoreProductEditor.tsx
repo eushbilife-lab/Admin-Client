@@ -33,6 +33,7 @@ type IngredientRow = {
 };
 
 type BenefitRow = { title: string; description: string; iconUrl: string };
+type TrustChipRow = { label: string; iconUrl: string };
 type HowToRow = { step: number; title: string; description: string };
 type FaqRow = { question: string; answer: string };
 type TestimonialRow = {
@@ -68,6 +69,11 @@ const emptyBenefit = (): BenefitRow => ({
   iconUrl: "",
 });
 
+const emptyTrustChip = (label = ""): TrustChipRow => ({
+  label,
+  iconUrl: "",
+});
+
 const emptyHowTo = (step = 1): HowToRow => ({
   step,
   title: "",
@@ -84,16 +90,32 @@ const emptyTestimonial = (): TestimonialRow => ({
   imageUrl: "",
 });
 
-function linesToList(text: string) {
-  return text
-    .split(/[\n,]/)
-    .map((part) => part.trim())
-    .filter(Boolean);
+function parseTrustChips(list?: any[]): TrustChipRow[] {
+  if (!Array.isArray(list) || !list.length) return [emptyTrustChip()];
+  return list.map((row) => {
+    if (typeof row === "string") return emptyTrustChip(row);
+    return {
+      label: String(row?.label || row?.title || row?.name || "").trim(),
+      iconUrl: String(row?.iconUrl || row?.imageUrl || "").trim(),
+    };
+  });
 }
 
-function listToLines(list?: string[]) {
-  return Array.isArray(list) ? list.join("\n") : "";
-}
+const DEFAULT_HIGHLIGHTS: TrustChipRow[] = [
+  emptyTrustChip("Free Delivery"),
+  emptyTrustChip("Tested Clinically"),
+  emptyTrustChip("100% Organic"),
+  emptyTrustChip("Herbal Fusion"),
+];
+
+const DEFAULT_CERTIFICATIONS: TrustChipRow[] = [
+  emptyTrustChip("Gluten Free"),
+  emptyTrustChip("No Artificial Flavours"),
+  emptyTrustChip("Plant Based"),
+  emptyTrustChip("100% Vegan"),
+  emptyTrustChip("Non GMO"),
+  emptyTrustChip("No Artificial Colors"),
+];
 
 export default function StoreProductEditor() {
   const { id } = useParams();
@@ -128,13 +150,9 @@ export default function StoreProductEditor() {
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [beforeAfterImages, setBeforeAfterImages] = useState<string[]>([]);
-  const [highlightsText, setHighlightsText] = useState(
-    "Free Delivery\nTested Clinically\n100% Organic\nHerbal Fusion"
-  );
-  const [certificationsText, setCertificationsText] = useState(
-    "Gluten Free\nNo Artificial Flavours\n100% Vegan\nNon GMO\nNo Artificial Colors"
-  );
-  const [tagsText, setTagsText] = useState("");
+  const [highlights, setHighlights] = useState<TrustChipRow[]>(DEFAULT_HIGHLIGHTS);
+  const [certifications, setCertifications] =
+    useState<TrustChipRow[]>(DEFAULT_CERTIFICATIONS);
   const [sku, setSku] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
   const [variants, setVariants] = useState<VariantRow[]>([emptyVariant(0)]);
@@ -198,9 +216,16 @@ export default function StoreProductEditor() {
         ? product.beforeAfterImages.map(String).filter(Boolean)
         : []
     );
-    setHighlightsText(listToLines(product.highlights));
-    setCertificationsText(listToLines(product.certifications));
-    setTagsText(listToLines(product.tags));
+    setHighlights(
+      product.highlights?.length
+        ? parseTrustChips(product.highlights)
+        : DEFAULT_HIGHLIGHTS
+    );
+    setCertifications(
+      product.certifications?.length
+        ? parseTrustChips(product.certifications)
+        : DEFAULT_CERTIFICATIONS
+    );
     setSku(product.sku || "");
     setIsFeatured(Boolean(product.isFeatured));
 
@@ -351,9 +376,18 @@ export default function StoreProductEditor() {
       imageUrl: imageUrl.trim() || gallery[0] || "",
       images: gallery,
       beforeAfterImages,
-      highlights: linesToList(highlightsText),
-      certifications: linesToList(certificationsText),
-      tags: linesToList(tagsText),
+      highlights: highlights
+        .filter((row) => row.label.trim())
+        .map((row) => ({
+          label: row.label.trim(),
+          iconUrl: row.iconUrl.trim(),
+        })),
+      certifications: certifications
+        .filter((row) => row.label.trim())
+        .map((row) => ({
+          label: row.label.trim(),
+          iconUrl: row.iconUrl.trim(),
+        })),
       sku: sku.trim() || cleanVariants[0]?.sku || "",
       isFeatured,
       variants: cleanVariants,
@@ -554,26 +588,126 @@ export default function StoreProductEditor() {
         </section>
 
         <section className="store-section">
-          <h2>Trust chips & labels</h2>
+          <div className="store-section__head">
+            <div>
+              <h2>Trust highlights</h2>
+              <p>Chips like Free Delivery, Tested Clinically — each with an icon.</p>
+            </div>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={() => setHighlights((rows) => [...rows, emptyTrustChip()])}
+            >
+              Add highlight
+            </Button>
+          </div>
+          {highlights.map((row, index) => (
+            <div key={`hl-${index}`} className="store-subcard">
+              <div className="store-subcard__top">
+                <strong>Highlight {index + 1}</strong>
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    setHighlights((rows) => rows.filter((_, i) => i !== index))
+                  }
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </div>
+              <TextField
+                label="Label"
+                value={row.label}
+                onChange={(e) =>
+                  setHighlights((rows) =>
+                    rows.map((r, i) =>
+                      i === index ? { ...r, label: e.target.value } : r
+                    )
+                  )
+                }
+                fullWidth
+                placeholder="Free Delivery"
+              />
+              <StoreImageField
+                label="Icon"
+                value={row.iconUrl}
+                onChange={(url) =>
+                  setHighlights((rows) =>
+                    rows.map((r, i) =>
+                      i === index ? { ...r, iconUrl: url } : r
+                    )
+                  )
+                }
+                folder="store"
+                helperText="Square icon / badge image for this highlight"
+              />
+            </div>
+          ))}
+        </section>
+
+        <section className="store-section">
+          <div className="store-section__head">
+            <div>
+              <h2>Certifications</h2>
+              <p>Labels like Gluten Free, Vegan, Non GMO — each with an icon.</p>
+            </div>
+            <Button
+              startIcon={<AddIcon />}
+              onClick={() =>
+                setCertifications((rows) => [...rows, emptyTrustChip()])
+              }
+            >
+              Add certification
+            </Button>
+          </div>
+          {certifications.map((row, index) => (
+            <div key={`cert-${index}`} className="store-subcard">
+              <div className="store-subcard__top">
+                <strong>Certification {index + 1}</strong>
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    setCertifications((rows) =>
+                      rows.filter((_, i) => i !== index)
+                    )
+                  }
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </div>
+              <TextField
+                label="Label"
+                value={row.label}
+                onChange={(e) =>
+                  setCertifications((rows) =>
+                    rows.map((r, i) =>
+                      i === index ? { ...r, label: e.target.value } : r
+                    )
+                  )
+                }
+                fullWidth
+                placeholder="Gluten Free"
+              />
+              <StoreImageField
+                label="Icon"
+                value={row.iconUrl}
+                onChange={(url) =>
+                  setCertifications((rows) =>
+                    rows.map((r, i) =>
+                      i === index ? { ...r, iconUrl: url } : r
+                    )
+                  )
+                }
+                folder="store"
+                helperText="Square icon / badge image for this certification"
+              />
+            </div>
+          ))}
           <TextField
-            label="Highlights (Free Delivery, Tested Clinically…)"
-            value={highlightsText}
-            onChange={(e) => setHighlightsText(e.target.value)}
+            label="Base SKU (fallback)"
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
             fullWidth
-            multiline
-            minRows={3}
-            helperText="One per line"
+            sx={{ mt: 2 }}
           />
-          <TextField
-            label="Certifications (Gluten Free, Vegan…)"
-            value={certificationsText}
-            onChange={(e) => setCertificationsText(e.target.value)}
-            fullWidth
-            multiline
-            minRows={3}
-          />
-          <TextField label="Tags" value={tagsText} onChange={(e) => setTagsText(e.target.value)} fullWidth multiline minRows={2} helperText="Optional search tags, one per line" />
-          <TextField label="Base SKU (fallback)" value={sku} onChange={(e) => setSku(e.target.value)} fullWidth />
         </section>
 
         <section className="store-section">
