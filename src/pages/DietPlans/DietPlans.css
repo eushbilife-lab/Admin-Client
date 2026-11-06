@@ -1,3 +1,28 @@
+.diet-tab__intro {
+  margin: 0 0 16px;
+  color: #5c675e;
+  font-size: 0.95rem;
+}
+
+.diet-tab__intro code {
+  font-size: 0.85em;
+  background: #eef3ee;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.diet-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.diet-toolbar--wrap {
+  margin-bottom: 16px;
+}
+
 .diet-plan-form {
   margin-bottom: 20px;
   padding: 16px;
@@ -52,8 +77,10 @@
   color: #5c675e;
 }
 
-.diet-plan-row__body small {
+.diet-plan-row__body small,
+.diet-muted {
   color: #7a857b;
+  font-size: 0.85rem;
 }
 
 .diet-plan-row__actions {
@@ -62,6 +89,223 @@
   gap: 6px;
   align-items: center;
   justify-content: flex-end;
+}
+
+.diet-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.diet-stat {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8e0;
+  background: linear-gradient(160deg, #f7faf6, #fff);
+}
+
+.diet-stat span {
+  display: block;
+  color: #6a746c;
+  font-size: 0.85rem;
+}
+
+.diet-stat strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.75rem;
+  color: #1b3d28;
+}
+
+.diet-stat small {
+  color: #7a857b;
+}
+
+.diet-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.diet-detail {
+  display: grid;
+  gap: 14px;
+}
+
+.diet-detail__card {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #e2e8e0;
+  background: #fff;
+}
+
+.diet-detail__card h3,
+.diet-detail__card h4 {
+  margin: 0 0 10px;
+  color: #1b3d28;
+}
+
+.diet-detail__card header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.diet-dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.diet-dl dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7a857b;
+}
+
+.diet-dl dd {
+  margin: 2px 0 0;
+  color: #243229;
+}
+
+.diet-meal {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #eef2ee;
+}
+
+.diet-meal ul,
+.diet-detail__card ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #3d4a40;
+}
+
+.diet-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.diet-bars li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f5f8f4;
+}
+
+.diet-recent {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.diet-recent li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #eef2ee;
+}
+
+.diet-recent button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+}
+
+.diet-recent strong {
+  display: block;
+  color: #1b3d28;
+}
+
+.diet-recent span {
+  color: #7a857b;
+  font-size: 0.85rem;
+}
+
+.diet-templates {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.diet-templates__list {
+  display: grid;
+  gap: 8px;
+}
+
+.diet-templates__item {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8e0;
+  background: #fff;
+  cursor: pointer;
+}
+
+.diet-templates__item.is-active {
+  border-color: #1b7a4b;
+  background: #f1f8f2;
+}
+
+.diet-templates__item span,
+.diet-templates__item small {
+  color: #6a746c;
+  font-size: 0.85rem;
+}
+
+.diet-templates__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.diet-templates__head p {
+  margin: 4px 0 0;
+  color: #5c675e;
+}
+
+.diet-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0 4px;
+}
+
+.diet-tags span {
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eaf3ea;
+  color: #1b5c38;
+}
+
+@media (max-width: 960px) {
+  .diet-stats,
+  .diet-overview-grid,
+  .diet-templates,
+  .diet-dl {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 720px) {

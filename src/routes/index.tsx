@@ -56,6 +56,9 @@ const StorePaymentDetail = lazy(
   () => import("pages/Store/Payments/StorePaymentDetail")
 );
 const DietPlans = lazy(() => import("pages/DietPlans"));
+const DietPlanDocumentDetail = lazy(
+  () => import("pages/DietPlans/DietPlanDocumentDetail")
+);
 const Formulas = lazy(() => import("pages/Formulas"));
 const MealPlans = lazy(() => import("pages/MealPlans"));
 const MealPlanEditor = lazy(() => import("pages/MealPlans/MealPlanEditor"));
@@ -134,6 +137,7 @@ export const private_routes: IRoute[] = [
   { path: "/store/payments", element: <StorePayments /> },
   { path: "/store/payments/:id", element: <StorePaymentDetail /> },
   { path: "/diet-plans", element: <DietPlans /> },
+  { path: "/diet-plans/documents/:id", element: <DietPlanDocumentDetail /> },
   { path: "/formulas", element: <Formulas /> },
   { path: "/meal-plans", element: <MealPlans /> },
   { path: "/meal-plans/new", element: <MealPlanEditor /> },

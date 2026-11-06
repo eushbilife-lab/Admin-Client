@@ -157,8 +157,9 @@ export const sidebarGroups: NavGroup[] = [
         path: "/diet-plans",
         icon: MdRestaurant,
         roles: ["admin"],
-        keywords: "diet plan image upload mobile gallery",
-        hint: "Diet plan images for the app",
+        keywords:
+          "diet plan image upload mobile gallery pdf keto pcos maintain gain templates",
+        hint: "Gallery, generated PDFs, day templates",
       },
     ],
   },
