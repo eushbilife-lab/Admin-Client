@@ -82,8 +82,22 @@ export const notificationApi = baseApi.injectEndpoints({
           : {}),
       }),
       transformResponse: (response: unknown) => {
-        const data = unwrapData<{ broadcast?: any; notification?: any }>(response);
-        return data?.broadcast || data?.notification;
+        const data = unwrapData<{
+          broadcast?: any;
+          notification?: any;
+          recipientCount?: number;
+          pushSent?: number;
+          pushFailed?: number;
+          pushConfigured?: boolean;
+        }>(response);
+        const broadcast = data?.broadcast || data?.notification || {};
+        return {
+          ...broadcast,
+          recipientCount: data?.recipientCount ?? broadcast.recipientCount ?? 0,
+          pushSent: data?.pushSent ?? broadcast.pushSent ?? 0,
+          pushFailed: data?.pushFailed ?? broadcast.pushFailed ?? 0,
+          pushConfigured: data?.pushConfigured ?? broadcast.pushConfigured,
+        };
       },
       invalidatesTags: [{ type: "Notification", id: "LIST" }],
     }),

@@ -83,6 +83,7 @@ const NotificationService = {
           email: data.email || "",
           priority: data.priority || "update",
           channel: data.channel || "both",
+          devices: data.devices || "all",
           promoId: data.promoId || "",
           promoCode: data.promoCode || "",
         };
