@@ -11,6 +11,15 @@ import storeCategoryService from "services/storeCategory.service";
 import { storeProductActions } from "redux/slices/storeProduct";
 import ToasterService from "utils/toaster.util";
 import StoreImageField from "../StoreImageField";
+import DynamicProductFields, {
+  parseCustomFields,
+  type DynamicField,
+} from "./DynamicProductFields";
+import SupplementProductForm, {
+  emptySupplementDetails,
+  parseSupplementDetails,
+  type SupplementDetails,
+} from "./SupplementProductForm";
 import "../Store.css";
 
 type VariantRow = {
@@ -145,6 +154,7 @@ export default function StoreProductEditor() {
   const [status, setStatus] = useState("published");
   const [currency, setCurrency] = useState("PKR");
   const [badgeText, setBadgeText] = useState("Sale");
+  const [color, setColor] = useState("");
   const [rating, setRating] = useState(4.8);
   const [ratingCount, setRatingCount] = useState(0);
   const [imageUrl, setImageUrl] = useState("");
@@ -171,6 +181,11 @@ export default function StoreProductEditor() {
     emptyTestimonial(),
   ]);
   const [saving, setSaving] = useState(false);
+  const [customFields, setCustomFields] = useState<DynamicField[]>([]);
+  const [supplementDetails, setSupplementDetails] = useState<SupplementDetails>(
+    emptySupplementDetails()
+  );
+  const isSupplement = category.toLowerCase().includes("supplement");
 
   useEffect(() => {
     if (!isNew && id) storeProductService.get(id, dispatch);
@@ -199,6 +214,7 @@ export default function StoreProductEditor() {
     setStatus(product.status || "published");
     setCurrency(product.currency || "PKR");
     setBadgeText(product.badgeText || "");
+    setColor(product.color || "");
     setRating(Number(product.rating) || 0);
     setRatingCount(Number(product.ratingCount) || 0);
     setImageUrl(product.imageUrl || "");
@@ -306,6 +322,8 @@ export default function StoreProductEditor() {
           }))
         : [emptyTestimonial()]
     );
+    setCustomFields(parseCustomFields(product.customFields));
+    setSupplementDetails(parseSupplementDetails(product.supplementDetails));
   }, [product, isNew]);
 
   const defaultVariant = useMemo(
@@ -371,6 +389,7 @@ export default function StoreProductEditor() {
       status,
       currency,
       badgeText: badgeText.trim() || (previewDiscount ? "Sale" : ""),
+      color: color.trim(),
       rating: Number(rating) || 0,
       ratingCount: Number(ratingCount) || 0,
       imageUrl: imageUrl.trim() || gallery[0] || "",
@@ -428,6 +447,35 @@ export default function StoreProductEditor() {
           rating: Number(row.rating) || 5,
           imageUrl: row.imageUrl.trim(),
         })),
+      supplementDetails: isSupplement
+        ? {
+            fitFor: supplementDetails.fitFor.filter((row) => row.title.trim()),
+            transparency: supplementDetails.transparency
+              .map((item) => item.trim())
+              .filter(Boolean),
+            interactions: supplementDetails.interactions.filter((row) =>
+              row.medication.trim()
+            ),
+            research: supplementDetails.research.trim(),
+            howToTake: supplementDetails.howToTake.trim(),
+            whyItWorks: supplementDetails.whyItWorks.trim(),
+            whenToTake: supplementDetails.whenToTake.trim(),
+            servingSize: supplementDetails.servingSize.trim(),
+            facts: supplementDetails.facts.filter((row) => row.name.trim()),
+            otherIngredients: supplementDetails.otherIngredients.trim(),
+          }
+        : undefined,
+      customFields: customFields
+        .filter((field) => field.label.trim())
+        .map((field) => ({
+          id: field.id,
+          type: field.type,
+          label: field.label.trim(),
+          placeholder: field.placeholder.trim(),
+          options: field.options,
+          value: field.value,
+          values: field.values,
+        })),
     };
 
     setSaving(true);
@@ -450,8 +498,20 @@ export default function StoreProductEditor() {
   return (
     <PageShell
       kicker="Store"
-      title={isNew ? "New store product" : "Edit store product"}
-      subtitle="Modeled on eushbi.com product pages — bottles/variants, sale prices, gallery, ingredients, benefits, how-to, FAQs, and reviews."
+      title={
+        isSupplement
+          ? isNew
+            ? "New supplement"
+            : "Edit supplement"
+          : isNew
+            ? "New super food"
+            : "Edit super food"
+      }
+      subtitle={
+        isSupplement
+          ? "Supplement form only. Card points, right-for-you cards, formula notes, interactions, and supplement facts."
+          : "Super food form only. Packs, gallery, ingredients, benefits, how to use, FAQs, and reviews."
+      }
       actions={
         <>
           <Button onClick={() => navigate("/store/products")}>Cancel</Button>
@@ -464,12 +524,58 @@ export default function StoreProductEditor() {
       {loading && !isNew ? <CircleLoader /> : null}
 
       <div className="store-editor">
+        <div className="store-form-switch" role="tablist">
+          <button
+            type="button"
+            className={isSupplement ? "" : "is-active"}
+            onClick={() => {
+              if (category.toLowerCase().includes("supplement")) {
+                setCategory("supper_foods");
+              }
+            }}
+          >
+            <strong>Super food form</strong>
+            <span>Simple food product: packs, ingredients, benefits, how to use, and reviews.</span>
+          </button>
+          <button
+            type="button"
+            className={isSupplement ? "is-active" : ""}
+            onClick={() => setCategory("supplements")}
+          >
+            <strong>Supplement form</strong>
+            <span>Separate form: right for you, formula, interactions, and supplement facts.</span>
+          </button>
+        </div>
+
         <section className="store-section">
-          <h2>Basics</h2>
-          <TextField label="Product name" value={name} onChange={(e) => setName(e.target.value)} fullWidth placeholder="Gallzen Capsules" />
-          <TextField label="Headline / tagline" value={headline} onChange={(e) => setHeadline(e.target.value)} fullWidth placeholder="Flow Better, Digest Faster" helperText="Hero line above the product title" />
+          <h2>{isSupplement ? "Supplement" : "Super food"}</h2>
+          <TextField
+            label="Product name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            fullWidth
+            placeholder={isSupplement ? "Acetyl L-Carnitine" : "Gallzen Capsules"}
+          />
+          <TextField
+            label={isSupplement ? "Opening line" : "Headline / tagline"}
+            value={headline}
+            onChange={(e) => setHeadline(e.target.value)}
+            fullWidth
+            placeholder={
+              isSupplement
+                ? "Mental clarity, cellular energy, and nerve support"
+                : "Flow Better, Digest Faster"
+            }
+          />
           <TextField label="Short description (card)" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} fullWidth multiline minRows={2} />
-          <TextField label="Full description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={4} />
+          <TextField
+            label={isSupplement ? "Intro" : "Full description"}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            fullWidth
+            multiline
+            minRows={4}
+          />
           <div className="store-editor__row">
             <TextField
               select
@@ -495,6 +601,32 @@ export default function StoreProductEditor() {
           </div>
           <div className="store-editor__row">
             <TextField label="Badge text" value={badgeText} onChange={(e) => setBadgeText(e.target.value)} fullWidth placeholder="Sale" />
+            <TextField
+              label="Product color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              fullWidth
+              placeholder="#9FC53A"
+              helperText="Hex color. Mobile uses this to tint the product."
+              InputProps={{
+                startAdornment: (
+                  <input
+                    type="color"
+                    aria-label="Pick product color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : "#9FC53A"}
+                    onChange={(e) => setColor(e.target.value.toUpperCase())}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      marginRight: 8,
+                      padding: 0,
+                      border: "none",
+                      background: "transparent",
+                    }}
+                  />
+                ),
+              }}
+            />
             <TextField label="Rating" type="number" inputProps={{ step: 0.1, min: 0, max: 5 }} value={rating} onChange={(e) => setRating(Number(e.target.value))} fullWidth />
             <TextField label="Rating count" type="number" value={ratingCount} onChange={(e) => setRatingCount(Number(e.target.value))} fullWidth />
           </div>
@@ -504,6 +636,47 @@ export default function StoreProductEditor() {
           </label>
         </section>
 
+        {isSupplement ? (
+          <section className="store-section">
+            <h2>Price and photo</h2>
+            <div className="store-editor__row">
+              <TextField
+                label="Price (PKR)"
+                type="number"
+                value={variants[0]?.price ?? 0}
+                onChange={(e) => updateVariant(0, { price: Number(e.target.value) })}
+                fullWidth
+              />
+              <TextField
+                label="Compare-at"
+                type="number"
+                value={variants[0]?.compareAtPrice ?? ""}
+                onChange={(e) =>
+                  updateVariant(0, {
+                    compareAtPrice: e.target.value === "" ? "" : Number(e.target.value),
+                  })
+                }
+                fullWidth
+              />
+              <TextField
+                label="Stock"
+                type="number"
+                value={variants[0]?.stock ?? 0}
+                onChange={(e) => updateVariant(0, { stock: Number(e.target.value) })}
+                fullWidth
+              />
+            </div>
+            <StoreImageField
+              label="Product photo"
+              value={imageUrl}
+              onChange={setImageUrl}
+              values={images}
+              onChangeMany={setImages}
+              multiple
+            />
+          </section>
+        ) : (
+        <>
         <section className="store-section">
           <div className="store-section__head">
             <div>
@@ -642,7 +815,19 @@ export default function StoreProductEditor() {
             </div>
           ))}
         </section>
+        </>
+        )}
 
+        {isSupplement ? (
+          <SupplementProductForm
+            productName={name}
+            benefits={benefits}
+            onBenefits={setBenefits}
+            details={supplementDetails}
+            onDetails={setSupplementDetails}
+          />
+        ) : (
+        <>
         <section className="store-section">
           <div className="store-section__head">
             <div>
@@ -861,6 +1046,10 @@ export default function StoreProductEditor() {
             </div>
           ))}
         </section>
+        </>
+        )}
+
+        <DynamicProductFields fields={customFields} onChange={setCustomFields} />
       </div>
     </PageShell>
   );

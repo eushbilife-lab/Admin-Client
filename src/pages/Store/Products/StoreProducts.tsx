@@ -39,14 +39,23 @@ function ProductCard({
   onOpen: () => void;
   onDelete: () => void | Promise<void>;
 }) {
+  const isSupplement = String(product.category || "")
+    .toLowerCase()
+    .includes("supplement");
+  const points = (Array.isArray(product.benefits) ? product.benefits : [])
+    .map((row: any) => String(row?.title || row || "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+
   return (
-    <article className="store-card">
+    <article className={`store-card${isSupplement ? " store-card--supplement" : ""}`}>
       <div
         className="store-card__media"
         style={{
           backgroundImage: product.imageUrl
             ? `url(${product.imageUrl})`
             : undefined,
+          backgroundColor: product.color || undefined,
         }}
         onClick={onOpen}
         role="presentation"
@@ -57,9 +66,23 @@ function ProductCard({
           label={product.status}
         />
         <h3>{product.name}</h3>
-        <p>
-          {product.shortDescription || product.categoryLabel || product.category}
-        </p>
+        {isSupplement && points.length ? (
+          <ul className="store-card__points">
+            {points.map((point: string) => (
+              <li key={point}>{point}</li>
+            ))}
+          </ul>
+        ) : (
+          <p>
+            {product.shortDescription || product.categoryLabel || product.category}
+          </p>
+        )}
+        {product.color ? (
+          <span className="store-card__color">
+            <i style={{ background: product.color }} />
+            {product.color}
+          </span>
+        ) : null}
         <strong>
           {product.currency || "PKR"}{" "}
           {Number(product.price || 0).toLocaleString()}

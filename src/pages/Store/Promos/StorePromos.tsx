@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Button,
+  Checkbox,
+  FormControlLabel,
   MenuItem,
   Skeleton,
   TextField,
@@ -20,11 +22,16 @@ type PromoRow = {
   id?: string;
   code: string;
   title?: string;
+  description?: string;
   type: "percent" | "fixed";
   value: number;
   minSubtotal?: number;
   maxDiscount?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
   usageLimit?: number | null;
+  perUserLimit?: number | null;
+  firstOrderOnly?: boolean;
   usedCount?: number;
   status?: string;
 };
@@ -32,13 +39,60 @@ type PromoRow = {
 const emptyForm = {
   code: "",
   title: "",
+  description: "",
   type: "percent" as "percent" | "fixed",
   value: 10,
   minSubtotal: 0,
   maxDiscount: "" as number | "",
   usageLimit: "" as number | "",
+  perUserLimit: "" as number | "",
+  firstOrderOnly: false,
+  startsAt: "",
+  endsAt: "",
   status: "published",
 };
+
+function dateInput(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function formatWhen(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+}
+
+function makeCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let body = "";
+  for (let i = 0; i < 6; i += 1) {
+    body += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return `EUSH-${body}`;
+}
+
+function payloadFrom(form: typeof emptyForm) {
+  return {
+    code: form.code.trim(),
+    title: form.title.trim(),
+    description: form.description.trim(),
+    type: form.type,
+    value: Number(form.value) || 0,
+    minSubtotal: Number(form.minSubtotal) || 0,
+    maxDiscount: form.maxDiscount === "" ? null : Number(form.maxDiscount),
+    usageLimit: form.usageLimit === "" ? null : Number(form.usageLimit),
+    perUserLimit: form.perUserLimit === "" ? null : Number(form.perUserLimit),
+    firstOrderOnly: form.firstOrderOnly,
+    startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+    endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
+    status: form.status,
+  };
+}
 
 export default function StorePromos() {
   const navigate = useNavigate();
@@ -46,6 +100,7 @@ export default function StorePromos() {
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<PromoRow[]>([]);
   const [form, setForm] = useState(emptyForm);
+  const [editingId, setEditingId] = useState("");
 
   const notifyPromo = (row: PromoRow) => {
     const id = row._id || row.id || "";
@@ -73,31 +128,51 @@ export default function StorePromos() {
     void load();
   }, [load]);
 
-  const create = async () => {
+  const edit = (row: PromoRow) => {
+    setEditingId(row._id || row.id || "");
+    setForm({
+      code: row.code || "",
+      title: row.title || "",
+      description: row.description || "",
+      type: row.type === "fixed" ? "fixed" : "percent",
+      value: Number(row.value) || 0,
+      minSubtotal: Number(row.minSubtotal) || 0,
+      maxDiscount: row.maxDiscount == null ? "" : Number(row.maxDiscount),
+      usageLimit: row.usageLimit == null ? "" : Number(row.usageLimit),
+      perUserLimit: row.perUserLimit == null ? "" : Number(row.perUserLimit),
+      firstOrderOnly: Boolean(row.firstOrderOnly),
+      startsAt: dateInput(row.startsAt),
+      endsAt: dateInput(row.endsAt),
+      status: row.status || "published",
+    });
+  };
+
+  const save = async () => {
     if (!form.code.trim()) {
       ToasterService.showError("Promo code is required");
       return;
     }
     setSaving(true);
-    const [, error]: any = await storePromoService.create({
-      code: form.code.trim(),
-      title: form.title.trim(),
-      type: form.type,
-      value: Number(form.value) || 0,
-      minSubtotal: Number(form.minSubtotal) || 0,
-      maxDiscount: form.maxDiscount === "" ? null : Number(form.maxDiscount),
-      usageLimit: form.usageLimit === "" ? null : Number(form.usageLimit),
-      status: form.status,
-    });
+    const payload = payloadFrom(form);
+    const [, error]: any = editingId
+      ? await storePromoService.update(editingId, payload)
+      : await storePromoService.create(payload);
     setSaving(false);
     if (error) {
       ToasterService.showError(
-        error?.response?.data?.message || "Could not create promo"
+        error?.response?.data?.message ||
+          error?.data?.message ||
+          "Could not save promo"
       );
       return;
     }
-    ToasterService.showSuccess("Promo created — live on mobile checkout");
+    ToasterService.showSuccess(
+      editingId
+        ? "Promo updated"
+        : "Promo created — live on mobile checkout when published"
+    );
     setForm(emptyForm);
+    setEditingId("");
     await load();
   };
 
@@ -125,6 +200,10 @@ export default function StorePromos() {
       );
       return;
     }
+    if ((row._id || row.id) === editingId) {
+      setEditingId("");
+      setForm(emptyForm);
+    }
     ToasterService.showSuccess("Promo deleted");
     await load();
   };
@@ -133,28 +212,49 @@ export default function StorePromos() {
     <PageShell
       kicker="Store"
       title="Promo codes"
-      subtitle="Codes shoppers enter on Cart (Apply). Published codes are validated by the User API and applied at checkout."
+      subtitle="Type a code yourself or generate one. Published codes are checked on the User API for dates, cart minimum, total uses, uses per customer, and first-order only."
     >
       <section className="store-order-card" style={{ marginBottom: 20 }}>
         <header className="store-order-card__head">
-          <h3>New promo</h3>
+          <h3>{editingId ? "Edit promo" : "New promo"}</h3>
         </header>
         <div className="store-promo-form">
-          <TextField
-            size="small"
-            label="Code"
-            value={form.code}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, code: e.target.value.toUpperCase() }))
-            }
-            placeholder="WELCOME10"
-          />
+          <div className="store-promo-code">
+            <TextField
+              size="small"
+              label="Code"
+              value={form.code}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  code: e.target.value.toUpperCase().replace(/\s+/g, ""),
+                }))
+              }
+              placeholder="WELCOME10"
+              fullWidth
+            />
+            <Button
+              variant="outlined"
+              onClick={() => setForm((f) => ({ ...f, code: makeCode() }))}
+            >
+              Generate
+            </Button>
+          </div>
           <TextField
             size="small"
             label="Title"
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             placeholder="Welcome 10% off"
+          />
+          <TextField
+            size="small"
+            label="Description"
+            value={form.description}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, description: e.target.value }))
+            }
+            placeholder="Shown with the code"
           />
           <TextField
             select
@@ -174,7 +274,7 @@ export default function StorePromos() {
           <TextField
             size="small"
             type="number"
-            label="Value"
+            label={form.type === "percent" ? "Percent" : "Amount (PKR)"}
             value={form.value}
             onChange={(e) =>
               setForm((f) => ({ ...f, value: Number(e.target.value) || 0 }))
@@ -207,6 +307,50 @@ export default function StorePromos() {
             placeholder="Optional"
           />
           <TextField
+            size="small"
+            type="number"
+            label="Total uses"
+            value={form.usageLimit}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                usageLimit:
+                  e.target.value === "" ? "" : Number(e.target.value) || 0,
+              }))
+            }
+            placeholder="Unlimited"
+          />
+          <TextField
+            size="small"
+            type="number"
+            label="Uses per customer"
+            value={form.perUserLimit}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                perUserLimit:
+                  e.target.value === "" ? "" : Number(e.target.value) || 0,
+              }))
+            }
+            placeholder="Unlimited"
+          />
+          <TextField
+            size="small"
+            type="datetime-local"
+            label="Starts"
+            value={form.startsAt}
+            onChange={(e) => setForm((f) => ({ ...f, startsAt: e.target.value }))}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
+            size="small"
+            type="datetime-local"
+            label="Ends"
+            value={form.endsAt}
+            onChange={(e) => setForm((f) => ({ ...f, endsAt: e.target.value }))}
+            InputLabelProps={{ shrink: true }}
+          />
+          <TextField
             select
             size="small"
             label="Status"
@@ -217,9 +361,33 @@ export default function StorePromos() {
             <MenuItem value="draft">draft</MenuItem>
             <MenuItem value="disabled">disabled</MenuItem>
           </TextField>
-          <Button variant="contained" disabled={saving} onClick={create}>
-            {saving ? "Saving…" : "Add promo"}
-          </Button>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={form.firstOrderOnly}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, firstOrderOnly: e.target.checked }))
+                }
+              />
+            }
+            label="First order only"
+          />
+          <div className="store-promo-actions">
+            <Button variant="contained" disabled={saving} onClick={save}>
+              {saving ? "Saving…" : editingId ? "Update promo" : "Add promo"}
+            </Button>
+            {editingId ? (
+              <Button
+                variant="text"
+                onClick={() => {
+                  setEditingId("");
+                  setForm(emptyForm);
+                }}
+              >
+                Cancel
+              </Button>
+            ) : null}
+          </div>
         </div>
       </section>
 
@@ -228,7 +396,7 @@ export default function StorePromos() {
       ) : items.length === 0 ? (
         <div className="store-empty">
           <h2>No promo codes</h2>
-          <p>Add WELCOME10 or SAVE500 for the mobile cart Apply field.</p>
+          <p>Add a code by hand, or generate one for the mobile cart.</p>
         </div>
       ) : (
         <div className="store-promo-list">
@@ -241,10 +409,17 @@ export default function StorePromos() {
                   {row.type === "percent"
                     ? `${row.value}% off`
                     : `PKR ${row.value} off`}
-                  {row.minSubtotal
-                    ? ` · min ${row.minSubtotal}`
+                  {row.minSubtotal ? ` · min ${row.minSubtotal}` : ""}
+                  {row.maxDiscount != null ? ` · cap ${row.maxDiscount}` : ""}
+                  {row.usageLimit != null
+                    ? ` · ${row.usedCount || 0}/${row.usageLimit} uses`
+                    : ` · used ${row.usedCount || 0}`}
+                  {row.perUserLimit != null
+                    ? ` · ${row.perUserLimit}/customer`
                     : ""}
-                  {row.usedCount != null ? ` · used ${row.usedCount}` : ""}
+                  {row.firstOrderOnly ? " · first order" : ""}
+                  {row.startsAt ? ` · from ${formatWhen(row.startsAt)}` : ""}
+                  {row.endsAt ? ` · until ${formatWhen(row.endsAt)}` : ""}
                 </p>
               </div>
               <StatusChip
@@ -256,6 +431,9 @@ export default function StorePromos() {
                 label={row.status || "draft"}
               />
               <div className="store-order-detail__btns">
+                <Button size="small" variant="outlined" onClick={() => edit(row)}>
+                  Edit
+                </Button>
                 <Tooltip title="Send push / inbox about this promo">
                   <Button
                     size="small"
