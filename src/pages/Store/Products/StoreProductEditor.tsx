@@ -375,16 +375,20 @@ export default function StoreProductEditor() {
       return;
     }
 
-    const gallery = [...images];
-    if (imageUrl.trim() && !gallery.includes(imageUrl.trim())) {
+    const gallery = isSupplement
+      ? imageUrl.trim()
+        ? [imageUrl.trim()]
+        : []
+      : [...images];
+    if (!isSupplement && imageUrl.trim() && !gallery.includes(imageUrl.trim())) {
       gallery.unshift(imageUrl.trim());
     }
 
     const payload = {
       name: name.trim(),
       headline: headline.trim(),
-      shortDescription: shortDescription.trim(),
-      description: description.trim(),
+      shortDescription: isSupplement ? "" : shortDescription.trim(),
+      description: isSupplement ? "" : description.trim(),
       category,
       status,
       currency,
@@ -422,7 +426,7 @@ export default function StoreProductEditor() {
         .filter((row) => row.title.trim())
         .map((row) => ({
           title: row.title.trim(),
-          description: row.description.trim(),
+          description: isSupplement ? "" : row.description.trim(),
           iconUrl: row.iconUrl.trim(),
         })),
       howToUse: howToUse
@@ -449,20 +453,39 @@ export default function StoreProductEditor() {
         })),
       supplementDetails: isSupplement
         ? {
-            fitFor: supplementDetails.fitFor.filter((row) => row.title.trim()),
+            bannerImageUrl: supplementDetails.bannerImageUrl.trim(),
+            pageQuestion: supplementDetails.pageQuestion.trim(),
+            fitFor: supplementDetails.fitFor
+              .filter((row) => row.title.trim())
+              .map((row) => ({
+                title: row.title.trim(),
+                description: row.description.trim(),
+                bannerImageUrl: row.bannerImageUrl.trim(),
+              })),
             transparency: supplementDetails.transparency
-              .map((item) => item.trim())
-              .filter(Boolean),
-            interactions: supplementDetails.interactions.filter((row) =>
-              row.medication.trim()
-            ),
+              .filter((row) => row.title.trim())
+              .map((row) => ({
+                title: row.title.trim(),
+                imageUrl: row.imageUrl.trim(),
+              })),
+            interactions: supplementDetails.interactions
+              .filter((row) => row.medication.trim())
+              .map((row) => ({
+                medication: row.medication.trim(),
+                note: row.note.trim(),
+              })),
             research: supplementDetails.research.trim(),
             howToTake: supplementDetails.howToTake.trim(),
             whyItWorks: supplementDetails.whyItWorks.trim(),
             whenToTake: supplementDetails.whenToTake.trim(),
+            infoImageUrl: supplementDetails.infoImageUrl.trim(),
             servingSize: supplementDetails.servingSize.trim(),
             facts: supplementDetails.facts.filter((row) => row.name.trim()),
+            factsImageUrl: supplementDetails.factsImageUrl.trim(),
             otherIngredients: supplementDetails.otherIngredients.trim(),
+            factsNote: supplementDetails.factsNote.trim(),
+            closingTitle: supplementDetails.closingTitle.trim(),
+            closingText: supplementDetails.closingText.trim(),
           }
         : undefined,
       customFields: customFields
@@ -567,15 +590,56 @@ export default function StoreProductEditor() {
                 : "Flow Better, Digest Faster"
             }
           />
-          <TextField label="Short description (card)" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} fullWidth multiline minRows={2} />
-          <TextField
-            label={isSupplement ? "Intro" : "Full description"}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            fullWidth
-            multiline
-            minRows={4}
-          />
+          {isSupplement ? null : (
+            <>
+              <TextField label="Short description (card)" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} fullWidth multiline minRows={2} />
+              <TextField
+                label="Full description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                fullWidth
+                multiline
+                minRows={4}
+              />
+            </>
+          )}
+          {isSupplement ? (
+            <>
+              <div className="store-editor__row">
+                <TextField
+                  label="Price (PKR)"
+                  type="number"
+                  value={variants[0]?.price ?? 0}
+                  onChange={(e) => updateVariant(0, { price: Number(e.target.value) })}
+                  fullWidth
+                />
+                <TextField
+                  label="Compare-at"
+                  type="number"
+                  value={variants[0]?.compareAtPrice ?? ""}
+                  onChange={(e) =>
+                    updateVariant(0, {
+                      compareAtPrice: e.target.value === "" ? "" : Number(e.target.value),
+                    })
+                  }
+                  fullWidth
+                />
+                <TextField
+                  label="Stock"
+                  type="number"
+                  value={variants[0]?.stock ?? 0}
+                  onChange={(e) => updateVariant(0, { stock: Number(e.target.value) })}
+                  fullWidth
+                />
+              </div>
+              <StoreImageField
+                label="Supplement photo"
+                value={imageUrl}
+                onChange={setImageUrl}
+                helperText="The product photo only. This is not the banner."
+              />
+            </>
+          ) : null}
           <div className="store-editor__row">
             <TextField
               select
@@ -636,46 +700,7 @@ export default function StoreProductEditor() {
           </label>
         </section>
 
-        {isSupplement ? (
-          <section className="store-section">
-            <h2>Price and photo</h2>
-            <div className="store-editor__row">
-              <TextField
-                label="Price (PKR)"
-                type="number"
-                value={variants[0]?.price ?? 0}
-                onChange={(e) => updateVariant(0, { price: Number(e.target.value) })}
-                fullWidth
-              />
-              <TextField
-                label="Compare-at"
-                type="number"
-                value={variants[0]?.compareAtPrice ?? ""}
-                onChange={(e) =>
-                  updateVariant(0, {
-                    compareAtPrice: e.target.value === "" ? "" : Number(e.target.value),
-                  })
-                }
-                fullWidth
-              />
-              <TextField
-                label="Stock"
-                type="number"
-                value={variants[0]?.stock ?? 0}
-                onChange={(e) => updateVariant(0, { stock: Number(e.target.value) })}
-                fullWidth
-              />
-            </div>
-            <StoreImageField
-              label="Product photo"
-              value={imageUrl}
-              onChange={setImageUrl}
-              values={images}
-              onChangeMany={setImages}
-              multiple
-            />
-          </section>
-        ) : (
+        {isSupplement ? null : (
         <>
         <section className="store-section">
           <div className="store-section__head">
@@ -820,7 +845,6 @@ export default function StoreProductEditor() {
 
         {isSupplement ? (
           <SupplementProductForm
-            productName={name}
             benefits={benefits}
             onBenefits={setBenefits}
             details={supplementDetails}

@@ -26,7 +26,7 @@ type Props = {
   maxMb?: number | null;
 };
 
-const ACCEPT = "image/jpeg,image/jpg,image/png,image/webp";
+const ACCEPT = "image/jpeg,image/jpg,image/png,image/webp,image/svg+xml,.svg";
 const DEFAULT_MAX_MB = 5;
 
 function readImageSize(file: File): Promise<{ width: number; height: number }> {
@@ -147,7 +147,7 @@ export default function StoreImageField({
       >
         <span>{uploading ? "Uploading…" : isMulti ? "Upload images" : "Upload image"}</span>
         <small>
-          JPG / PNG / WebP{sizeLabel}
+          JPG / PNG / WebP / SVG{sizeLabel}
           {isMulti ? " · max 5" : ""}
           {sizeHint}
         </small>

@@ -42,6 +42,10 @@ function ProductCard({
   const isSupplement = String(product.category || "")
     .toLowerCase()
     .includes("supplement");
+  const bannerImage = String(
+    product.supplementDetails?.bannerImageUrl || ""
+  ).trim();
+  const photo = String(product.imageUrl || "").trim();
   const points = (Array.isArray(product.benefits) ? product.benefits : [])
     .map((row: any) => String(row?.title || row || "").trim())
     .filter(Boolean)
@@ -52,9 +56,10 @@ function ProductCard({
       <div
         className="store-card__media"
         style={{
-          backgroundImage: product.imageUrl
-            ? `url(${product.imageUrl})`
-            : undefined,
+          backgroundImage:
+            (isSupplement ? bannerImage : photo)
+              ? `url(${isSupplement ? bannerImage : photo})`
+              : undefined,
           backgroundColor: product.color || undefined,
         }}
         onClick={onOpen}
@@ -66,6 +71,9 @@ function ProductCard({
           label={product.status}
         />
         <h3>{product.name}</h3>
+        {isSupplement && photo && photo !== bannerImage ? (
+          <img className="store-card__photo" src={photo} alt="" />
+        ) : null}
         {isSupplement && points.length ? (
           <ul className="store-card__points">
             {points.map((point: string) => (

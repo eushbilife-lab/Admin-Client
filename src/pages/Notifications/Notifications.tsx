@@ -25,6 +25,7 @@ type SentRow = {
   promoCode: string;
   recipientCount: number;
   pushSent: number;
+  pushFailed: number;
   createdAt: string;
 };
 
@@ -143,13 +144,18 @@ function asPriority(value: unknown): Priority {
   return value === "deal" || value === "urgent" ? value : "update";
 }
 
+function pictureUrl(raw: any): string {
+  const value = String(raw?.image || raw?.media || "").trim();
+  return /^https?:\/\//i.test(value) ? value : "";
+}
+
 function mapRow(raw: any): SentRow {
   return {
     id: String(raw.id || raw._id || ""),
     title: String(raw.title || ""),
-    body: String(raw.body || ""),
-    link: String(raw.link || ""),
-    image: String(raw.image || "").startsWith("https://") ? String(raw.image) : "",
+    body: String(raw.body || raw.content || ""),
+    link: String(raw.link || raw.url || ""),
+    image: pictureUrl(raw),
     channel: asChannel(raw.channel),
     priority: asPriority(raw.priority),
     audience: asAudience(raw.audience),
@@ -158,6 +164,7 @@ function mapRow(raw: any): SentRow {
     promoCode: String(raw.promoCode || ""),
     recipientCount: Number(raw.recipientCount) || 0,
     pushSent: Number(raw.pushSent) || 0,
+    pushFailed: Number(raw.pushFailed) || 0,
     createdAt: String(raw.createdAt || ""),
   };
 }
@@ -178,6 +185,17 @@ function audienceLabel(audience: Audience, email = "") {
 function when(iso: string) {
   const date = new Date(iso);
   return Number.isFinite(date.getTime()) ? date.toLocaleString() : "";
+}
+
+async function copyText(value: string, label: string) {
+  const text = value.trim();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    ToasterService.showSuccess(`${label} copied`);
+  } catch {
+    ToasterService.showError("Could not copy that");
+  }
 }
 
 function SentOptions({
@@ -256,7 +274,11 @@ export default function Notifications() {
   const [historyChannel, setHistoryChannel] = useState<"" | Channel>("");
   const [rows, setRows] = useState<SentRow[]>([]);
   const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState("");
+  const [photoFilter, setPhotoFilter] = useState<"" | "photo" | "plain">("");
+  const [previewKind, setPreviewKind] = useState<"phone" | "bell">("phone");
 
   const emailReady = audience === "user" && email.includes("@");
   const countReady = audience !== "user" || emailReady;
@@ -274,9 +296,10 @@ export default function Notifications() {
     setLoading(false);
     const data = success?.data?.data || {};
     const list = (data.notifications || data.broadcasts || []).map(mapRow).filter((row: SentRow) => row.id);
-    const total = Number(data.count || data.totalCount || 0);
+    const count = Number(data.count || data.totalCount || list.length);
     setRows(list);
-    setPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
+    setTotal(count);
+    setPages(Math.max(1, Math.ceil(count / PAGE_SIZE)));
   };
 
   useEffect(() => {
@@ -320,6 +343,20 @@ export default function Notifications() {
       JSON.stringify({ title, body, link, image, channel, priority, audience, devices, email, promoCode })
     );
   }, [title, body, link, image, channel, priority, audience, devices, email, promoCode]);
+
+  const clearDraft = () => {
+    setTitle("");
+    setBody("");
+    setLink("");
+    setImage("");
+    setEmail("");
+    setPromoCode("");
+    setChannel("both");
+    setPriority("update");
+    setAudience("all");
+    setDevices("all");
+    sessionStorage.removeItem(DRAFT_KEY);
+  };
 
   const onPickImage = async (file: File | undefined) => {
     if (!file) return;
@@ -453,29 +490,41 @@ export default function Notifications() {
 
   const previewTitle = title.trim() || "Your title";
   const previewBody = body.trim() || "The message people will read.";
+  const visibleRows = rows.filter((row) =>
+    photoFilter === "photo" ? Boolean(row.image) : photoFilter === "plain" ? !row.image : true
+  );
+  const selected = visibleRows.find((row) => row.id === selectedId) || null;
+  const pageReached = rows.reduce((sum, row) => sum + row.recipientCount, 0);
+  const pagePush = rows.reduce((sum, row) => sum + row.pushSent, 0);
+  const pagePhotos = rows.filter((row) => row.image).length;
 
   return (
     <PageShell
       kicker="Operations"
       title="Notifications"
-      subtitle="Send an in-app alert, a phone popup, or both. Add an image when the message needs one."
+      subtitle="Write the message, attach a photo, choose who receives it, and check how it looks before it goes out."
     >
       <div className="notif-admin">
         <div className="notif-admin__stats">
           <article>
-            <span>In-app</span>
-            <strong>Ready</strong>
-            <small>Always saved in the bell</small>
+            <span>Sent</span>
+            <strong>{total}</strong>
+            <small>Messages in this filter</small>
+          </article>
+          <article>
+            <span>Reached</span>
+            <strong>{pageReached}</strong>
+            <small>People on this page</small>
           </article>
           <article className={pushOn ? "is-on" : ""}>
             <span>Push</span>
-            <strong>{pushOn ? "Connected" : "Off"}</strong>
-            <small>{pushOn ? "Android, iPhone, and website" : "Add the Firebase key on this server"}</small>
+            <strong>{pushOn ? pagePush : "Off"}</strong>
+            <small>{pushOn ? "Popups delivered on this page" : "Add the Firebase key on this server"}</small>
           </article>
           <article>
-            <span>Audience</span>
-            <strong>{countReady ? audienceCount ?? "—" : "—"}</strong>
-            <small>{audienceLabel(audience)}</small>
+            <span>Photos</span>
+            <strong>{pagePhotos}</strong>
+            <small>{countReady ? `${audienceCount ?? "—"} in ${audienceLabel(audience).toLowerCase()}` : "Choose an audience"}</small>
           </article>
         </div>
 
@@ -500,8 +549,13 @@ export default function Notifications() {
             </section>
 
             <section>
-              <h2>Start from</h2>
-              <div className="notif-admin__pills">
+              <div className="notif-admin__section-head">
+                <h2>Start from</h2>
+                <button type="button" className="notif-admin__text" onClick={clearDraft}>
+                  Clear draft
+                </button>
+              </div>
+              <div className="notif-admin__templates">
                 {TEMPLATES.map((item) => (
                   <button
                     key={item.id}
@@ -514,7 +568,8 @@ export default function Notifications() {
                       setPriority(item.priority);
                     }}
                   >
-                    {item.label}
+                    <strong>{item.label}</strong>
+                    <span>{item.title}</span>
                   </button>
                 ))}
               </div>
@@ -540,9 +595,27 @@ export default function Notifications() {
                   required
                 />
               </label>
+              {showPush ? (
+                <div className="notif-admin__meters">
+                  <label>
+                    <span>Popup title</span>
+                    <i>
+                      <b style={{ width: `${Math.min(100, (title.length / 50) * 100)}%` }} />
+                    </i>
+                    <em>{Math.min(title.length, 50)}/50</em>
+                  </label>
+                  <label>
+                    <span>Popup message</span>
+                    <i>
+                      <b style={{ width: `${Math.min(100, (body.length / 140) * 100)}%` }} />
+                    </i>
+                    <em>{Math.min(body.length, 140)}/140</em>
+                  </label>
+                </div>
+              ) : null}
               {showPush && (title.length > 50 || body.length > 140) ? (
                 <p className="notif-admin__hint">
-                  Phone popups show about 50 characters of the title and 140 of the message. The bell keeps the full text.
+                  The phone cuts the popup at those limits. The bell keeps the full title and message.
                 </p>
               ) : null}
               <div className="notif-admin__pills">
@@ -575,9 +648,17 @@ export default function Notifications() {
               {image ? (
                 <div className="notif-admin__shot">
                   <img src={image} alt="" />
-                  <button type="button" onClick={() => setImage("")}>
-                    Remove
-                  </button>
+                  <div className="notif-admin__shot-actions">
+                    <button type="button" onClick={() => void copyText(image, "Image link")}>
+                      Copy link
+                    </button>
+                    <button type="button" onClick={() => fileRef.current?.click()}>
+                      Replace
+                    </button>
+                    <button type="button" onClick={() => setImage("")}>
+                      Remove
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <button
@@ -585,9 +666,20 @@ export default function Notifications() {
                   className="notif-admin__drop"
                   disabled={uploading}
                   onClick={() => fileRef.current?.click()}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    void onPickImage(event.dataTransfer.files?.[0]);
+                  }}
+                  onPaste={(event) => {
+                    const file = Array.from(event.clipboardData.files).find((item) =>
+                      item.type.startsWith("image/")
+                    );
+                    if (file) void onPickImage(file);
+                  }}
                 >
                   {uploading ? "Uploading…" : "Add an image"}
-                  <small>JPG, PNG, or WebP. Up to 5 MB. Shown in the popup and the bell.</small>
+                  <small>Drop, paste, or choose a JPG, PNG, or WebP. Up to 5 MB.</small>
                 </button>
               )}
             </section>
@@ -690,7 +782,25 @@ export default function Notifications() {
           </form>
 
           <aside className="notif-admin__preview" aria-label="Preview">
-            <p>What people see</p>
+            <div className="notif-admin__section-head">
+              <p>What people see</p>
+              <div className="notif-admin__pills">
+                <button
+                  type="button"
+                  className={previewKind === "phone" ? "is-on" : ""}
+                  onClick={() => setPreviewKind("phone")}
+                >
+                  Phone
+                </button>
+                <button
+                  type="button"
+                  className={previewKind === "bell" ? "is-on" : ""}
+                  onClick={() => setPreviewKind("bell")}
+                >
+                  Bell
+                </button>
+              </div>
+            </div>
             <ul className="notif-admin__check">
               <li>{channelLabel(channel)}</li>
               <li>{PRIORITIES.find((item) => item.id === priority)?.label}</li>
@@ -700,7 +810,7 @@ export default function Notifications() {
               <li>{image ? "Image attached" : "No image"}</li>
               <li>{link.trim() || "No page link"}</li>
             </ul>
-            {showPush ? (
+            {showPush && previewKind === "phone" ? (
               <div className="notif-admin__lock">
                 <span className="notif-admin__tag">Push</span>
                 <article>
@@ -713,7 +823,7 @@ export default function Notifications() {
                 </article>
               </div>
             ) : null}
-            {showInbox ? (
+            {showInbox && previewKind === "bell" ? (
               <div className="notif-admin__bell">
                 <span className="notif-admin__tag">In-app</span>
                 <article>
@@ -724,6 +834,12 @@ export default function Notifications() {
                   <small>{link.trim() ? `Opens ${link.trim()}` : "Stays in the bell"}</small>
                 </article>
               </div>
+            ) : null}
+            {!showPush && previewKind === "phone" ? (
+              <p className="notif-admin__hint">This send stays in the bell. Open Bell to preview it.</p>
+            ) : null}
+            {!showInbox && previewKind === "bell" ? (
+              <p className="notif-admin__hint">This send is a phone popup only. Open Phone to preview it.</p>
             ) : null}
           </aside>
         </div>
@@ -744,6 +860,20 @@ export default function Notifications() {
                 {item.label}
               </button>
             ))}
+            <button
+              type="button"
+              className={photoFilter === "photo" ? "is-on" : ""}
+              onClick={() => setPhotoFilter((current) => (current === "photo" ? "" : "photo"))}
+            >
+              With photo
+            </button>
+            <button
+              type="button"
+              className={photoFilter === "plain" ? "is-on" : ""}
+              onClick={() => setPhotoFilter((current) => (current === "plain" ? "" : "plain"))}
+            >
+              No photo
+            </button>
           </div>
           <input
             value={historySearch}
@@ -752,16 +882,78 @@ export default function Notifications() {
           />
         </div>
 
+        {selected ? (
+          <article className="notif-admin__detail">
+            {selected.image ? <img src={selected.image} alt="" /> : <span className="notif-admin__blank" />}
+            <div>
+              <div className="notif-admin__badges">
+                <span className={selected.channel === "push" ? "is-push" : "is-inbox"}>
+                  {channelLabel(selected.channel)}
+                </span>
+                <span className={`is-${selected.priority}`}>
+                  {PRIORITIES.find((item) => item.id === selected.priority)?.label}
+                </span>
+              </div>
+              <h3>{selected.title}</h3>
+              <p>{selected.body}</p>
+              <small>
+                {when(selected.createdAt)}
+                {selected.link ? ` · ${selected.link}` : ""}
+                {selected.promoCode ? ` · ${selected.promoCode}` : ""}
+              </small>
+              <div className="notif-admin__detail-stats">
+                <span>{audienceLabel(selected.audience, selected.email)}</span>
+                <span>{selected.recipientCount} people</span>
+                {selected.channel !== "inbox" ? (
+                  <span>
+                    {selected.pushSent} delivered
+                    {selected.pushFailed ? ` · ${selected.pushFailed} failed` : ""}
+                  </span>
+                ) : (
+                  <span>Saved in the bell</span>
+                )}
+              </div>
+            </div>
+            <div className="notif-admin__detail-actions">
+              <button type="button" onClick={() => applySent(selected)}>
+                Use again
+              </button>
+              <button type="button" onClick={() => void copyText(selected.title, "Title")}>
+                Copy title
+              </button>
+              {selected.link ? (
+                <button type="button" onClick={() => void copyText(selected.link, "Link")}>
+                  Copy link
+                </button>
+              ) : null}
+              {selected.image ? (
+                <button type="button" onClick={() => void copyText(selected.image, "Image link")}>
+                  Copy photo
+                </button>
+              ) : null}
+              <button type="button" className="is-danger" onClick={() => void deleteSent(selected)}>
+                Delete
+              </button>
+            </div>
+          </article>
+        ) : null}
+
         {loading ? (
           <p className="notif-admin__empty">Loading…</p>
-        ) : rows.length === 0 ? (
+        ) : visibleRows.length === 0 ? (
           <p className="notif-admin__empty">
-            {historyQuery || historyChannel ? "Nothing matches." : "Nothing has been sent yet."}
+            {historyQuery || historyChannel || photoFilter
+              ? "Nothing matches."
+              : "Nothing has been sent yet."}
           </p>
         ) : (
           <ul className="notif-admin__cards">
-            {rows.map((row) => (
-              <li key={row.id}>
+            {visibleRows.map((row) => (
+              <li
+                key={row.id}
+                className={selectedId === row.id ? "is-open" : ""}
+                onClick={() => setSelectedId((current) => (current === row.id ? "" : row.id))}
+              >
                 {row.image ? <img src={row.image} alt="" /> : <span className="notif-admin__blank" />}
                 <div>
                   <div className="notif-admin__badges">
@@ -780,7 +972,7 @@ export default function Notifications() {
                     {row.link ? ` · ${row.link}` : ""}
                   </small>
                 </div>
-                <div className="notif-admin__meta">
+                <div className="notif-admin__meta" onClick={(event) => event.stopPropagation()}>
                   <SentOptions onReuse={() => applySent(row)} onDelete={() => void deleteSent(row)} />
                   <span>{audienceLabel(row.audience, row.email)}</span>
                   {row.channel !== "inbox" ? <span>{deviceLabel(row.devices)}</span> : null}

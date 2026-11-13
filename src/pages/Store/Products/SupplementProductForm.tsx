@@ -1,6 +1,8 @@
+import { Dispatch, SetStateAction } from "react";
 import { Button, IconButton, TextField } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import StoreImageField from "../StoreImageField";
 
 export type SupplementBenefit = {
   title: string;
@@ -8,43 +10,72 @@ export type SupplementBenefit = {
   iconUrl: string;
 };
 
-export type SupplementFit = { title: string; description: string };
+export type SupplementFit = {
+  title: string;
+  description: string;
+  imageUrl: string;
+  bannerImageUrl: string;
+};
+
+export type FormulaChip = { title: string; imageUrl: string };
 export type SupplementInteraction = { medication: string; note: string };
 export type SupplementFact = { name: string; amount: string; dailyValue: string };
 
 export type SupplementDetails = {
+  bannerImageUrl: string;
+  pageQuestion: string;
   fitFor: SupplementFit[];
-  transparency: string[];
+  transparency: FormulaChip[];
   interactions: SupplementInteraction[];
   research: string;
   howToTake: string;
   whyItWorks: string;
   whenToTake: string;
+  infoImageUrl: string;
   servingSize: string;
   facts: SupplementFact[];
+  factsImageUrl: string;
   otherIngredients: string;
+  factsNote: string;
+  closingTitle: string;
+  closingText: string;
 };
 
 export const emptySupplementDetails = (): SupplementDetails => ({
+  bannerImageUrl: "",
+  pageQuestion: "Is this supplement right for you?",
   fitFor: [
-    { title: "", description: "" },
-    { title: "", description: "" },
-    { title: "", description: "" },
+    { title: "", description: "", imageUrl: "", bannerImageUrl: "" },
+    { title: "", description: "", imageUrl: "", bannerImageUrl: "" },
+    { title: "", description: "", imageUrl: "", bannerImageUrl: "" },
   ],
   transparency: [
-    "Vegan",
-    "Made without major allergens",
-    "Backed by research",
+    { title: "Made without major allergens", imageUrl: "" },
+    { title: "Backed by research", imageUrl: "" },
+    { title: "Third party tested", imageUrl: "" },
   ],
   interactions: [{ medication: "", note: "" }],
   research: "",
-  howToTake: "Take with food and a full glass of water.",
+  howToTake: "Take with food and plenty of water.",
   whyItWorks: "",
   whenToTake: "",
+  infoImageUrl: "",
   servingSize: "1 capsule",
   facts: [{ name: "", amount: "", dailyValue: "" }],
+  factsImageUrl: "",
   otherIngredients: "",
+  factsNote: "Daily value not established.",
+  closingTitle: "Is this supplement right for you?",
+  closingText: "",
 });
+
+function asChip(item: any): FormulaChip {
+  if (typeof item === "string") return { title: item, imageUrl: "" };
+  return {
+    title: String(item?.title || item?.label || ""),
+    imageUrl: String(item?.imageUrl || ""),
+  };
+}
 
 export function parseSupplementDetails(raw: any): SupplementDetails {
   const base = emptySupplementDetails();
@@ -53,8 +84,13 @@ export function parseSupplementDetails(raw: any): SupplementDetails {
     ? raw.fitFor.map((row: any) => ({
         title: String(row?.title || ""),
         description: String(row?.description || ""),
+        imageUrl: String(row?.imageUrl || ""),
+        bannerImageUrl: String(row?.bannerImageUrl || ""),
       }))
     : base.fitFor;
+  const transparency = Array.isArray(raw.transparency)
+    ? raw.transparency.map(asChip).filter((row: FormulaChip) => row.title)
+    : base.transparency;
   const facts = Array.isArray(raw.facts)
     ? raw.facts.map((row: any) => ({
         name: String(row?.name || ""),
@@ -68,10 +104,9 @@ export function parseSupplementDetails(raw: any): SupplementDetails {
         note: String(row?.note || ""),
       }))
     : base.interactions;
-  const transparency = Array.isArray(raw.transparency)
-    ? raw.transparency.map((item: any) => String(item || "")).filter(Boolean)
-    : base.transparency;
   return {
+    bannerImageUrl: String(raw.bannerImageUrl || ""),
+    pageQuestion: String(raw.pageQuestion || base.pageQuestion),
     fitFor: fitFor.length ? fitFor : base.fitFor,
     transparency: transparency.length ? transparency : base.transparency,
     interactions: interactions.length ? interactions : base.interactions,
@@ -79,59 +114,57 @@ export function parseSupplementDetails(raw: any): SupplementDetails {
     howToTake: String(raw.howToTake || base.howToTake),
     whyItWorks: String(raw.whyItWorks || ""),
     whenToTake: String(raw.whenToTake || ""),
+    infoImageUrl: String(raw.infoImageUrl || ""),
     servingSize: String(raw.servingSize || base.servingSize),
     facts: facts.length ? facts : base.facts,
+    factsImageUrl: String(raw.factsImageUrl || ""),
     otherIngredients: String(raw.otherIngredients || ""),
+    factsNote: String(raw.factsNote || base.factsNote),
+    closingTitle: String(raw.closingTitle || base.closingTitle),
+    closingText: String(raw.closingText || ""),
   };
 }
 
-type BenefitRow = SupplementBenefit;
-
 export default function SupplementProductForm({
-  productName,
   benefits,
   onBenefits,
   details,
   onDetails,
 }: {
-  productName: string;
-  benefits: BenefitRow[];
-  onBenefits: (rows: BenefitRow[]) => void;
+  benefits: SupplementBenefit[];
+  onBenefits: (rows: SupplementBenefit[]) => void;
   details: SupplementDetails;
-  onDetails: (next: SupplementDetails) => void;
+  onDetails: Dispatch<SetStateAction<SupplementDetails>>;
 }) {
   const patch = (partial: Partial<SupplementDetails>) =>
-    onDetails({ ...details, ...partial });
+    onDetails((current) => ({ ...current, ...partial }));
+
+  const patchRows = <K extends "fitFor" | "transparency" | "interactions" | "facts">(
+    key: K,
+    recipe: (rows: SupplementDetails[K]) => SupplementDetails[K]
+  ) => {
+    onDetails((current) => ({ ...current, [key]: recipe(current[key]) }));
+  };
 
   return (
     <>
       <section className="store-section">
-        <div className="store-section__head">
-          <div>
-            <h2>Supplement form</h2>
-            <p>
-              Card points, “is it right for you,” formula notes, interactions, and the supplement facts panel.
-            </p>
-          </div>
-        </div>
-        <TextField
-          label="Page question"
-          value={
-            productName.trim()
-              ? `Is our ${productName.trim()} right for you?`
-              : "Is this supplement right for you?"
-          }
-          fullWidth
-          InputProps={{ readOnly: true }}
-          helperText="Shown from the product name. Fill the three cards below."
+        <h2>Banner</h2>
+        <p>Wide banner for the supplement page. It is stored separately from the supplement photo.</p>
+        <StoreImageField
+          label="Banner image"
+          value={details.bannerImageUrl}
+          onChange={(bannerImageUrl) => patch({ bannerImageUrl })}
+          helperText="Banner only. Uploading here does not change the supplement photo."
+          folder="store"
         />
       </section>
 
       <section className="store-section">
         <div className="store-section__head">
           <div>
-            <h2>Card benefits</h2>
-            <p>The short points on the supplements list, like focus, nerves, and energy.</p>
+            <h2>Benefits</h2>
+            <p>The three points under the title on the supplement card.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
@@ -154,25 +187,12 @@ export default function SupplementProductForm({
               </IconButton>
             </div>
             <TextField
-              label="Point"
+              label="Title"
               value={row.title}
               onChange={(e) =>
                 onBenefits(
                   benefits.map((item, i) =>
                     i === index ? { ...item, title: e.target.value } : item
-                  )
-                )
-              }
-              fullWidth
-              placeholder="Supports mental clarity"
-            />
-            <TextField
-              label="Extra line"
-              value={row.description}
-              onChange={(e) =>
-                onBenefits(
-                  benefits.map((item, i) =>
-                    i === index ? { ...item, description: e.target.value } : item
                   )
                 )
               }
@@ -185,13 +205,31 @@ export default function SupplementProductForm({
       <section className="store-section">
         <div className="store-section__head">
           <div>
-            <h2>Right for you</h2>
-            <p>Three cards under the product title. Each has a short title and a sentence.</p>
+            <h2>Page question</h2>
+            <p>The question above the three cards, such as “Is our CoQ10 right for you?”</p>
+          </div>
+        </div>
+        <TextField
+          label="Page question"
+          value={details.pageQuestion}
+          onChange={(e) => patch({ pageQuestion: e.target.value })}
+          fullWidth
+        />
+      </section>
+
+      <section className="store-section">
+        <div className="store-section__head">
+          <div>
+            <h2>Cards</h2>
+            <p>Each card has a banner image, a title, and a description.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
             onClick={() =>
-              patch({ fitFor: [...details.fitFor, { title: "", description: "" }] })
+              patchRows("fitFor", (rows) => [
+                ...rows,
+                { title: "", description: "", imageUrl: "", bannerImageUrl: "" },
+              ])
             }
           >
             Add card
@@ -204,35 +242,47 @@ export default function SupplementProductForm({
               <IconButton
                 size="small"
                 onClick={() =>
-                  patch({ fitFor: details.fitFor.filter((_, i) => i !== index) })
+                  patchRows("fitFor", (rows) => rows.filter((_, i) => i !== index))
                 }
               >
                 <DeleteOutlineIcon fontSize="small" />
               </IconButton>
             </div>
-            <TextField
-              label="Title"
-              value={row.title}
-              onChange={(e) =>
-                patch({
-                  fitFor: details.fitFor.map((item, i) =>
-                    i === index ? { ...item, title: e.target.value } : item
-                  ),
-                })
+            <StoreImageField
+              key={`card-banner-${index}`}
+              label="Card banner image"
+              value={row.bannerImageUrl}
+              onChange={(bannerImageUrl) =>
+                patchRows("fitFor", (rows) =>
+                  rows.map((item, i) =>
+                    i === index ? { ...item, bannerImageUrl } : item
+                  )
+                )
               }
-              fullWidth
-              placeholder="Stay sharp"
+              folder="store"
             />
             <TextField
-              label="Description"
+              label="Card title"
+              value={row.title}
+              onChange={(e) => {
+                const title = e.target.value;
+                patchRows("fitFor", (rows) =>
+                  rows.map((item, i) => (i === index ? { ...item, title } : item))
+                );
+              }}
+              fullWidth
+            />
+            <TextField
+              label="Card description"
               value={row.description}
-              onChange={(e) =>
-                patch({
-                  fitFor: details.fitFor.map((item, i) =>
-                    i === index ? { ...item, description: e.target.value } : item
-                  ),
-                })
-              }
+              onChange={(e) => {
+                const description = e.target.value;
+                patchRows("fitFor", (rows) =>
+                  rows.map((item, i) =>
+                    i === index ? { ...item, description } : item
+                  )
+                );
+              }}
               fullWidth
               multiline
               minRows={2}
@@ -245,38 +295,56 @@ export default function SupplementProductForm({
         <div className="store-section__head">
           <div>
             <h2>Formula transparency</h2>
-            <p>Chips such as Vegan, Made without major allergens, Backed by research.</p>
+            <p>Each chip has an icon image and a title.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
-            onClick={() => patch({ transparency: [...details.transparency, ""] })}
+            onClick={() =>
+              patchRows("transparency", (rows) => [...rows, { title: "", imageUrl: "" }])
+            }
           >
             Add chip
           </Button>
         </div>
-        {details.transparency.map((label, index) => (
-          <div key={`chip-${index}`} className="store-editor__row">
+        {details.transparency.map((row, index) => (
+          <div key={`chip-${index}`} className="store-subcard">
+            <div className="store-subcard__top">
+              <strong>Formula {index + 1}</strong>
+              <IconButton
+                size="small"
+                onClick={() =>
+                  patchRows("transparency", (rows) =>
+                    rows.filter((_, i) => i !== index)
+                  )
+                }
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </div>
             <TextField
-              label={`Chip ${index + 1}`}
-              value={label}
-              onChange={(e) =>
-                patch({
-                  transparency: details.transparency.map((item, i) =>
-                    i === index ? e.target.value : item
-                  ),
-                })
-              }
+              label="Title"
+              value={row.title}
+              onChange={(e) => {
+                const title = e.target.value;
+                patchRows("transparency", (rows) =>
+                  rows.map((item, i) => (i === index ? { ...item, title } : item))
+                );
+              }}
               fullWidth
             />
-            <IconButton
-              onClick={() =>
-                patch({
-                  transparency: details.transparency.filter((_, i) => i !== index),
-                })
+            <StoreImageField
+              key={`formula-image-${index}`}
+              label="Formula image"
+              value={row.imageUrl}
+              onChange={(imageUrl) =>
+                patchRows("transparency", (rows) =>
+                  rows.map((item, i) =>
+                    i === index ? { ...item, imageUrl } : item
+                  )
+                )
               }
-            >
-              <DeleteOutlineIcon />
-            </IconButton>
+              folder="store"
+            />
           </div>
         ))}
       </section>
@@ -284,8 +352,8 @@ export default function SupplementProductForm({
       <section className="store-section">
         <div className="store-section__head">
           <div>
-            <h2>Drug and nutrient notes</h2>
-            <p>Medicines this supplement may affect. Keep each note short and factual.</p>
+            <h2>Common drug-nutrient interactions</h2>
+            <p>Only the medicines this page actually lists.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
@@ -295,13 +363,13 @@ export default function SupplementProductForm({
               })
             }
           >
-            Add note
+            Add interaction
           </Button>
         </div>
         {details.interactions.map((row, index) => (
           <div key={`ix-${index}`} className="store-subcard">
             <div className="store-subcard__top">
-              <strong>Note {index + 1}</strong>
+              <strong>Interaction {index + 1}</strong>
               <IconButton
                 size="small"
                 onClick={() =>
@@ -314,7 +382,7 @@ export default function SupplementProductForm({
               </IconButton>
             </div>
             <TextField
-              label="Medication group"
+              label="Title"
               value={row.medication}
               onChange={(e) =>
                 patch({
@@ -324,10 +392,10 @@ export default function SupplementProductForm({
                 })
               }
               fullWidth
-              placeholder="Thyroid medications"
+              placeholder="Immunosuppressant medications"
             />
             <TextField
-              label="What to know"
+              label="Description"
               value={row.note}
               onChange={(e) =>
                 patch({
@@ -345,7 +413,13 @@ export default function SupplementProductForm({
       </section>
 
       <section className="store-section">
-        <h2>Supplement information</h2>
+        <h2>Information</h2>
+        <StoreImageField
+          label="Information image"
+          value={details.infoImageUrl}
+          onChange={(infoImageUrl) => patch({ infoImageUrl })}
+          folder="store"
+        />
         <TextField
           label="What the research says"
           value={details.research}
@@ -375,6 +449,7 @@ export default function SupplementProductForm({
           value={details.whenToTake}
           onChange={(e) => patch({ whenToTake: e.target.value })}
           fullWidth
+          helperText="Leave blank when the page has no time."
         />
       </section>
 
@@ -395,12 +470,17 @@ export default function SupplementProductForm({
             Add row
           </Button>
         </div>
+        <StoreImageField
+          label="Facts image"
+          value={details.factsImageUrl}
+          onChange={(factsImageUrl) => patch({ factsImageUrl })}
+          folder="store"
+        />
         <TextField
           label="Serving size"
           value={details.servingSize}
           onChange={(e) => patch({ servingSize: e.target.value })}
           fullWidth
-          placeholder="1 vegetarian capsule"
         />
         {details.facts.map((row, index) => (
           <div key={`fact-${index}`} className="store-subcard">
@@ -426,7 +506,6 @@ export default function SupplementProductForm({
                 })
               }
               fullWidth
-              placeholder="Acetyl L-Carnitine"
             />
             <div className="store-editor__row">
               <TextField
@@ -440,7 +519,6 @@ export default function SupplementProductForm({
                   })
                 }
                 fullWidth
-                placeholder="500 mg"
               />
               <TextField
                 label="% Daily value"
@@ -453,7 +531,6 @@ export default function SupplementProductForm({
                   })
                 }
                 fullWidth
-                placeholder="† if not established"
               />
             </div>
           </div>
@@ -465,7 +542,30 @@ export default function SupplementProductForm({
           fullWidth
           multiline
           minRows={2}
-          placeholder="Hypromellose, rice flour, silica"
+        />
+        <TextField
+          label="Facts note"
+          value={details.factsNote}
+          onChange={(e) => patch({ factsNote: e.target.value })}
+          fullWidth
+        />
+      </section>
+
+      <section className="store-section">
+        <h2>Is this supplement right for you?</h2>
+        <TextField
+          label="Closing title"
+          value={details.closingTitle}
+          onChange={(e) => patch({ closingTitle: e.target.value })}
+          fullWidth
+        />
+        <TextField
+          label="Closing description"
+          value={details.closingText}
+          onChange={(e) => patch({ closingText: e.target.value })}
+          fullWidth
+          multiline
+          minRows={2}
         />
       </section>
     </>
