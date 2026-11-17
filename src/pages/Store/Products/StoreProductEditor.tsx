@@ -238,14 +238,14 @@ export default function StoreProductEditor() {
         : []
     );
     setHighlights(
-      product.highlights?.length
+      Array.isArray(product.highlights) && product.highlights.length
         ? parseTrustChips(product.highlights)
-        : DEFAULT_HIGHLIGHTS
+        : [emptyTrustChip()]
     );
     setCertifications(
-      product.certifications?.length
+      Array.isArray(product.certifications) && product.certifications.length
         ? parseTrustChips(product.certifications)
-        : DEFAULT_CERTIFICATIONS
+        : [emptyTrustChip()]
     );
     setSku(product.sku || "");
     setIsFeatured(Boolean(product.isFeatured));
@@ -310,7 +310,7 @@ export default function StoreProductEditor() {
             title: row.title || "",
             description: row.description || "",
           }))
-        : [emptyHowTo(1), emptyHowTo(2), emptyHowTo(3), emptyHowTo(4)]
+        : [emptyHowTo(1)]
     );
     setFaqs(
       product.faqs?.length
@@ -401,7 +401,7 @@ export default function StoreProductEditor() {
       category,
       status,
       currency,
-      badgeText: badgeText.trim() || (previewDiscount ? "Sale" : ""),
+      badgeText: badgeText.trim(),
       color: color.trim(),
       rating: Number(rating) || 0,
       ratingCount: Number(ratingCount) || 0,
@@ -461,41 +461,67 @@ export default function StoreProductEditor() {
           imageUrl: row.imageUrl.trim(),
         })),
       supplementDetails: isSupplement
-        ? {
-            bannerImageUrl: supplementDetails.bannerImageUrl.trim(),
-            pageQuestion: supplementDetails.pageQuestion.trim(),
-            fitFor: supplementDetails.fitFor
-              .filter((row) => row.title.trim())
-              .map((row) => ({
-                title: row.title.trim(),
-                description: row.description.trim(),
-                bannerImageUrl: row.bannerImageUrl.trim(),
-              })),
-            transparency: supplementDetails.transparency
-              .filter((row) => row.title.trim())
-              .map((row) => ({
-                title: row.title.trim(),
-                imageUrl: row.imageUrl.trim(),
-              })),
-            interactions: supplementDetails.interactions
-              .filter((row) => row.medication.trim())
-              .map((row) => ({
-                medication: row.medication.trim(),
-                note: row.note.trim(),
-              })),
-            research: supplementDetails.research.trim(),
-            howToTake: supplementDetails.howToTake.trim(),
-            whyItWorks: supplementDetails.whyItWorks.trim(),
-            whenToTake: supplementDetails.whenToTake.trim(),
-            infoImageUrl: supplementDetails.infoImageUrl.trim(),
-            servingSize: supplementDetails.servingSize.trim(),
-            facts: supplementDetails.facts.filter((row) => row.name.trim()),
-            factsImageUrl: supplementDetails.factsImageUrl.trim(),
-            otherIngredients: supplementDetails.otherIngredients.trim(),
-            factsNote: supplementDetails.factsNote.trim(),
-            closingTitle: supplementDetails.closingTitle.trim(),
-            closingText: supplementDetails.closingText.trim(),
-          }
+        ? (() => {
+            const ingredientLines = supplementDetails.ingredients
+              .map((line) => line.trim())
+              .filter(Boolean);
+            return {
+              bannerImageUrl: supplementDetails.bannerImageUrl.trim(),
+              pageQuestion: supplementDetails.pageQuestion.trim(),
+              fitFor: supplementDetails.fitFor
+                .filter(
+                  (row) =>
+                    row.title.trim() ||
+                    row.description.trim() ||
+                    row.imageUrl.trim() ||
+                    row.bannerImageUrl.trim()
+                )
+                .map((row) => ({
+                  title: row.title.trim(),
+                  description: row.description.trim(),
+                  imageUrl: row.imageUrl.trim(),
+                  bannerImageUrl: row.bannerImageUrl.trim(),
+                })),
+              transparency: supplementDetails.transparency
+                .filter((row) => row.title.trim() || row.imageUrl.trim())
+                .map((row) => ({
+                  title: row.title.trim(),
+                  imageUrl: row.imageUrl.trim(),
+                })),
+              interactionsIntro: supplementDetails.interactionsIntro.trim(),
+              interactions: supplementDetails.interactions
+                .filter(
+                  (row) => row.medication.trim() || row.note.trim() || row.imageUrl.trim()
+                )
+                .map((row) => ({
+                  medication: row.medication.trim(),
+                  note: row.note.trim(),
+                  imageUrl: row.imageUrl.trim(),
+                })),
+              research: supplementDetails.research.trim(),
+              howToTake: supplementDetails.howToTake.trim(),
+              whyItWorks: supplementDetails.whyItWorks.trim(),
+              whenToTake: supplementDetails.whenToTake.trim(),
+              infoTitle: supplementDetails.infoTitle.trim(),
+              infoImageUrl: supplementDetails.infoImageUrl.trim(),
+              servingSize: supplementDetails.servingSize.trim(),
+              facts: supplementDetails.facts
+                .filter((row) => row.name.trim() || row.amount.trim() || row.dailyValue.trim())
+                .map((row) => ({
+                  name: row.name.trim(),
+                  amount: row.amount.trim(),
+                  dailyValue: row.dailyValue.trim(),
+                })),
+              factsImageUrl: supplementDetails.factsImageUrl.trim(),
+              ingredients: ingredientLines,
+              otherIngredients: ingredientLines.join("\n"),
+              factsNote: supplementDetails.factsNote.trim(),
+              closingTitle: supplementDetails.closingTitle.trim(),
+              closingText: supplementDetails.closingText.trim(),
+              closingImageUrl: supplementDetails.closingImageUrl.trim(),
+              closingButtonLabel: supplementDetails.closingButtonLabel.trim(),
+            };
+          })()
         : undefined,
       customFields: customFields
         .filter((field) => field.label.trim())

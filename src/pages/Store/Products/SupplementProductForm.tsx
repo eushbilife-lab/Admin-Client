@@ -92,9 +92,15 @@ function asChip(item: any): FormulaChip {
   };
 }
 
+function keptText(value: unknown, fallback = ""): string {
+  if (value === undefined || value === null) return fallback;
+  return String(value);
+}
+
 export function parseSupplementDetails(raw: any): SupplementDetails {
   const base = emptySupplementDetails();
   if (!raw || typeof raw !== "object") return base;
+  const blankFit = { title: "", description: "", imageUrl: "", bannerImageUrl: "" };
   const fitFor = Array.isArray(raw.fitFor)
     ? raw.fitFor.map((row: any) => ({
         title: String(row?.title || ""),
@@ -104,7 +110,7 @@ export function parseSupplementDetails(raw: any): SupplementDetails {
       }))
     : base.fitFor;
   const transparency = Array.isArray(raw.transparency)
-    ? raw.transparency.map(asChip).filter((row: FormulaChip) => row.title)
+    ? raw.transparency.map(asChip)
     : base.transparency;
   const facts = Array.isArray(raw.facts)
     ? raw.facts.map((row: any) => ({
@@ -121,38 +127,38 @@ export function parseSupplementDetails(raw: any): SupplementDetails {
       }))
     : base.interactions;
   const ingredientRows = Array.isArray(raw.ingredients)
-    ? raw.ingredients
-        .map((row: any) =>
-          String(typeof row === "string" ? row : row?.name || "").trim()
-        )
-        .filter(Boolean)
+    ? raw.ingredients.map((row: any) =>
+        String(typeof row === "string" ? row : row?.name || "")
+      )
     : String(raw.otherIngredients || "")
         .split(/\n+/)
         .map((line) => line.trim())
         .filter(Boolean);
   return {
-    bannerImageUrl: String(raw.bannerImageUrl || ""),
-    pageQuestion: String(raw.pageQuestion || base.pageQuestion),
-    fitFor: fitFor.length ? fitFor : base.fitFor,
-    transparency: transparency.length ? transparency : base.transparency,
-    interactionsIntro: String(raw.interactionsIntro || ""),
-    interactions: interactions.length ? interactions : base.interactions,
-    research: String(raw.research || ""),
-    howToTake: String(raw.howToTake || base.howToTake),
-    whyItWorks: String(raw.whyItWorks || ""),
-    whenToTake: String(raw.whenToTake || ""),
-    infoTitle: String(raw.infoTitle || ""),
-    infoImageUrl: String(raw.infoImageUrl || ""),
-    servingSize: String(raw.servingSize || base.servingSize),
-    facts: facts.length ? facts : base.facts,
-    factsImageUrl: String(raw.factsImageUrl || ""),
-    otherIngredients: String(raw.otherIngredients || ""),
-    ingredients: ingredientRows.length ? ingredientRows : base.ingredients,
-    factsNote: String(raw.factsNote || base.factsNote),
-    closingTitle: String(raw.closingTitle || base.closingTitle),
-    closingText: String(raw.closingText || ""),
-    closingImageUrl: String(raw.closingImageUrl || ""),
-    closingButtonLabel: String(raw.closingButtonLabel || base.closingButtonLabel),
+    bannerImageUrl: keptText(raw.bannerImageUrl),
+    pageQuestion: keptText(raw.pageQuestion, base.pageQuestion),
+    fitFor: fitFor.length ? fitFor : [blankFit],
+    transparency: transparency.length ? transparency : [{ title: "", imageUrl: "" }],
+    interactionsIntro: keptText(raw.interactionsIntro),
+    interactions: interactions.length
+      ? interactions
+      : [{ medication: "", note: "", imageUrl: "" }],
+    research: keptText(raw.research),
+    howToTake: keptText(raw.howToTake, base.howToTake),
+    whyItWorks: keptText(raw.whyItWorks),
+    whenToTake: keptText(raw.whenToTake),
+    infoTitle: keptText(raw.infoTitle),
+    infoImageUrl: keptText(raw.infoImageUrl),
+    servingSize: keptText(raw.servingSize, base.servingSize),
+    facts: facts.length ? facts : [{ name: "", amount: "", dailyValue: "" }],
+    factsImageUrl: keptText(raw.factsImageUrl),
+    otherIngredients: keptText(raw.otherIngredients),
+    ingredients: ingredientRows.length ? ingredientRows : [""],
+    factsNote: keptText(raw.factsNote, base.factsNote),
+    closingTitle: keptText(raw.closingTitle, base.closingTitle),
+    closingText: keptText(raw.closingText),
+    closingImageUrl: keptText(raw.closingImageUrl),
+    closingButtonLabel: keptText(raw.closingButtonLabel, base.closingButtonLabel),
   };
 }
 
