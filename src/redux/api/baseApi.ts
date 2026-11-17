@@ -83,6 +83,7 @@ export const baseApi = createApi({
     "StoreBanner",
     "StoreOrder",
     "StoreCategory",
+    "StoreSupplementType",
     "StorePromo",
     "StorePayment",
     "Contact",

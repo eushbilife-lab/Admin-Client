@@ -8,6 +8,7 @@ import CircleLoader from "@core/basic-components/CircleLoader";
 import { useAppDispatch, useAppSelector } from "redux/hooks";
 import storeProductService from "services/storeProduct.service";
 import storeCategoryService from "services/storeCategory.service";
+import storeSupplementTypeService from "services/storeSupplementType.service";
 import { storeProductActions } from "redux/slices/storeProduct";
 import ToasterService from "utils/toaster.util";
 import StoreImageField from "../StoreImageField";
@@ -148,6 +149,10 @@ export default function StoreProductEditor() {
   const [shortDescription, setShortDescription] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState(initialCategory);
+  const [supplementTypeId, setSupplementTypeId] = useState("");
+  const [supplementTypes, setSupplementTypes] = useState<
+    { id: string; label: string; status?: string }[]
+  >([]);
   const [categoryOptions, setCategoryOptions] = useState<
     { key: string; label: string }[]
   >([
@@ -207,6 +212,16 @@ export default function StoreProductEditor() {
         list.map((c: any) => ({ key: c.key, label: c.label || c.key }))
       );
     });
+    storeSupplementTypeService.getAll({}).then(([success]: any) => {
+      const list = success?.data?.data?.supplementTypes || [];
+      setSupplementTypes(
+        list.map((row: any) => ({
+          id: String(row._id || row.id || ""),
+          label: row.label || row.key,
+          status: row.status,
+        }))
+      );
+    });
   }, []);
 
   useEffect(() => {
@@ -216,6 +231,9 @@ export default function StoreProductEditor() {
     setShortDescription(product.shortDescription || "");
     setDescription(product.description || "");
     setCategory(product.category || "supper_foods");
+    setSupplementTypeId(
+      String(product.supplementTypeId || product.supplementType?.id || "")
+    );
     setStatus(product.status || "published");
     setCurrency(product.currency || "PKR");
     setBadgeText(product.badgeText || "");
@@ -399,6 +417,7 @@ export default function StoreProductEditor() {
       shortDescription: shortDescription.trim(),
       description: isSupplement ? shortDescription.trim() : description.trim(),
       category,
+      supplementTypeId: isSupplement ? supplementTypeId || null : null,
       status,
       currency,
       badgeText: badgeText.trim(),
@@ -616,6 +635,27 @@ export default function StoreProductEditor() {
               fullWidth
               placeholder="CoQ10"
             />
+            <TextField
+              select
+              label="Supplement type"
+              value={supplementTypeId}
+              onChange={(e) => setSupplementTypeId(e.target.value)}
+              fullWidth
+              helperText="Managed under Store → Supplement types. Shown on GET /store/products/{id}?type=supplements as supplementTypeId and supplementType."
+            >
+              <MenuItem value="">None</MenuItem>
+              {supplementTypes
+                .filter(
+                  (row) =>
+                    row.id &&
+                    (row.status !== "inactive" || row.id === supplementTypeId)
+                )
+                .map((row) => (
+                  <MenuItem key={row.id} value={row.id}>
+                    {row.label}
+                  </MenuItem>
+                ))}
+            </TextField>
             <TextField
               label="Description"
               value={shortDescription}

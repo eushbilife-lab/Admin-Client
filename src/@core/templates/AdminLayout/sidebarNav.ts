@@ -177,6 +177,14 @@ export const sidebarGroups: NavGroup[] = [
         hint: "Shop sections (Supper Foods…)",
       },
       {
+        label: "Supplement types",
+        path: "/store/supplement-types",
+        icon: MdCategory,
+        roles: ["admin"],
+        keywords: "vitamin mineral protein supplement type",
+        hint: "Types used on the supplement form",
+      },
+      {
         label: "Products",
         path: "/store/products",
         icon: MdStorefront,
