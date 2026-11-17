@@ -32,6 +32,8 @@ type VariantRow = {
   stock: number;
   imageUrl: string;
   isDefault: boolean;
+  badgeText: string;
+  isPopular: boolean;
 };
 
 type IngredientRow = {
@@ -53,9 +55,9 @@ type TestimonialRow = {
   imageUrl: string;
 };
 
-const emptyVariant = (index = 0): VariantRow => ({
+const emptyVariant = (index = 0, supplement = false): VariantRow => ({
   key: "",
-  label: index === 0 ? "1 Bottle" : `${index + 1} Bottles`,
+  label: supplement ? "30 Days" : index === 0 ? "1 Bottle" : `${index + 1} Bottles`,
   bottles: index + 1,
   sku: "",
   price: 0,
@@ -63,6 +65,8 @@ const emptyVariant = (index = 0): VariantRow => ({
   stock: 0,
   imageUrl: "",
   isDefault: index === 0,
+  badgeText: supplement && index === 0 ? "Standard Price" : "",
+  isPopular: false,
 });
 
 const emptyIngredient = (): IngredientRow => ({
@@ -133,12 +137,11 @@ export default function StoreProductEditor() {
   const dispatch = useAppDispatch();
   const { product, loading } = useAppSelector((state) => state.storeProduct);
   const isNew = !id || id === "new";
-  const initialCategory =
-    searchParams.get("category") === "supplements"
+  const initialCategory = searchParams.get("category")
+    ? String(searchParams.get("category"))
+    : isNew
       ? "supplements"
-      : searchParams.get("category") === "supper_foods"
-        ? "supper_foods"
-        : "supper_foods";
+      : "supper_foods";
 
   const [name, setName] = useState("");
   const [headline, setHeadline] = useState("");
@@ -165,7 +168,9 @@ export default function StoreProductEditor() {
     useState<TrustChipRow[]>(DEFAULT_CERTIFICATIONS);
   const [sku, setSku] = useState("");
   const [isFeatured, setIsFeatured] = useState(false);
-  const [variants, setVariants] = useState<VariantRow[]>([emptyVariant(0)]);
+  const [variants, setVariants] = useState<VariantRow[]>([
+    emptyVariant(0, initialCategory.toLowerCase().includes("supplement")),
+  ]);
   const [ingredients, setIngredients] = useState<IngredientRow[]>([
     emptyIngredient(),
   ]);
@@ -258,6 +263,8 @@ export default function StoreProductEditor() {
           stock: Number(v.stock) || 0,
           imageUrl: v.imageUrl || "",
           isDefault: Boolean(v.isDefault),
+          badgeText: v.badgeText || "",
+          isPopular: Boolean(v.isPopular),
         }))
       );
     } else {
@@ -271,6 +278,8 @@ export default function StoreProductEditor() {
           sku: product.sku || "",
           imageUrl: product.imageUrl || "",
           isDefault: true,
+          badgeText: "",
+          isPopular: false,
         },
       ]);
     }
@@ -387,8 +396,8 @@ export default function StoreProductEditor() {
     const payload = {
       name: name.trim(),
       headline: headline.trim(),
-      shortDescription: isSupplement ? "" : shortDescription.trim(),
-      description: isSupplement ? "" : description.trim(),
+      shortDescription: shortDescription.trim(),
+      description: isSupplement ? shortDescription.trim() : description.trim(),
       category,
       status,
       currency,
@@ -532,7 +541,7 @@ export default function StoreProductEditor() {
       }
       subtitle={
         isSupplement
-          ? "Supplement form only. Card points, right-for-you cards, formula notes, interactions, and supplement facts."
+          ? "Same sections as the supplement detail page, from the product card through the assessment button."
           : "Super food form only. Packs, gallery, ingredients, benefits, how to use, FAQs, and reviews."
       }
       actions={
@@ -570,76 +579,60 @@ export default function StoreProductEditor() {
           </button>
         </div>
 
+        {isSupplement ? (
+          <section className="store-section">
+            <h2>Product card</h2>
+            <p>The top of the supplement page: name, description, and photo.</p>
+            <TextField
+              label="Product name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              fullWidth
+              placeholder="CoQ10"
+            />
+            <TextField
+              label="Description"
+              value={shortDescription}
+              onChange={(e) => setShortDescription(e.target.value)}
+              fullWidth
+              multiline
+              minRows={3}
+              placeholder="CoQ10 helps you maintain healthy, energized cells that are essential for heart health & peak fitness performance."
+            />
+            <StoreImageField
+              label="Product photo"
+              value={imageUrl}
+              onChange={setImageUrl}
+            />
+          </section>
+        ) : null}
+
+        {isSupplement ? null : (
         <section className="store-section">
-          <h2>{isSupplement ? "Supplement" : "Super food"}</h2>
+          <h2>Super food</h2>
           <TextField
             label="Product name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             fullWidth
-            placeholder={isSupplement ? "Acetyl L-Carnitine" : "Gallzen Capsules"}
+            placeholder="Gallzen Capsules"
           />
           <TextField
-            label={isSupplement ? "Opening line" : "Headline / tagline"}
+            label="Headline / tagline"
             value={headline}
             onChange={(e) => setHeadline(e.target.value)}
             fullWidth
-            placeholder={
-              isSupplement
-                ? "Mental clarity, cellular energy, and nerve support"
-                : "Flow Better, Digest Faster"
-            }
+            placeholder="Flow Better, Digest Faster"
           />
-          {isSupplement ? null : (
-            <>
-              <TextField label="Short description (card)" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} fullWidth multiline minRows={2} />
-              <TextField
-                label="Full description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                fullWidth
-                multiline
-                minRows={4}
-              />
-            </>
-          )}
-          {isSupplement ? (
-            <>
-              <div className="store-editor__row">
-                <TextField
-                  label="Price (PKR)"
-                  type="number"
-                  value={variants[0]?.price ?? 0}
-                  onChange={(e) => updateVariant(0, { price: Number(e.target.value) })}
-                  fullWidth
-                />
-                <TextField
-                  label="Compare-at"
-                  type="number"
-                  value={variants[0]?.compareAtPrice ?? ""}
-                  onChange={(e) =>
-                    updateVariant(0, {
-                      compareAtPrice: e.target.value === "" ? "" : Number(e.target.value),
-                    })
-                  }
-                  fullWidth
-                />
-                <TextField
-                  label="Stock"
-                  type="number"
-                  value={variants[0]?.stock ?? 0}
-                  onChange={(e) => updateVariant(0, { stock: Number(e.target.value) })}
-                  fullWidth
-                />
-              </div>
-              <StoreImageField
-                label="Supplement photo"
-                value={imageUrl}
-                onChange={setImageUrl}
-                helperText="The product photo only. This is not the banner."
-              />
-            </>
-          ) : null}
+          <TextField label="Short description (card)" value={shortDescription} onChange={(e) => setShortDescription(e.target.value)} fullWidth multiline minRows={2} />
+          <TextField
+            label="Full description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            fullWidth
+            multiline
+            minRows={4}
+          />
           <div className="store-editor__row">
             <TextField
               select
@@ -699,6 +692,7 @@ export default function StoreProductEditor() {
             Featured on Store home
           </label>
         </section>
+        )}
 
         {isSupplement ? null : (
         <>
@@ -849,6 +843,189 @@ export default function StoreProductEditor() {
             onBenefits={setBenefits}
             details={supplementDetails}
             onDetails={setSupplementDetails}
+            afterBenefits={
+              <section className="store-section">
+                <div className="store-section__head">
+                  <div>
+                    <h2>Packs and prices</h2>
+                    <p>Each row is a pack, such as 30 Days, with its price, strike price, and badge.</p>
+                  </div>
+                  <Button
+                    startIcon={<AddIcon />}
+                    onClick={() => setVariants((rows) => [...rows, emptyVariant(rows.length, true)])}
+                  >
+                    Add pack
+                  </Button>
+                </div>
+                {variants.map((row, index) => {
+                  const compare = row.compareAtPrice === "" ? 0 : Number(row.compareAtPrice);
+                  const off =
+                    compare > Number(row.price)
+                      ? Math.round(((compare - Number(row.price)) / compare) * 100)
+                      : null;
+                  return (
+                    <div key={`pack-${index}`} className="store-subcard">
+                      <div className="store-subcard__top">
+                        <strong>Pack {index + 1}</strong>
+                        <div className="store-subcard__actions">
+                          <label className="store-check">
+                            <input
+                              type="checkbox"
+                              checked={row.isPopular}
+                              onChange={(e) => updateVariant(index, { isPopular: e.target.checked })}
+                            />
+                            Most popular
+                          </label>
+                          {variants.length > 1 ? (
+                            <IconButton
+                              size="small"
+                              onClick={() => setVariants((rows) => rows.filter((_, i) => i !== index))}
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          ) : null}
+                        </div>
+                      </div>
+                      <StoreImageField
+                        label="Pack icon"
+                        value={row.imageUrl}
+                        onChange={(imageUrl) => updateVariant(index, { imageUrl })}
+                      />
+                      <div className="store-editor__row">
+                        <TextField
+                          label="Duration"
+                          value={row.label}
+                          onChange={(e) => updateVariant(index, { label: e.target.value })}
+                          fullWidth
+                          placeholder="30 Days"
+                        />
+                        <TextField
+                          label="Badge"
+                          value={row.badgeText}
+                          onChange={(e) => updateVariant(index, { badgeText: e.target.value })}
+                          fullWidth
+                          placeholder={off ? `${off}% OFF` : "Standard Price"}
+                          helperText={off ? `Discount from the prices is ${off}% OFF` : "Shown when there is no discount"}
+                        />
+                      </div>
+                      <div className="store-editor__row">
+                        <TextField
+                          label="Price (Rs)"
+                          type="number"
+                          value={row.price}
+                          onChange={(e) => updateVariant(index, { price: Number(e.target.value) })}
+                          fullWidth
+                        />
+                        <TextField
+                          label="Strike price"
+                          type="number"
+                          value={row.compareAtPrice}
+                          onChange={(e) =>
+                            updateVariant(index, {
+                              compareAtPrice: e.target.value === "" ? "" : Number(e.target.value),
+                            })
+                          }
+                          fullWidth
+                        />
+                        <TextField
+                          label="Stock"
+                          type="number"
+                          value={row.stock}
+                          onChange={(e) => updateVariant(index, { stock: Number(e.target.value) })}
+                          fullWidth
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </section>
+            }
+            beforeClosing={
+              <section className="store-section">
+                <div className="store-section__head">
+                  <div>
+                    <h2>Customer reviews</h2>
+                    <p>Name, stars, and the review text shown on the page.</p>
+                  </div>
+                  <Button
+                    startIcon={<AddIcon />}
+                    onClick={() => setTestimonials((rows) => [...rows, emptyTestimonial()])}
+                  >
+                    Add review
+                  </Button>
+                </div>
+                <div className="store-editor__row">
+                  <TextField
+                    label="Rating"
+                    type="number"
+                    inputProps={{ step: 0.1, min: 0, max: 5 }}
+                    value={rating}
+                    onChange={(e) => setRating(Number(e.target.value))}
+                    fullWidth
+                  />
+                  <TextField
+                    label="Rating count"
+                    type="number"
+                    value={ratingCount}
+                    onChange={(e) => setRatingCount(Number(e.target.value))}
+                    fullWidth
+                    helperText="Shown as “Based on 48 Ratings”"
+                  />
+                </div>
+                {testimonials.map((row, index) => (
+                  <div key={`rev-${index}`} className="store-subcard">
+                    <div className="store-subcard__top">
+                      <strong>Review {index + 1}</strong>
+                      <IconButton
+                        size="small"
+                        onClick={() => setTestimonials((rows) => rows.filter((_, i) => i !== index))}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </div>
+                    <div className="store-editor__row">
+                      <TextField
+                        label="Name"
+                        value={row.name}
+                        onChange={(e) =>
+                          setTestimonials((rows) =>
+                            rows.map((item, i) => (i === index ? { ...item, name: e.target.value } : item))
+                          )
+                        }
+                        fullWidth
+                        placeholder="Sohail Mushtaq"
+                      />
+                      <TextField
+                        label="Stars"
+                        type="number"
+                        inputProps={{ min: 1, max: 5 }}
+                        value={row.rating}
+                        onChange={(e) =>
+                          setTestimonials((rows) =>
+                            rows.map((item, i) =>
+                              i === index ? { ...item, rating: Number(e.target.value) } : item
+                            )
+                          )
+                        }
+                        fullWidth
+                      />
+                    </div>
+                    <TextField
+                      label="Review"
+                      value={row.quote}
+                      onChange={(e) =>
+                        setTestimonials((rows) =>
+                          rows.map((item, i) => (i === index ? { ...item, quote: e.target.value } : item))
+                        )
+                      }
+                      fullWidth
+                      multiline
+                      minRows={3}
+                    />
+                  </div>
+                ))}
+              </section>
+            }
           />
         ) : (
         <>
@@ -1073,7 +1250,35 @@ export default function StoreProductEditor() {
         </>
         )}
 
-        <DynamicProductFields fields={customFields} onChange={setCustomFields} />
+        {isSupplement ? (
+          <section className="store-section">
+            <h2>Publishing</h2>
+            <div className="store-editor__row">
+              <TextField select label="Shop section" value={category} onChange={(e) => setCategory(e.target.value)} fullWidth>
+                {categoryOptions.map((opt) => (
+                  <MenuItem key={opt.key} value={opt.key}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+              <TextField select label="Status" value={status} onChange={(e) => setStatus(e.target.value)} fullWidth>
+                <MenuItem value="published">Published</MenuItem>
+                <MenuItem value="active">Active</MenuItem>
+                <MenuItem value="draft">Draft</MenuItem>
+                <MenuItem value="inactive">Inactive</MenuItem>
+              </TextField>
+              <TextField label="Currency" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} fullWidth />
+            </div>
+            <label className="store-check">
+              <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} />
+              Featured on Store home
+            </label>
+          </section>
+        ) : null}
+
+        {isSupplement ? null : (
+          <DynamicProductFields fields={customFields} onChange={setCustomFields} />
+        )}
       </div>
     </PageShell>
   );

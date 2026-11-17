@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction } from "react";
+import { Dispatch, ReactNode, SetStateAction } from "react";
 import { Button, IconButton, TextField } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -18,7 +18,11 @@ export type SupplementFit = {
 };
 
 export type FormulaChip = { title: string; imageUrl: string };
-export type SupplementInteraction = { medication: string; note: string };
+export type SupplementInteraction = {
+  medication: string;
+  note: string;
+  imageUrl: string;
+};
 export type SupplementFact = { name: string; amount: string; dailyValue: string };
 
 export type SupplementDetails = {
@@ -26,19 +30,24 @@ export type SupplementDetails = {
   pageQuestion: string;
   fitFor: SupplementFit[];
   transparency: FormulaChip[];
+  interactionsIntro: string;
   interactions: SupplementInteraction[];
   research: string;
   howToTake: string;
   whyItWorks: string;
   whenToTake: string;
+  infoTitle: string;
   infoImageUrl: string;
   servingSize: string;
   facts: SupplementFact[];
   factsImageUrl: string;
   otherIngredients: string;
+  ingredients: string[];
   factsNote: string;
   closingTitle: string;
   closingText: string;
+  closingImageUrl: string;
+  closingButtonLabel: string;
 };
 
 export const emptySupplementDetails = (): SupplementDetails => ({
@@ -54,19 +63,25 @@ export const emptySupplementDetails = (): SupplementDetails => ({
     { title: "Backed by research", imageUrl: "" },
     { title: "Third party tested", imageUrl: "" },
   ],
-  interactions: [{ medication: "", note: "" }],
+  interactionsIntro: "",
+  interactions: [{ medication: "", note: "", imageUrl: "" }],
   research: "",
   howToTake: "Take with food and plenty of water.",
   whyItWorks: "",
   whenToTake: "",
+  infoTitle: "",
   infoImageUrl: "",
   servingSize: "1 capsule",
   facts: [{ name: "", amount: "", dailyValue: "" }],
   factsImageUrl: "",
   otherIngredients: "",
-  factsNote: "Daily value not established.",
+  ingredients: [""],
+  factsNote:
+    "% Daily Values are based on a 2,000 calorie diet. Daily Value not established.",
   closingTitle: "Is this supplement right for you?",
   closingText: "",
+  closingImageUrl: "",
+  closingButtonLabel: "Take Assessment Now",
 });
 
 function asChip(item: any): FormulaChip {
@@ -102,26 +117,42 @@ export function parseSupplementDetails(raw: any): SupplementDetails {
     ? raw.interactions.map((row: any) => ({
         medication: String(row?.medication || ""),
         note: String(row?.note || ""),
+        imageUrl: String(row?.imageUrl || ""),
       }))
     : base.interactions;
+  const ingredientRows = Array.isArray(raw.ingredients)
+    ? raw.ingredients
+        .map((row: any) =>
+          String(typeof row === "string" ? row : row?.name || "").trim()
+        )
+        .filter(Boolean)
+    : String(raw.otherIngredients || "")
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean);
   return {
     bannerImageUrl: String(raw.bannerImageUrl || ""),
     pageQuestion: String(raw.pageQuestion || base.pageQuestion),
     fitFor: fitFor.length ? fitFor : base.fitFor,
     transparency: transparency.length ? transparency : base.transparency,
+    interactionsIntro: String(raw.interactionsIntro || ""),
     interactions: interactions.length ? interactions : base.interactions,
     research: String(raw.research || ""),
     howToTake: String(raw.howToTake || base.howToTake),
     whyItWorks: String(raw.whyItWorks || ""),
     whenToTake: String(raw.whenToTake || ""),
+    infoTitle: String(raw.infoTitle || ""),
     infoImageUrl: String(raw.infoImageUrl || ""),
     servingSize: String(raw.servingSize || base.servingSize),
     facts: facts.length ? facts : base.facts,
     factsImageUrl: String(raw.factsImageUrl || ""),
     otherIngredients: String(raw.otherIngredients || ""),
+    ingredients: ingredientRows.length ? ingredientRows : base.ingredients,
     factsNote: String(raw.factsNote || base.factsNote),
     closingTitle: String(raw.closingTitle || base.closingTitle),
     closingText: String(raw.closingText || ""),
+    closingImageUrl: String(raw.closingImageUrl || ""),
+    closingButtonLabel: String(raw.closingButtonLabel || base.closingButtonLabel),
   };
 }
 
@@ -130,11 +161,15 @@ export default function SupplementProductForm({
   onBenefits,
   details,
   onDetails,
+  afterBenefits,
+  beforeClosing,
 }: {
   benefits: SupplementBenefit[];
   onBenefits: (rows: SupplementBenefit[]) => void;
   details: SupplementDetails;
   onDetails: Dispatch<SetStateAction<SupplementDetails>>;
+  afterBenefits?: ReactNode;
+  beforeClosing?: ReactNode;
 }) {
   const patch = (partial: Partial<SupplementDetails>) =>
     onDetails((current) => ({ ...current, ...partial }));
@@ -149,22 +184,10 @@ export default function SupplementProductForm({
   return (
     <>
       <section className="store-section">
-        <h2>Banner</h2>
-        <p>Wide banner for the supplement page. It is stored separately from the supplement photo.</p>
-        <StoreImageField
-          label="Banner image"
-          value={details.bannerImageUrl}
-          onChange={(bannerImageUrl) => patch({ bannerImageUrl })}
-          helperText="Banner only. Uploading here does not change the supplement photo."
-          folder="store"
-        />
-      </section>
-
-      <section className="store-section">
         <div className="store-section__head">
           <div>
             <h2>Benefits</h2>
-            <p>The three points under the title on the supplement card.</p>
+            <p>The check marks under the product description, such as “Promotes heart health”.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
@@ -202,11 +225,13 @@ export default function SupplementProductForm({
         ))}
       </section>
 
+      {afterBenefits}
+
       <section className="store-section">
         <div className="store-section__head">
           <div>
-            <h2>Page question</h2>
-            <p>The question above the three cards, such as “Is our CoQ10 right for you?”</p>
+            <h2>Is our product right for you?</h2>
+            <p>The heading above the cards, such as “Is our CoQ10 right for you?”</p>
           </div>
         </div>
         <TextField
@@ -220,8 +245,8 @@ export default function SupplementProductForm({
       <section className="store-section">
         <div className="store-section__head">
           <div>
-            <h2>Cards</h2>
-            <p>Each card has a banner image, a title, and a description.</p>
+            <h2>Right-for-you cards</h2>
+            <p>Each card has a photo, a title, and a description, such as “Power Up”.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
@@ -295,7 +320,7 @@ export default function SupplementProductForm({
         <div className="store-section__head">
           <div>
             <h2>Formula transparency</h2>
-            <p>Each chip has an icon image and a title.</p>
+            <p>Icon and title chips, such as “Made Without Major Allergens”.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
@@ -353,19 +378,31 @@ export default function SupplementProductForm({
         <div className="store-section__head">
           <div>
             <h2>Common drug-nutrient interactions</h2>
-            <p>Only the medicines this page actually lists.</p>
+            <p>The note under the heading, then each medicine with its icon and description.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
             onClick={() =>
               patch({
-                interactions: [...details.interactions, { medication: "", note: "" }],
+                interactions: [
+                  ...details.interactions,
+                  { medication: "", note: "", imageUrl: "" },
+                ],
               })
             }
           >
             Add interaction
           </Button>
         </div>
+        <TextField
+          label="Intro"
+          value={details.interactionsIntro}
+          onChange={(e) => patch({ interactionsIntro: e.target.value })}
+          fullWidth
+          multiline
+          minRows={3}
+          placeholder="Medications and supplements can interact in different ways..."
+        />
         {details.interactions.map((row, index) => (
           <div key={`ix-${index}`} className="store-subcard">
             <div className="store-subcard__top">
@@ -381,8 +418,21 @@ export default function SupplementProductForm({
                 <DeleteOutlineIcon fontSize="small" />
               </IconButton>
             </div>
+            <StoreImageField
+              key={`ix-image-${index}`}
+              label="Icon"
+              value={row.imageUrl}
+              onChange={(imageUrl) =>
+                patch({
+                  interactions: details.interactions.map((item, i) =>
+                    i === index ? { ...item, imageUrl } : item
+                  ),
+                })
+              }
+              folder="store"
+            />
             <TextField
-              label="Title"
+              label="Medication"
               value={row.medication}
               onChange={(e) =>
                 patch({
@@ -413,7 +463,15 @@ export default function SupplementProductForm({
       </section>
 
       <section className="store-section">
-        <h2>Information</h2>
+        <h2>Product information</h2>
+        <p>Shown in this order on the page: image, research, why it works, how to take it, when to take it.</p>
+        <TextField
+          label="Information title"
+          value={details.infoTitle}
+          onChange={(e) => patch({ infoTitle: e.target.value })}
+          fullWidth
+          placeholder="CoQ10 Information"
+        />
         <StoreImageField
           label="Information image"
           value={details.infoImageUrl}
@@ -429,14 +487,6 @@ export default function SupplementProductForm({
           minRows={3}
         />
         <TextField
-          label="How to take it"
-          value={details.howToTake}
-          onChange={(e) => patch({ howToTake: e.target.value })}
-          fullWidth
-          multiline
-          minRows={2}
-        />
-        <TextField
           label="Why it works"
           value={details.whyItWorks}
           onChange={(e) => patch({ whyItWorks: e.target.value })}
@@ -445,11 +495,19 @@ export default function SupplementProductForm({
           minRows={3}
         />
         <TextField
-          label="When to take it"
+          label="How to take it?"
+          value={details.howToTake}
+          onChange={(e) => patch({ howToTake: e.target.value })}
+          fullWidth
+          multiline
+          minRows={2}
+        />
+        <TextField
+          label="When to take it?"
           value={details.whenToTake}
           onChange={(e) => patch({ whenToTake: e.target.value })}
           fullWidth
-          helperText="Leave blank when the page has no time."
+          placeholder="Daytime"
         />
       </section>
 
@@ -457,7 +515,7 @@ export default function SupplementProductForm({
         <div className="store-section__head">
           <div>
             <h2>Supplement facts</h2>
-            <p>Serving size, amount per serving, and percent daily value.</p>
+            <p>Serving size, then each nutrient with amount per serving and % daily value.</p>
           </div>
           <Button
             startIcon={<AddIcon />}
@@ -470,12 +528,6 @@ export default function SupplementProductForm({
             Add row
           </Button>
         </div>
-        <StoreImageField
-          label="Facts image"
-          value={details.factsImageUrl}
-          onChange={(factsImageUrl) => patch({ factsImageUrl })}
-          folder="store"
-        />
         <TextField
           label="Serving size"
           value={details.servingSize}
@@ -536,38 +588,69 @@ export default function SupplementProductForm({
           </div>
         ))}
         <TextField
-          label="Other ingredients"
-          value={details.otherIngredients}
-          onChange={(e) => patch({ otherIngredients: e.target.value })}
-          fullWidth
-          multiline
-          minRows={2}
-        />
-        <TextField
           label="Facts note"
           value={details.factsNote}
           onChange={(e) => patch({ factsNote: e.target.value })}
           fullWidth
+          multiline
+          minRows={2}
+          placeholder="% Daily Values are based on a 2,000 calorie diet."
         />
       </section>
 
       <section className="store-section">
-        <h2>Is this supplement right for you?</h2>
-        <TextField
-          label="Closing title"
-          value={details.closingTitle}
-          onChange={(e) => patch({ closingTitle: e.target.value })}
-          fullWidth
-        />
-        <TextField
-          label="Closing description"
-          value={details.closingText}
-          onChange={(e) => patch({ closingText: e.target.value })}
-          fullWidth
-          multiline
-          minRows={2}
-        />
+        <div className="store-section__head">
+          <div>
+            <h2>Ingredients</h2>
+            <p>One line each, in the order shown on the page.</p>
+          </div>
+          <Button
+            startIcon={<AddIcon />}
+            onClick={() => {
+              const ingredients = [...details.ingredients, ""];
+              patch({ ingredients, otherIngredients: ingredients.filter(Boolean).join("\n") });
+            }}
+          >
+            Add ingredient
+          </Button>
+        </div>
+        {details.ingredients.map((row, index) => (
+          <div key={`ing-${index}`} className="store-subcard">
+            <div className="store-subcard__top">
+              <strong>Ingredient {index + 1}</strong>
+              <IconButton
+                size="small"
+                onClick={() => {
+                  const ingredients = details.ingredients.filter((_, i) => i !== index);
+                  patch({
+                    ingredients: ingredients.length ? ingredients : [""],
+                    otherIngredients: ingredients.filter(Boolean).join("\n"),
+                  });
+                }}
+              >
+                <DeleteOutlineIcon fontSize="small" />
+              </IconButton>
+            </div>
+            <TextField
+              label="Name"
+              value={row}
+              onChange={(e) => {
+                const ingredients = details.ingredients.map((item, i) =>
+                  i === index ? e.target.value : item
+                );
+                patch({
+                  ingredients,
+                  otherIngredients: ingredients.filter(Boolean).join("\n"),
+                });
+              }}
+              fullWidth
+              placeholder="Garlic Powder"
+            />
+          </div>
+        ))}
       </section>
+
+      {beforeClosing}
     </>
   );
 }
