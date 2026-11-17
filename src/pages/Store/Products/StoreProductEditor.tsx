@@ -630,6 +630,32 @@ export default function StoreProductEditor() {
               value={imageUrl}
               onChange={setImageUrl}
             />
+            <TextField
+              label="Product color"
+              value={color}
+              onChange={(e) => setColor(e.target.value)}
+              fullWidth
+              placeholder="#9FC53A"
+              helperText="Hex color. Mobile uses this to tint the product."
+              InputProps={{
+                startAdornment: (
+                  <input
+                    type="color"
+                    aria-label="Pick product color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(color) ? color : "#9FC53A"}
+                    onChange={(e) => setColor(e.target.value.toUpperCase())}
+                    style={{
+                      width: 28,
+                      height: 28,
+                      marginRight: 8,
+                      padding: 0,
+                      border: "none",
+                      background: "transparent",
+                    }}
+                  />
+                ),
+              }}
+            />
           </section>
         ) : null}
 
