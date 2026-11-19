@@ -23,6 +23,31 @@ import SupplementProductForm, {
 } from "./SupplementProductForm";
 import "../Store.css";
 
+type RatingBreakdown = {
+  star5: number;
+  star4: number;
+  star3: number;
+  star2: number;
+  star1: number;
+};
+
+const emptyRatingBreakdown = (): RatingBreakdown => ({
+  star5: 0,
+  star4: 0,
+  star3: 0,
+  star2: 0,
+  star1: 0,
+});
+
+function readRatingBreakdown(value: any): RatingBreakdown {
+  const next = emptyRatingBreakdown();
+  if (!value || typeof value !== "object") return next;
+  (Object.keys(next) as (keyof RatingBreakdown)[]).forEach((key) => {
+    next[key] = Math.max(0, Number(value[key]) || 0);
+  });
+  return next;
+}
+
 type VariantRow = {
   key: string;
   label: string;
@@ -165,6 +190,7 @@ export default function StoreProductEditor() {
   const [color, setColor] = useState("");
   const [rating, setRating] = useState(4.8);
   const [ratingCount, setRatingCount] = useState(0);
+  const [ratingBreakdown, setRatingBreakdown] = useState<RatingBreakdown>(emptyRatingBreakdown);
   const [imageUrl, setImageUrl] = useState("");
   const [images, setImages] = useState<string[]>([]);
   const [beforeAfterImages, setBeforeAfterImages] = useState<string[]>([]);
@@ -240,6 +266,7 @@ export default function StoreProductEditor() {
     setColor(product.color || "");
     setRating(Number(product.rating) || 0);
     setRatingCount(Number(product.ratingCount) || 0);
+    setRatingBreakdown(readRatingBreakdown(product.ratingBreakdown));
     setImageUrl(product.imageUrl || "");
     {
       const gallery = Array.isArray(product.images)
@@ -424,6 +451,7 @@ export default function StoreProductEditor() {
       color: color.trim(),
       rating: Number(rating) || 0,
       ratingCount: Number(ratingCount) || 0,
+      ratingBreakdown,
       imageUrl: imageUrl.trim() || gallery[0] || "",
       images: gallery,
       beforeAfterImages,
@@ -777,7 +805,27 @@ export default function StoreProductEditor() {
               }}
             />
             <TextField label="Rating" type="number" inputProps={{ step: 0.1, min: 0, max: 5 }} value={rating} onChange={(e) => setRating(Number(e.target.value))} fullWidth />
-            <TextField label="Rating count" type="number" value={ratingCount} onChange={(e) => setRatingCount(Number(e.target.value))} fullWidth />
+            <TextField label="Rating count" type="number" value={ratingCount} onChange={(e) => setRatingCount(Number(e.target.value))} fullWidth helperText="Shown as “Based on 48 Ratings”" />
+          </div>
+          <div className="store-editor__row">
+            {([5, 4, 3, 2, 1] as const).map((star) => {
+              const key = `star${star}` as keyof RatingBreakdown;
+              return (
+                <TextField
+                  key={key}
+                  label={`${star} star`}
+                  type="number"
+                  value={ratingBreakdown[key]}
+                  onChange={(e) =>
+                    setRatingBreakdown((current) => ({
+                      ...current,
+                      [key]: Math.max(0, Number(e.target.value) || 0),
+                    }))
+                  }
+                  fullWidth
+                />
+              );
+            })}
           </div>
           <label className="store-check">
             <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} />
@@ -1063,6 +1111,26 @@ export default function StoreProductEditor() {
                     fullWidth
                     helperText="Shown as “Based on 48 Ratings”"
                   />
+                </div>
+                <div className="store-editor__row">
+                  {([5, 4, 3, 2, 1] as const).map((star) => {
+                    const key = `star${star}` as keyof RatingBreakdown;
+                    return (
+                      <TextField
+                        key={key}
+                        label={`${star} star`}
+                        type="number"
+                        value={ratingBreakdown[key]}
+                        onChange={(e) =>
+                          setRatingBreakdown((current) => ({
+                            ...current,
+                            [key]: Math.max(0, Number(e.target.value) || 0),
+                          }))
+                        }
+                        fullWidth
+                      />
+                    );
+                  })}
                 </div>
                 {testimonials.map((row, index) => (
                   <div key={`rev-${index}`} className="store-subcard">
