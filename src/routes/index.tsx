@@ -98,6 +98,7 @@ const Contacts = lazy(() => import("pages/AddContactUs"));
 
 //Product Notifications Routes
 const Notifications = lazy(() => import("pages/Notifications"));
+const Inbox = lazy(() => import("pages/Inbox"));
 
 const AddNotifications = lazy(() => import("pages/AddNotifications"));
 
@@ -221,6 +222,7 @@ export const private_routes: IRoute[] = [
   { path: "/update-users/:id", element: <UpdateUsers/> },
 
 
+  { path: "/inbox", element: <Inbox /> },
   { path: "/notifications", element: <Notifications/> },
   { path: "/add-Notifications", element: <Notifications/> },
   { path: "/add-notifications", element: <Notifications/> },
@@ -233,12 +235,14 @@ export const globalAdmin_private_routes: IRoute[] = [];
 
 export const data_entry_private_routes: IRoute[] = [
   { path: "/dashboard", element: <Dashboard /> },
+  { path: "/inbox", element: <Inbox /> },
   { path: "/products", element: <Product /> },
   { path: "/add-product", element: <AddProduct /> },
 ];
 
 export const data_author_private_routes: IRoute[] = [
   { path: "/dashboard", element: <Dashboard /> },
+  { path: "/inbox", element: <Inbox /> },
   { path: "/products", element: <Product /> },
   { path: "/add-product", element: <AddProduct /> },
   { path: "/update-product/:id", element: <UpdateProduct /> },

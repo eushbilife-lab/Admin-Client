@@ -196,6 +196,48 @@
   right: 0;
 }
 
+.admin-header__dropdown--notes {
+  width: min(22rem, 80vw);
+  max-height: 24rem;
+  overflow: auto;
+  padding: 0.35rem;
+}
+
+.admin-header__note {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.1rem;
+  padding: 0.65rem 0.7rem;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-header__note strong {
+  font-size: 0.82rem;
+}
+
+.admin-header__note span {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.admin-header__note.is-unread strong {
+  font-weight: 800;
+}
+
+.admin-header__note-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.35rem 0.15rem;
+}
+
 .admin-header__dropdown--search {
   left: 0;
   right: 0;

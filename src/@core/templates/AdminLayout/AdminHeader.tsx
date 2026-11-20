@@ -13,9 +13,14 @@ import {
 } from "react-icons/md";
 import { useAppSelector } from "redux/hooks";
 import AuthService from "services/auth.service";
-import NotificationService from "services/notification.service";
-import { getAppDispatch } from "utils/dispatch.util";
 import { config } from "config";
+import {
+  useGetInboxQuery,
+  useMarkAllInboxReadMutation,
+  useMarkInboxReadMutation,
+  type InboxItem,
+} from "redux/api/inbox/inboxApi";
+import { useInboxStream } from "hooks/useInboxStream";
 import { BRAND, displayNameOf } from "constants/brand";
 import { QUICK_CREATE } from "constants/adminCommands";
 import { getSidebarGroups } from "./sidebarNav";
@@ -32,7 +37,14 @@ type AdminHeaderProps = {
   onDensityChange: (density: AdminDensity) => void;
 };
 
-type MenuKey = "search" | "add" | "user" | null;
+type MenuKey = "search" | "add" | "user" | "notes" | null;
+
+function canOpenNote(role: string | undefined, link: string) {
+  if (!link) return false;
+  if (role === "admin") return true;
+  return ["/inbox", "/dashboard", "/products", "/add-product"].includes(link)
+    || link.startsWith("/update-product");
+}
 
 const isMac = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
 
@@ -47,8 +59,16 @@ export default function AdminHeader({
 }: AdminHeaderProps) {
   const navigate = useNavigate();
   const user = useAppSelector((state) => state.auth.user);
-  const noteCount = useAppSelector((state) => state.notification.count);
   const rootRef = useRef<HTMLElement>(null);
+  const inbox = useGetInboxQuery(
+    { page: 1, pageSize: 8 },
+    { skip: !user, pollingInterval: 20000 }
+  );
+  const [markRead] = useMarkInboxReadMutation();
+  const [markAll] = useMarkAllInboxReadMutation();
+  useInboxStream(Boolean(user));
+  const notes = inbox.data?.activities || [];
+  const unread = inbox.data?.unreadCount || 0;
   const [openMenu, setOpenMenu] = useState<MenuKey>(null);
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState(() => readRecentPages(6));
@@ -61,7 +81,6 @@ export default function AdminHeader({
       : config.API_URL + user.profileImage
     : "";
   const shortcut = useMemo(() => (isMac ? "⌘K" : "Ctrl K"), []);
-  const canSeeNotes = user?.role === "admin";
 
   const navItems = useMemo(() => {
     return getSidebarGroups(user?.role).flatMap((group) => group.items);
@@ -80,11 +99,11 @@ export default function AdminHeader({
     [user?.role],
   );
 
-  useEffect(() => {
-    if (!canSeeNotes) return;
-    const dispatch = getAppDispatch();
-    if (dispatch) NotificationService.getAllNotifications({ page: 1, page_size: 1 }, dispatch);
-  }, [canSeeNotes]);
+  const openNote = (item: InboxItem) => {
+    if (!item.isRead) void markRead(item.id);
+    if (canOpenNote(user?.role, item.link)) go(item.link);
+    else setOpenMenu(null);
+  };
 
   useEffect(() => {
     if (openMenu !== "search") return;
@@ -253,17 +272,47 @@ export default function AdminHeader({
           {theme === "dark" ? <MdLightMode size={18} /> : <MdDarkMode size={18} />}
         </button>
 
-        <button
-          type="button"
-          className="admin-header__icon"
-          aria-label="Notifications"
-          onClick={() => navigate("/notifications")}
-        >
-          <MdNotificationsNone size={20} />
-          {canSeeNotes && noteCount > 0 ? (
-            <span className="admin-header__badge">{noteCount > 9 ? "9+" : noteCount}</span>
+        <div className="admin-header__action">
+          <button
+            type="button"
+            className="admin-header__icon"
+            aria-label="Activity"
+            aria-expanded={openMenu === "notes"}
+            onClick={() => toggle("notes")}
+          >
+            <MdNotificationsNone size={20} />
+            {unread > 0 ? (
+              <span className="admin-header__badge">{unread > 9 ? "9+" : unread}</span>
+            ) : null}
+          </button>
+          {openMenu === "notes" ? (
+            <div className="admin-header__dropdown admin-header__dropdown--right admin-header__dropdown--notes" role="menu">
+              {notes.length === 0 ? (
+                <p className="admin-header__dropdown-empty">No activity yet.</p>
+              ) : (
+                notes.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`admin-header__note${item.isRead ? "" : " is-unread"}`}
+                    onClick={() => openNote(item)}
+                  >
+                    <strong>{item.title}</strong>
+                    <span>{item.message}</span>
+                  </button>
+                ))
+              )}
+              <div className="admin-header__note-foot">
+                <button type="button" className="admin-header__dropdown-item" onClick={() => markAll()} disabled={!unread}>
+                  Mark all read
+                </button>
+                <button type="button" className="admin-header__dropdown-item" onClick={() => go("/inbox")}>
+                  Show all
+                </button>
+              </div>
+            </div>
           ) : null}
-        </button>
+        </div>
 
         <div className="admin-header__avatars">
           <div className="admin-header__action admin-header__action--add">

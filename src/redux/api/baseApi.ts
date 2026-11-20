@@ -58,6 +58,7 @@ export const baseApi = createApi({
     "User",
     "Role",
     "Notification",
+    "AdminInbox",
     "Product",
     "DraftProduct",
     "Image",

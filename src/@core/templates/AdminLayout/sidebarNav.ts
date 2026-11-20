@@ -476,6 +476,13 @@ export const sidebarGroups: NavGroup[] = [
         hint: "Inbox / contact us",
       },
       {
+        label: "Activity",
+        path: "/inbox",
+        icon: MdNotifications,
+        keywords: "inbox alerts activity user actions staff",
+        hint: "What members and staff just did",
+      },
+      {
         label: "Notifications",
         path: "/notifications",
         icon: MdNotifications,
